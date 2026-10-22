@@ -280,3 +280,35 @@ therefore has two classes.
 
 The author asked for centerlines in red over the blue outlines in the full
 map. The centerlines layer comes with the centerlines product.
+
+The outline of every style is a `line` layer from z0, about one pixel wide
+at low zooms. At world scale a glacier is smaller than a pixel, so a fill
+alone draws nothing there. Themed styles colour the outline with the
+theme's expression, and the legend still comes from the fill.
+
+## Local preview
+
+`preview --version 7.0` links `catalog/` and `staging/` into one tree at
+`.cache/preview` and serves it on port 8000 with Range and CORS. The tree is
+outside `staging/`, because `tools/upload_data.py` walks `staging/` and would
+upload the symlinked data a second time. Dot paths in `staging/` (`.reports`,
+`.tiles`) stay out of the preview, as they stay out of the upload.
+
+`RGI_QUERY_BASE=http://localhost:8000 pixi run pytest
+tests/unit/test_documented_queries.py` runs every SQL recipe of the published
+READMEs and AGENTS files against the preview.
+
+chiitiler renders the style checks and the thumbnails. Its prebuilt
+MapLibre Native binary exists for Node 24, not for Node 26, and it links ICU
+74 and `libOpenGL.so.0`. conda-forge has no ICU 74. chiitiler therefore runs
+from its Docker image (`ghcr.io/kanahiro/chiitiler`, digest
+`sha256:d3586159af69…`), with the repository bind-mounted read-only at its
+own path:
+
+```bash
+docker run -d --rm --name rgi-chiitiler -p 13579:3000 -e CHIITILER_PROCESSES=0 \
+  --mount "type=bind,source=$PWD,target=$PWD,readonly" ghcr.io/kanahiro/chiitiler:latest
+```
+
+A `/clip` bbox that spans the full ±180° renders only part of the data. Frame
+world views at ±170° or less.

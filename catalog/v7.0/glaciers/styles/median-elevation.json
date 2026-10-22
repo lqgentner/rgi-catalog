@@ -43,10 +43,40 @@
       "id": "glaciers-outline",
       "type": "line",
       "source-layer": "glaciers",
-      "minzoom": 10,
       "paint": {
-        "line-color": "#4d4d4d",
-        "line-width": 0.4
+        "line-color": [
+          "step",
+          [
+            "get",
+            "zmed_m"
+          ],
+          "#440154",
+          1000,
+          "#414487",
+          2000,
+          "#2a788e",
+          3000,
+          "#22a884",
+          4000,
+          "#7ad151",
+          5000,
+          "#fde725"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.2,
+          8,
+          0.6,
+          12,
+          1.0
+        ]
       },
       "source": "data"
     },

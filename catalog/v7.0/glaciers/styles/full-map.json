@@ -25,10 +25,23 @@
     {
       "id": "glaciers-outline",
       "type": "line",
-      "minzoom": 8,
       "paint": {
         "line-color": "#2171b5",
-        "line-width": 0.8
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.2,
+          8,
+          0.6,
+          12,
+          1.0
+        ]
       },
       "source-layer": "glaciers",
       "source": "data"

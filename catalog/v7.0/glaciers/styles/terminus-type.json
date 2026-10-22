@@ -45,10 +45,42 @@
       "id": "glaciers-outline",
       "type": "line",
       "source-layer": "glaciers",
-      "minzoom": 10,
       "paint": {
-        "line-color": "#4d4d4d",
-        "line-width": 0.4
+        "line-color": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "term_type"
+            ],
+            1,
+            "Marine-terminating",
+            9,
+            "Not assigned",
+            ""
+          ],
+          "Marine-terminating",
+          "#08519c",
+          "Not assigned",
+          "#bdbdbd",
+          "#bdbdbd"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.2,
+          8,
+          0.6,
+          12,
+          1.0
+        ]
       },
       "source": "data"
     },

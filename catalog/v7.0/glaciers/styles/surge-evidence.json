@@ -53,10 +53,50 @@
       "id": "glaciers-outline",
       "type": "line",
       "source-layer": "glaciers",
-      "minzoom": 10,
       "paint": {
-        "line-color": "#4d4d4d",
-        "line-width": 0.4
+        "line-color": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "surge_type"
+            ],
+            0,
+            "No evidence",
+            1,
+            "Possible",
+            2,
+            "Probable",
+            3,
+            "Observed",
+            ""
+          ],
+          "No evidence",
+          "#c6dbef",
+          "Possible",
+          "#fdd0a2",
+          "Probable",
+          "#fd8d3c",
+          "Observed",
+          "#d94801",
+          "#bdbdbd"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.2,
+          8,
+          0.6,
+          12,
+          1.0
+        ]
       },
       "source": "data"
     },

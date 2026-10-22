@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from rgi_catalog import pipeline, render, sources, tiles
+from rgi_catalog import pipeline, preview, render, sources, tiles
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,6 +21,7 @@ def build_parser() -> argparse.ArgumentParser:
     pipeline.add_parser(subparsers)
     tiles.add_parser(subparsers)
     render.add_parser(subparsers)
+    preview.add_parser(subparsers)
     return parser
 
 

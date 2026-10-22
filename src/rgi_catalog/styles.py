@@ -17,8 +17,10 @@ LABEL_FONT = ["Open Sans Italic"]
 GLACIER_FILL = "#9ecae1"
 GLACIER_LINE = "#2171b5"
 LABEL_COLOR = "#08306b"
-THEME_LINE = "#4d4d4d"
 NO_DATA = "#bdbdbd"
+# At world scale a glacier is smaller than a pixel, so a fill alone draws
+# nothing. An outline of about one pixel keeps every tiled glacier visible.
+OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
 
 LABELS: dict[str, Any] = {
     "id": "glacier-labels",
@@ -48,8 +50,7 @@ LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
         {
             "id": "glaciers-outline",
             "type": "line",
-            "minzoom": 8,
-            "paint": {"line-color": GLACIER_LINE, "line-width": 0.8},
+            "paint": {"line-color": GLACIER_LINE, "line-width": OUTLINE_WIDTH},
         },
     ],
     "glacier-labels": [LABELS],
@@ -257,8 +258,7 @@ def thematic_style(theme: str, archive_href: str) -> dict[str, Any]:
             "id": "glaciers-outline",
             "type": "line",
             "source-layer": "glaciers",
-            "minzoom": 10,
-            "paint": {"line-color": THEME_LINE, "line-width": 0.4},
+            "paint": {"line-color": spec.fill_color(), "line-width": OUTLINE_WIDTH},
         },
         {**LABELS, "source-layer": "glacier-labels"},
     ]

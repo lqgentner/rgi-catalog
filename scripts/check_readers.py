@@ -18,10 +18,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
-from http import HTTPStatus
-from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-import re
 import shutil
 import statistics
 import subprocess
@@ -36,57 +33,31 @@ import pyarrow.parquet as pq
 import pyogrio
 
 from rgi_catalog.geoparquet import KV_KEYS, write_geoparquet
+from rgi_catalog.preview import RangeHandler, serve
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
 SIZES = (10_000, 25_000, 50_000, 100_000)
-_RANGE = re.compile(r"bytes=(\d+)-(\d*)")
 
 
-class _RangeHandler(SimpleHTTPRequestHandler):
-    """Serve files with single-range ``206`` responses and count the bytes sent."""
+class _CountingHandler(RangeHandler):
+    """Count the requests and the body bytes the preview server sends."""
 
     bytes_sent = 0
     requests = 0
 
     @override
-    def do_GET(self) -> None:
-        path = Path(self.translate_path(self.path))
-        if not path.is_file():
-            self.send_error(HTTPStatus.NOT_FOUND)
-            return
-        size = path.stat().st_size
-        match = _RANGE.fullmatch(self.headers.get("Range", ""))
-        start, end = 0, size - 1
-        if match:
-            start = int(match.group(1))
-            end = min(int(match.group(2)) if match.group(2) else size - 1, size - 1)
-            self.send_response(HTTPStatus.PARTIAL_CONTENT)
-            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
-        else:
-            self.send_response(HTTPStatus.OK)
-        self.send_header("Accept-Ranges", "bytes")
-        self.send_header("Content-Length", str(end - start + 1))
-        self.end_headers()
-        with path.open("rb") as f:
-            f.seek(start)
-            data = f.read(end - start + 1)
-        type(self).bytes_sent += len(data)
-        type(self).requests += 1
-        self.wfile.write(data)
-
-    @override
-    def log_message(self, format: str, *args: object) -> None:
-        del format, args
+    def send_header(self, keyword: str, value: str) -> None:
+        if keyword == "Content-Length" and self.command == "GET":
+            type(self).bytes_sent += int(value)
+            type(self).requests += 1
+        super().send_header(keyword, value)
 
 
 @contextmanager
 def _serve(root: Path) -> Iterator[str]:
-    def handler(*args: object, **kwargs: object) -> _RangeHandler:
-        return _RangeHandler(*args, directory=str(root), **kwargs)  # type: ignore[arg-type]
-
-    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)  # type: ignore[arg-type]
+    server = serve(root, port=0, handler=_CountingHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
@@ -202,20 +173,20 @@ def measure(path: Path) -> list[dict[str, float]]:
                 for _ in range(3):
                     con = _duckdb()
                     con.sql("SET enable_external_file_cache = false")
-                    _RangeHandler.bytes_sent = 0
-                    _RangeHandler.requests = 0
+                    _CountingHandler.bytes_sent = 0
+                    _CountingHandler.requests = 0
                     start = time.perf_counter()
                     con.sql(f"SELECT avg(area_km2) FROM read_parquet('{url}')").fetchone()  # noqa: S608
                     scans.append(time.perf_counter() - start)
                 scan = statistics.median(scans)
-                scan_mb = _RangeHandler.bytes_sent / 1e6
-                scan_requests = _RangeHandler.requests
+                scan_mb = _CountingHandler.bytes_sent / 1e6
+                scan_requests = _CountingHandler.requests
                 con = _duckdb()
                 con.sql("SET enable_external_file_cache = false")
-                _RangeHandler.bytes_sent = 0
-                _RangeHandler.requests = 0
+                _CountingHandler.bytes_sent = 0
+                _CountingHandler.requests = 0
                 found = con.sql(_bbox_query(url, lon, lat)).fetchone()
-                fetched = _RangeHandler.bytes_sent
+                fetched = _CountingHandler.bytes_sent
             rows.append(
                 {
                     "rows_per_group": size,
@@ -224,7 +195,7 @@ def measure(path: Path) -> list[dict[str, float]]:
                     "scan_s": scan,
                     "scan_mb": scan_mb,
                     "scan_requests": scan_requests,
-                    "one_glacier_requests": _RangeHandler.requests,
+                    "one_glacier_requests": _CountingHandler.requests,
                     "one_glacier_mb": fetched / 1e6,
                     "matches": float(found[0]) if found else 0.0,
                 },

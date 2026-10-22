@@ -106,6 +106,29 @@ def test_match_branches_exist_in_data(theme: styles.Theme) -> None:
     assert set(theme.codes) == present
 
 
+@pytest.mark.parametrize("style", ALL_STYLES.values())
+def test_glacier_outlines_drawn_from_zoom_0(style: dict[str, Any]) -> None:
+    # At world scale a glacier is smaller than a pixel. A fill alone draws
+    # nothing there, a line of about one pixel shows it.
+    lines = [
+        layer
+        for layer in style["layers"]
+        if layer["type"] == "line" and layer["source-layer"] == "glaciers"
+    ]
+    assert len(lines) == 1
+    assert "minzoom" not in lines[0]
+    width = lines[0]["paint"]["line-width"]
+    assert width[:3] == ["interpolate", ["linear"], ["zoom"]]
+    assert width[3:5] == [0, 1.2]
+
+
+def test_thematic_outline_uses_the_theme_colour() -> None:
+    style = ALL_STYLES["surge-evidence"]
+    fill = next(layer for layer in style["layers"] if layer["type"] == "fill")
+    line = next(layer for layer in style["layers"] if layer["type"] == "line")
+    assert line["paint"]["line-color"] == fill["paint"]["fill-color"]
+
+
 def test_collection_style_rejects_unknown_layer() -> None:
     with pytest.raises(KeyError, match="nonsense"):
         styles.collection_style("glaciers", "../rgi7.0.pmtiles", ["nonsense"])
