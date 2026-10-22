@@ -24,7 +24,6 @@ CASES = [
     ("McCall Glacier", "McCall Glacier"),
     ("Ледник Безенги", "Ледник Безенги"),
     ("Brousilov Ice Cap (Prince George Land)", "Brousilov Ice Cap (Prince George Land)"),
-    # Author decisions at the Task 8 checkpoint (2026-10-22).
     # Roman numerals stay capitals. A hyphen before a compass point or a Roman
     # numeral becomes a space, as in the Swiss Glacier Inventory.
     ("ROTBLATTGLETSCHER-III", "Rotblattgletscher III"),

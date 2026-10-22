@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 # row group size by up to 18% on the full glaciers table.
 WRITE_STRATEGY = "in-memory"
 GEOPARQUET_VERSION: Literal["2.0", "1.1"] = "2.0"
-# Chosen by the author at the Task 8 checkpoint (docs/DESIGN.md). gpio writes
-# whole 2,048-row vectors, so 10,000 is written as 10,240.
+# 10,000 rows, rounded up to whole 2,048-row vectors. docs/DESIGN.md has the
+# measurements.
 ROW_GROUP_SIZE: int = 10_240
 COMPRESSION_LEVEL = 15
 VECTOR = 2_048
