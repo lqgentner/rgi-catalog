@@ -12,22 +12,29 @@ render. Edit `metadata/`, never `catalog/`.
 
 ## GeoParquet writer
 
-`src/rgi_catalog/geoparquet.py` writes each file in three steps:
+`src/rgi_catalog/geoparquet.py` writes each file in two steps:
 
-1. geopandas writes a plain intermediate GeoParquet file.
-2. `gpio convert geoparquet` writes the published file. The settings are
-   GeoParquet 2.0, zstd level 15, Hilbert order, and the chosen row group
-   size. `--no-repair-geometry` stops gpio from changing a geometry. The
-   build repairs geometries itself and reports each repair.
-3. `gpio add bbox` adds the bbox covering column when step 2 did not.
+1. geopandas writes a plain intermediate GeoParquet file. Its schema
+   metadata carries the key-value metadata (`rgi:version`,
+   `rgi:mirror_revision`, `rgi:sources`, `rgi:citation`, `rgi:catalog`).
+2. The gpio Python API reads that file, adds the bbox covering column,
+   orders the rows on the Hilbert curve, and writes the published file in
+   one pass. The settings are GeoParquet 2.0, zstd level 15, and the chosen
+   row group size. gpio carries the input's non-geo key-value metadata into
+   the output (geoparquet-io #690).
 
-The key-value metadata (`rgi:version`, `rgi:mirror_revision`, `rgi:sources`,
-`rgi:citation`, `rgi:catalog`) goes into the Parquet footer last. The build
-uses `geoparquet_io.core.parquet_footer.patch_footer_kv` from the pinned
-geoparquet-io 1.7.0. That function rewrites only the footer, so the data
-pages keep their zstd level 15 encoding.
+gpio does not repair geometries on this path. The build repairs geometries
+itself and reports each repair.
 
-gpio snaps `--row-group-size` down to a multiple of 2,048 rows.
+The write uses gpio's `in-memory` strategy, which writes through pyarrow.
+gpio's default strategy writes through DuckDB, which made row groups of up
+to 12,122 rows on the full glaciers table when 10,240 were requested. The
+pyarrow writer keeps the size exactly. Its file is 321.7 MB against 293.6 MB
+from DuckDB at the same zstd level. The writer refuses a file whose row
+groups exceed the requested size.
+
+gpio writes whole 2,048-row vectors, so a requested size is rounded up to a
+multiple of 2,048.
 
 ### Byte stability
 
@@ -44,9 +51,10 @@ The pixi environment installs it.
 
 ## Glaciers file (measured 2026-10-22)
 
-`convert --products glaciers` writes 274,531 rows. At the gpio default of
-49,152 rows per group the file is 293.6 MB in 6 row groups. The build takes
-3 min 23 s and peaks at 3.9 GB of memory.
+`convert --products glaciers` writes 274,531 rows. The measurements below
+were taken with gpio's default DuckDB writer, before the switch to the
+pyarrow writer. At gpio's default of 49,152 rows per group the file was
+293.6 MB in 6 row groups.
 
 Readers on the GeoParquet 2.0 file:
 
@@ -79,4 +87,11 @@ host each request adds round-trip latency instead.
 The one-glacier read fetches the whole geometry column chunk of the matching
 row group. Its size grows in proportion to the row group size.
 
-The decision is pending with the author.
+**Decision (author, 2026-10-22): 10,000 rows per group, written as
+10,240.** The later viewer fetches single glaciers, and this size makes that
+read about 4 times cheaper than 50,000. The cost is about 20 more requests
+per full scan. The size is below the 50,000 to 150,000 range that the
+distribution guide recommends. rashid runs against the data in Task 11.
+
+The final glaciers file has 27 row groups of at most 10,240 rows, 321.7 MB.
+The build takes 2 min 27 s and peaks at 5.9 GB of memory.

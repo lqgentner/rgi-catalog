@@ -24,6 +24,34 @@ CASES = [
     ("McCall Glacier", "McCall Glacier"),
     ("Ледник Безенги", "Ледник Безенги"),
     ("Brousilov Ice Cap (Prince George Land)", "Brousilov Ice Cap (Prince George Land)"),
+    # Author decisions at the Task 8 checkpoint (2026-10-22).
+    # Roman numerals stay capitals. A hyphen before a compass point or a Roman
+    # numeral becomes a space, as in the Swiss Glacier Inventory.
+    ("ROTBLATTGLETSCHER-III", "Rotblattgletscher III"),
+    ("WEINGARTENGLETSCHER-N-II", "Weingartengletscher N II"),
+    ("Tälligletscher-E", "Tälligletscher E"),
+    ("Fründenhorn-NW", "Fründenhorn NW"),
+    ("Mont Vélan-W", "Mont Vélan W"),
+    ("Vostok-4 Ice Cap (Eva-Liv Island)", "Vostok-4 Ice Cap (Eva-Liv Island)"),
+    ("SAINT-SORLIN", "Saint-Sorlin"),
+    # Particles in re-cased names are lowercase unless first. No reordering.
+    ("CORDÓN DEL PICO ALTO", "Cordón del Pico Alto"),
+    ("TRIENT GLACIER DU", "Trient Glacier du"),
+    ("PETIT COMBIN GLACIER DU-III", "Petit Combin Glacier du III"),
+    ("GLACIER D'ARGENTIERE", "Glacier d'Argentiere"),
+    ("ORNY GLACIER D'", "Orny Glacier d'"),
+    ("DE LA PLAINE MORTE", "De la Plaine Morte"),
+    # Inventory codes with range or query suffixes are stripped.
+    ("FR4N01166H08-10 de la Grande Montagne", "de la Grande Montagne"),
+    ("FR4N01166D14+66D15 du Says", "du Says"),
+    ("FR4N01172C04? de Porteras", "de Porteras"),
+    ("FR4N01083A?? de Malamort", "de Malamort"),
+    # No name: "NN,", "Unnamed_23", and names that are only a bracket.
+    ("NN,", None),
+    ("Unnamed_23", None),
+    ("(Severny Island)", None),
+    # Trailing commas are dropped.
+    ("Alexander Island,", "Alexander Island"),
 ]
 
 
@@ -41,6 +69,11 @@ def test_rule_report_counts_and_sample() -> None:
     assert by_rule["recased"] == 1
     assert by_rule["numeric-only"] == 1
     assert by_rule["unchanged"] == 1
+    # A name that is only a code counts once, as code-only.
+    code_counts, _ = rule_report(pd.Series(["CN5O261B0076"]), sample=1)
+    by_code = dict(zip(code_counts["rule"], code_counts["count"], strict=True))
+    assert by_code["code-only"] == 1
+    assert by_code["inventory-code-stripped"] == 0
     assert list(sample.columns) == ["glac_name", "display_name", "rules"]
     assert len(sample) == 2
     # The sample draws only from names that a rule changed.

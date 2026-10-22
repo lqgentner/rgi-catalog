@@ -143,3 +143,14 @@ def test_write_geoparquet_is_deterministic(tmp_path: Path) -> None:
     write_geoparquet(_frame(), first, kv=KV, row_group_size=ROW_GROUP)
     write_geoparquet(_frame(), second, kv=KV, row_group_size=ROW_GROUP)
     assert _sha256(first) == _sha256(second)
+
+
+def test_write_geoparquet_keeps_invalid_geometry_exactly(tmp_path: Path) -> None:
+    # The build repairs and reports geometries itself, so the writer must not.
+    frame = _frame().iloc[:10].copy()
+    bowtie = Polygon([(0, 0), (2, 2), (2, 0), (0, 2)])
+    frame.loc[frame.index[0], "geometry"] = bowtie
+    out = tmp_path / "invalid.parquet"
+    write_geoparquet(frame, out, kv=KV, row_group_size=ROW_GROUP)
+    got = gpd.read_parquet(out).set_index("rgi_id").loc[frame["rgi_id"].iloc[0], "geometry"]
+    assert shapely.equals_exact(got, bowtie, 0)
