@@ -119,8 +119,9 @@ These were decided with the author, or are fixed by RGI or the spec.
 - **One PMTiles archive per RGI version (decided)**, with several layers, not
   one archive per product.
 - **The corrected RGI6 links come from Fabien Maussion's server (decided).**
-- **Tooling:** pixi (conda-forge + PyPI), Python 3.13. tippecanoe comes from
-  conda-forge.
+- **Tooling:** pixi (conda-forge + PyPI), Python 3.13. The tiler is
+  tylertoo (PyPI), which reads GeoParquet directly. tippecanoe (conda-forge)
+  is the fallback if tylertoo cannot build the archive described in §6.
 - **Portolan:** follow the `portolan` skills (installed plugin v0.5.0,
   checked up to date on 2026-10-22), especially `git-backed-catalog`,
   `portolan-bootstrap`, `sourcecoop`, `portolan-thumbnails` and
@@ -340,8 +341,8 @@ This is the name drawn on the map, and a convenience column in the Parquet.
   - If any of them cannot read it, write GeoParquet 1.1 (WKB + bbox
     covering). The guide endorses 1.1 for wider reader support. Record why in
     `docs/DESIGN.md`.
-  - tippecanoe does not read Parquet. Feed it GeoJSON sequences exported from
-    the built Parquet files.
+  - tylertoo reads the built GeoParquet files directly. No intermediate
+    GeoJSON is needed.
 - **Row group size is measured, not guessed.** The guide recommends 50–150 k
   rows per group; Portolan caps it at 150 k (PORTO-FMT-009). For 274 k glacier
   rows, that is only 2–6 groups of roughly 100 MB. The builder measures at
@@ -399,9 +400,9 @@ Points that rule the tuning:
   z10. Large glaciers are named from about z7, and the smallest only near the
   maximum zoom.
 - **Measured constraints.** The first tiles stay small, following the
-  `portolan-bootstrap` QC. Tile size stays within tippecanoe's limit without
+  `portolan-bootstrap` QC. Tile size stays within the tiler's limit without
   silently dropping features at the zoom where they are meant to be complete.
-- **tippecanoe reads from the built Parquet files,** so the map cannot drift
+- **The tiler reads the built Parquet files,** so the map cannot drift
   from the data.
 
 ### 6.2 Attributes in tiles
@@ -567,7 +568,7 @@ Follow the `portolan-bootstrap` documentation contract:
 - **Dependencies:**
   - geopandas, pyarrow and shapely for assembly;
   - geoparquet-io for writing;
-  - tippecanoe;
+  - tylertoo (tippecanoe as the fallback);
   - DuckDB for profiling and the query tests;
   - rashid 0.3.x;
   - jinja2 and pyyaml;
@@ -630,7 +631,7 @@ format risks (§5.5, §6.1) before most of the work is done.
 
 - Exact column names and dtypes for the folded-in data. The constraints are
   in §5.2: round trips exact, values unchanged.
-- tippecanoe parameters, zoom ranges, simplification and the label
+- Tiler parameters, zoom ranges, simplification and the label
   minimum-zoom thresholds, within §6.
 - Module layout, task names, test structure.
 - The local preview server's implementation.

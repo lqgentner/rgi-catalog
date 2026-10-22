@@ -4,9 +4,9 @@
 
 **Goal:** Build, preview and publish an unofficial, cloud-native mirror of RGI 7.0 (five GeoParquet files, one multi-layer PMTiles archive, a Portolan catalog) to `s3://lqgentner/rgi`.
 
-**Architecture:** A Python package `rgi_catalog` (run under pixi) downloads pinned upstream zips, assembles one table per feature kind, fixes documented upstream errors, writes GeoParquet through `gpio`, tiles through tippecanoe, and renders the committed `catalog/` from tracked metadata plus a committed build record. Data bytes live in a git-ignored staging tree laid out like `catalog/`. A local overlay server previews both as one tree before the template's `tools/publish.py` and `tools/upload_data.py` upload them.
+**Architecture:** A Python package `rgi_catalog` (run under pixi) downloads pinned upstream zips, assembles one table per feature kind, fixes documented upstream errors, writes GeoParquet through `gpio`, tiles the GeoParquet files with tylertoo, and renders the committed `catalog/` from tracked metadata plus a committed build record. Data bytes live in a git-ignored staging tree laid out like `catalog/`. A local overlay server previews both as one tree before the template's `tools/publish.py` and `tools/upload_data.py` upload them.
 
-**Tech Stack:** pixi (conda-forge + PyPI), Python 3.13, geopandas/pyogrio/shapely/pyarrow, geoparquet-io (gpio) 1.7.0, tippecanoe 2.79 (`tippecanoe`, `tile-join`), DuckDB, jinja2, PyYAML, rashid `>=0.3.0,<0.4.0`, pytest, ruff, pyrefly.
+**Tech Stack:** pixi (conda-forge + PyPI), Python 3.13, geopandas/pyogrio/shapely/pyarrow, geoparquet-io (gpio) 1.7.0, tylertoo 0.8.0 (tippecanoe 2.79 as the fallback), DuckDB, jinja2, PyYAML, rashid `>=0.3.0,<0.4.0`, pytest, ruff, pyrefly.
 
 **Spec:** `docs/superpowers/specs/2026-10-22-rgi-mirror-design.md`. Read it fully before any task; section numbers below (§) refer to it.
 
@@ -60,7 +60,7 @@ src/rgi_catalog/
   typing.py                       lossless integer narrowing, dtype maps
   assemble.py                     one function per product → GeoDataFrame
   geoparquet.py                   write via gpio, kv metadata, read-back checks
-  tiles.py                        GeoJSONSeq export, label points, tippecanoe, tile-join
+  tiles.py                        label points, tile properties, tylertoo runs
   styles.py                       MapLibre style documents
   record.py                       build record (sizes, checksums, extents, counts)
   render.py                       STAC JSON + READMEs/AGENTS from metadata + record
@@ -281,27 +281,38 @@ CASES = [
 
 **Files:**
 - Create: `src/rgi_catalog/tiles.py`, `src/rgi_catalog/styles.py`, `tests/unit/test_tiles.py`, `tests/unit/test_styles.py`
+- Modify: `pyproject.toml` (tylertoo replaces tippecanoe), `docs/DESIGN.md`
 
 **Interfaces:**
 - Consumes: staged Parquet files.
 - Produces:
-  - `@dataclass(frozen=True) class LayerSpec: name: str; source: Path; minzoom: int; maxzoom: int; extra_args: tuple[str, ...]`.
-  - `export_layer(parquet: Path, out: Path, *, drop: Sequence[str]) -> Path` — GeoJSONSeq of every scalar column (list/struct columns listed in `drop`).
+  - `@dataclass(frozen=True) class LayerSpec: name: str; source: Path; minzoom: int; maxzoom: int; extra_args: tuple[str, ...]`. `source` is a GeoParquet file. tylertoo reads it directly; there is no GeoJSON export.
+  - `tile_properties(parquet: Path) -> list[str]` — the scalar columns of a file. List and struct columns (`hypso_permille`, `rgi6_links`, `glacier_ids`) and `bbox` are left out, because vector tiles cannot store them (spec §6.2).
   - `label_minzoom(area_km2: float) -> int`.
-  - `export_labels(glaciers_parquet: Path, out: Path) -> Path` — one point per glacier with non-null `display_name`, at (`cenlon`, `cenlat`), properties `rgi_id`, `display_name`, `area_km2`, and a per-feature `"tippecanoe": {"minzoom": label_minzoom(area)}`.
-  - `build_archive(layers: Sequence[LayerSpec], out: Path, *, name: str, attribution: str, description: str) -> Path` — one `tippecanoe` run per layer to a temporary `.pmtiles` with `-l {name}` `-Z/-z`, then `tile-join` into `out`. Archive metadata: name `RGI 7.0 (unofficial mirror)`, attribution `RGI 7.0 Consortium (2023), doi:10.5067/f6jmovy5navz — unofficial mirror`.
+  - `write_labels(glaciers_parquet: Path, out: Path) -> Path` — a GeoParquet file of points, one per glacier with a non-null `display_name`, at (`cenlon`, `cenlat`), with columns `rgi_id`, `display_name`, `area_km2` and `label_minzoom`.
+  - `build_archive(layers: Sequence[LayerSpec], out: Path, *, name: str, attribution: str, description: str) -> Path` — runs tylertoo to write one PMTiles archive with one vector layer per `LayerSpec`, using the mechanism that Step 0 establishes (expected: `tylertoo pyramid OUT --band LO-HI:INPUT:LAYER …`, bands sharing zoom ranges since v0.7.0). Archive metadata: name `RGI 7.0 (unofficial mirror)`, attribution `RGI 7.0 Consortium (2023), doi:10.5067/f6jmovy5navz — unofficial mirror`.
   - `styles.collection_style(collection: str, archive_href: str, layers: Sequence[str]) -> dict` and `styles.full_map_style(archive_href: str) -> dict` (MapLibre v8; source id `data`; url `pmtiles://` + relative href; label layer is a `symbol` layer on `glacier-labels` with `text-field: ["get", "display_name"]`).
   - CLI `tiles --version 7.0`.
 
+tylertoo 0.8.0 (2026-10-06) is pre-1.0, and its author calls it not yet production-ready. Two capabilities this archive needs are not shown in its tutorials. Step 0 checks them first.
+
+- [ ] **Step 0: tylertoo spike.** Add `tylertoo ==0.8.0` to the PyPI dependencies and remove `tippecanoe`. Read `tylertoo --help`, `tylertoo pyramid --help` and `tylertoo tiles --help` (CLI reference: https://geoparquet-io.github.io/tylertoo/reference/cli/; tippecanoe mapping: https://geoparquet-io.github.io/tylertoo/guides/tippecanoe/). On a small fixture, establish and record in `docs/DESIGN.md`:
+  1. **Several layers in one archive.** The `glaciers` and `glacier-labels` layers must share zoom levels in one archive. Expected: `pyramid` bands. `merge` does not work, because it needs archives with disjoint tiles.
+  2. **A minimum zoom per label.** Label points must enter at `label_minzoom` and must not be thinned below it. Candidates: `--entry-zoom` on the `label_minzoom` column, `--magnitude-ladder area_km2`, and `--no-density-drop` for the label layer. Check this per band if a `pyramid` band does not take the conversion options.
+  3. **Property selection** with `--include-property`/`--exclude-property`, and how list and struct columns behave when they are not excluded.
+  4. **Glaciers complete from z10.** Polygons are not density-thinned by default. Use `--size-valve drop` (the equivalent of tippecanoe's `--drop-densest-as-needed`) only below the complete zoom.
+
+  If 1 or 2 cannot be done with tylertoo 0.8.0: **CHECKPOINT** with the author. The fallback is tippecanoe 2.79 from conda-forge, fed GeoJSONSeq exported from the Parquet files, with a per-feature `"tippecanoe": {"minzoom": …}` on labels and `tile-join` to combine layers.
 - [ ] **Step 1: Failing tests:**
   - `test_label_minzoom_monotonic`: non-increasing over areas `[0.01, 0.2, 1, 8, 25, 82, 1000]`; `label_minzoom(82) <= 8`; `label_minzoom(0.2) >= 12`.
-  - `test_export_labels_skips_unnamed_and_uses_rgi_point`: fixture glacier without `display_name` absent; coordinates equal `cenlon`/`cenlat` exactly.
-  - `test_export_layer_drops_list_columns`.
-  - `test_build_archive_contains_layers` (fixture; read the archive header/metadata with the `pmtiles` Python reader or `tile-join --help`-documented output; assert `vector_layers` ids include `glaciers` and `glacier-labels`, and bounds lie within `[-180, -90, 180, 90]`). Include a fixture glacier at longitude 179.95 (region 10 sits on the antimeridian) and assert the archive bounds include it.
+  - `test_write_labels_skips_unnamed_and_uses_rgi_point`: the fixture glacier without `display_name` is absent; coordinates equal `cenlon`/`cenlat` exactly; `label_minzoom` equals `label_minzoom(area_km2)`.
+  - `test_tile_properties_leaves_out_list_columns`.
+  - `test_build_archive_contains_layers` (fixture; read the archive header and metadata with the `pmtiles` Python reader; assert `vector_layers` ids include `glaciers` and `glacier-labels`, and bounds lie within `[-180, -90, 180, 90]`). Include a fixture glacier at longitude 179.95 (region 10 sits on the antimeridian) and assert the archive bounds include it.
+  - `test_build_archive_label_entry_zoom`: decode the fixture archive (`tylertoo decode --layer glacier-labels`) and assert that a label is absent below its `label_minzoom` and present from it.
   - `test_styles_reference_archive_relatively`: `style["sources"]["data"]["url"] == "pmtiles://../rgi7.0.pmtiles"` for glaciers and `"pmtiles://../../glaciers/rgi7.0.pmtiles"` for other collections; `version == 8`.
-- [ ] **Step 2:** Run → FAIL. Implement. Starting zoom ranges (tune in Step 4): `glaciers` z8–z14 (complete from z10, `--drop-densest-as-needed` below), `glacier-labels` z7–z14. Run → PASS.
-- [ ] **Step 3:** Build the real archive: `pixi run python -m rgi_catalog tiles --version 7.0`.
-- [ ] **Step 4:** Inspect with pmtiles.io (or the Task 11 preview once it exists): first tile size, completeness at z10, label density. Record the final parameters in `docs/DESIGN.md`.
+- [ ] **Step 2:** Run → FAIL. Implement. Starting zoom ranges (tune in Step 4): `glaciers` z8–z14 (complete from z10), `glacier-labels` z7–z14. Run → PASS.
+- [ ] **Step 3:** Build the real archive: `pixi run python -m rgi_catalog tiles --version 7.0`. Run `tylertoo stats` on it.
+- [ ] **Step 4:** Inspect with pmtiles.io (or the Task 11 preview once it exists): first tile size, completeness at z10 (`tylertoo decode --zoom 10` row count against the Parquet row count), label density. Record the final parameters in `docs/DESIGN.md`.
 - [ ] **Step 5: CHECKPOINT (style plan).** Query distributions (`SELECT term_type, count(*) …`, same for `surge_type`, `primeclass`, `dem_source`) and propose per-collection default styles; the browser draws a legend only for a `fill` layer whose `fill-color` is `match` or `step`. Every `match` branch must exist in the data. If tile weight forces dropping scalar columns from tiles, ask here (spec §6.2). Author approves; implement the approved styles. Commit `feat: build the web-map archive and styles`.
 
 ---
