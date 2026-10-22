@@ -225,3 +225,42 @@ reached.
 `label_minzoom` falls by one zoom for every factor of 4 in area, because
 each zoom step quadruples a glacier's area on screen. A glacier of 1 km²
 gets its label at z11. The result is clamped to z7–z12.
+
+## Glacier styles
+
+The author approved this style plan on 2026-10-22. `styles.glacier_styles`
+builds the styles of the glaciers collection.
+
+| Style | Column | Expression | Legend |
+| --- | --- | --- | --- |
+| `full-map` (default) | none | blue fill and outline, names | no |
+| `median-elevation` | `zmed_m` | `step` at 1,000 m to 5,000 m | 6 classes |
+| `surge-evidence` | `surge_type` | `match` on 0 to 3 | 4 classes |
+| `terminus-type` | `term_type` | `match` on 1 and 9 | 2 classes |
+| `same-as-rgi6` | `is_rgi6` | `match` on the flag | 2 classes |
+
+Every style draws the names on top. The names use CARTO's glyphs, which the
+browser's default basemaps also use, in Open Sans Italic.
+
+The browser labels a legend entry with the `match` branch value. Each
+`match` therefore takes a nested expression that turns the code into the
+user guide's label, and branches on that label. The legend reads "Observed",
+not "3".
+
+RGI 7.0 assigns only the marine-terminating terminus class (1,561
+glaciers). Every other glacier is "not assigned" (9). The user guide states
+that no lake- or shelf-terminating class is available. The terminus style
+therefore has two classes.
+
+`tests/unit/test_styles.py::test_match_branches_exist_in_data` checks each
+`match` against the staged file when it exists. Measured counts:
+
+| Column | Values |
+| --- | --- |
+| `surge_type` | 0: 271,901, 1: 630, 2: 825, 3: 1,175 |
+| `term_type` | 1: 1,561, 9: 272,970 |
+| `is_rgi6` | true: 73,797, false: 200,734 |
+| `zmed_m` | <1,000: 38,275, 1–2k: 66,180, 2–3k: 20,622, 3–4k: 22,258, 4–5k: 45,150, ≥5k: 82,046 |
+
+The author asked for centerlines in red over the blue outlines in the full
+map. The centerlines layer comes with the centerlines product.
