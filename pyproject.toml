@@ -130,6 +130,8 @@ requires-pixi = ">=0.80"
 python = "3.13.*"
 geopandas = "*"
 pyogrio = "*"
+# The GDAL Parquet driver, so the reader check exercises GDAL (as QGIS uses it).
+libgdal-arrow-parquet = "*"
 shapely = "*"
 pyarrow = "*"
 python-duckdb = "*"
