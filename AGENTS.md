@@ -1,35 +1,11 @@
-<!-- ops-sync:begin — synced from portolan-sdi/portolan-ops. Edit there, not here. -->
-# Portolan agent norms
-
-All agents MUST read this document before starting work, with no exceptions, ever. (Claude Code does not read `AGENTS.md` but imports this file via a one-line `CLAUDE.md`.) Most of this content is synced downstream from `portolan-ops`. Put repo-specific instructions in `AGENTS.md`, never in `CLAUDE.md`, which the sync overwrites.
-
-## Ground rules
-
-Agents MUST read the complete contents of [norms](https://github.com/portolan-sdi/portolan-ops/blob/main/norms) and [policies](https://github.com/portolan-sdi/portolan-ops/blob/main/policies/) before starting work, with no exceptions, ever.
-
-The [portolan-spec](https://github.com/portolan-sdi/portolan-spec) repo is the absolute ground truth for the Portolan spec. All other tools are downstream of it.
-
-Before documenting any command, flag, or API, verify that it exists.
-
-Use conventional commits always.
-
-All tickets and PRs MUST follow the [templates](https://github.com/portolan-sdi/portolan-ops/blob/main/templates/).
-
-## Org-wide facts
-
-The canonical homepage is <https://www.portolan-sdi.org/>. Canonical URLs live in [copy/urls.md](https://github.com/portolan-sdi/portolan-ops/blob/main/copy/urls.md). Do not hardcode variants.
-
-Community discussion happens in the [Portolan Google Group](https://groups.google.com/g/portolan) and the [Portolan channel](https://cloudnativegeo.slack.com/archives/C0A1JBH9529) in Cloud-Native Geo Slack. Planning happens in [org-level GitHub projects](https://github.com/orgs/portolan-sdi/projects/1).
-
-Files between `ops-sync` markers are synced from [portolan-ops](https://github.com/portolan-sdi/portolan-ops). They are overwritten on every sync run. To change one, edit it in portolan-ops.
-
-One canonical home per fact. If a value like a color, URL, or policy line exists in portolan-ops, link to it rather than copying it.
-<!-- ops-sync:end -->
+# rgi-catalog agent notes
 
 ## This Repository
 
-A template for a git-backed Portolan catalog. Repositories created from it
-inherit everything here, so a mistake in this file propagates.
+An unofficial, cloud-native mirror of the Randolph Glacier Inventory (RGI),
+built as a git-backed Portolan catalog from `portolan-catalog-template`. It is
+not endorsed by the RGI Consortium. The design is in
+`docs/superpowers/specs/2026-10-22-rgi-mirror-design.md`.
 
 ### The publish boundary
 
@@ -70,3 +46,50 @@ Keep both hrefs absolute. The repository sits outside the published catalog,
 so a relative href resolves against the public base URL. Each placeholder
 holds a `://`, because `tests/test_links.py` treats an href without one as a
 path and looks for it on disk.
+
+## Working in this repository
+
+### Commands
+
+Every command runs inside the pixi environment.
+
+```bash
+pixi install                                         # create the environment
+pixi run check                                       # lint, typecheck, unit tests, catalog gates
+pixi run python -m rgi_catalog download --version 7.0
+pixi run python -m rgi_catalog convert --version 7.0
+pixi run python -m rgi_catalog tiles --version 7.0
+pixi run python -m rgi_catalog render --version 7.0
+pixi run python -m rgi_catalog preview --version 7.0
+```
+
+### The render rule
+
+`render` generates `catalog/`. Do not edit a file in `catalog/` by hand. Edit
+`metadata/`, then run `pixi run python -m rgi_catalog render --version 7.0`.
+A unit test fails when `catalog/` differs from a fresh render.
+
+### The data policy
+
+Restructuring is allowed, and fixing documented upstream errors is allowed.
+Values never change otherwise. Every fix is listed in `docs/PROVENANCE.md`. A
+cleaned `display_name` is allowed because `rgi_id` stays authoritative. Never
+alter or re-mint an `rgi_id`.
+
+### Publishing
+
+Publish with `tools/upload_data.py` (the data in `staging/`) and then
+`tools/publish.py` (the catalog documents). Run both without `--confirm`
+first. Never use `portolan push`.
+
+### A mirror revision
+
+A fix to the conversion or the catalog overwrites the files at the same paths.
+Each fix is a mirror revision, named `7.0-r1`, `7.0-r2`, and so on.
+
+1. Rebuild: `download`, `convert`, `tiles`.
+2. Bump the revision in `metadata/catalog.yaml`.
+3. Run `render`, then `pixi run check`.
+4. Upload the data, then publish the catalog.
+5. Add a `CHANGELOG.md` entry.
+6. Tag the commit with the revision name.

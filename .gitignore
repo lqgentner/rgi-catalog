@@ -19,7 +19,7 @@
 
 # Downloaded sources and build scratch. Re-fetchable by your own tooling.
 sources/
-staging/*/data/
+staging/
 .cache/
 
 # Secrets
