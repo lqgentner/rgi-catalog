@@ -96,6 +96,7 @@ suppress-dummy-args = false
     "PLR2004",  # Allow magic values in tests
     "SLF001",   # Allow accesses on "private" class members.
     "TC003",    # Runtime imports of stdlib types are fine in tests
+    "RUF001",   # Mojibake test cases contain look-alike characters on purpose
 ]
 "scripts/**/*.py" = [
     "INP001",   # scripts/ is a collection of entry points, not a package
@@ -104,7 +105,7 @@ suppress-dummy-args = false
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["rgi_catalog"]
+known-first-party = ["rgi_catalog", "tests"]
 force-sort-within-sections = true
 required-imports = ["from __future__ import annotations"]
 
@@ -116,6 +117,8 @@ preset = "strict"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
+# The repository root, so `tests.unit.*` helper modules import the way pyrefly resolves them.
+pythonpath = ["."]
 
 [tool.pixi.workspace]
 name = "rgi_catalog"
