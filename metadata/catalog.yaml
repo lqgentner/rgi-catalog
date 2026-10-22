@@ -1,0 +1,12 @@
+# Tracked catalog metadata. The render step builds catalog/ from this file.
+
+public_base: https://data.source.coop/lqgentner/rgi
+
+citation: >-
+  RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global
+  Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow
+  and Ice Data Center. doi:10.5067/f6jmovy5navz.
+
+versions:
+  "7.0":
+    mirror_revision: 7.0-r1

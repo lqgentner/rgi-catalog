@@ -41,3 +41,42 @@ checks this on a 5,000-row table with list and struct columns.
 a bbox query), geopandas, GDAL through pyogrio, and `gpio check all`. GDAL
 needs its Parquet driver, which conda-forge ships as `libgdal-arrow-parquet`.
 The pixi environment installs it.
+
+## Glaciers file (measured 2026-10-22)
+
+`convert --products glaciers` writes 274,531 rows. At the gpio default of
+49,152 rows per group the file is 293.6 MB in 6 row groups. The build takes
+3 min 23 s and peaks at 3.9 GB of memory.
+
+Readers on the GeoParquet 2.0 file:
+
+| Reader | Result |
+| --- | --- |
+| DuckDB 1.5.6, spatial bbox query | ok |
+| geopandas 1.2.0 | ok, 274,531 rows |
+| GDAL 3.13.3 (pyogrio) | ok, 274,531 features |
+| `gpio check all` | ok, 40 spec checks passed |
+
+### Row group size
+
+`scripts/check_readers.py --measure` rewrites the file at four sizes and
+serves each from a local Range server. The scan is
+`SELECT avg(area_km2)` (median of 3 runs, fresh connection each). The
+one-glacier read is a bbox query for the first glacier's `cenlon`/`cenlat`.
+
+| Rows per group | Row groups | File MB | Scan s | Scan MB | Scan requests | One glacier MB | One glacier requests |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10,000 | 27 | 294.6 | 1.071 | 2.61 | 29 | 14.28 | 7 |
+| 25,000 | 11 | 292.7 | 1.026 | 2.61 | 13 | 25.03 | 7 |
+| 50,000 | 6 | 293.6 | 0.011 | 2.61 | 8 | 61.52 | 7 |
+| 100,000 | 3 | 292.9 | 0.010 | 2.61 | 5 | 119.82 | 7 |
+
+The scan reads the same 2.61 MB at every size. Its time steps from about
+0.01 s to about 1 s between 8 and 13 requests. That step comes from the
+local server or DuckDB's HTTP client, not from the bytes read. On a remote
+host each request adds round-trip latency instead.
+
+The one-glacier read fetches the whole geometry column chunk of the matching
+row group. Its size grows in proportion to the row group size.
+
+The decision is pending with the author.

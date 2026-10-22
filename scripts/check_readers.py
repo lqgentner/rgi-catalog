@@ -23,6 +23,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import re
 import shutil
+import statistics
 import subprocess
 import tempfile
 import threading
@@ -47,6 +48,7 @@ class _RangeHandler(SimpleHTTPRequestHandler):
     """Serve files with single-range ``206`` responses and count the bytes sent."""
 
     bytes_sent = 0
+    requests = 0
 
     @override
     def do_GET(self) -> None:
@@ -71,6 +73,7 @@ class _RangeHandler(SimpleHTTPRequestHandler):
             f.seek(start)
             data = f.read(end - start + 1)
         type(self).bytes_sent += len(data)
+        type(self).requests += 1
         self.wfile.write(data)
 
     @override
@@ -195,13 +198,22 @@ def measure(path: Path) -> list[dict[str, float]]:
             groups = pq.ParquetFile(out).metadata.num_row_groups
             with _serve(root) as base:
                 url = f"{base}/{out.name}"
+                scans = []
+                for _ in range(3):
+                    con = _duckdb()
+                    con.sql("SET enable_external_file_cache = false")
+                    _RangeHandler.bytes_sent = 0
+                    _RangeHandler.requests = 0
+                    start = time.perf_counter()
+                    con.sql(f"SELECT avg(area_km2) FROM read_parquet('{url}')").fetchone()  # noqa: S608
+                    scans.append(time.perf_counter() - start)
+                scan = statistics.median(scans)
+                scan_mb = _RangeHandler.bytes_sent / 1e6
+                scan_requests = _RangeHandler.requests
                 con = _duckdb()
-                con.sql("SET enable_http_metadata_cache = false")
-                start = time.perf_counter()
-                con.sql(f"SELECT avg(area_km2) FROM read_parquet('{url}')").fetchone()  # noqa: S608
-                scan = time.perf_counter() - start
-                con = _duckdb()
+                con.sql("SET enable_external_file_cache = false")
                 _RangeHandler.bytes_sent = 0
+                _RangeHandler.requests = 0
                 found = con.sql(_bbox_query(url, lon, lat)).fetchone()
                 fetched = _RangeHandler.bytes_sent
             rows.append(
@@ -210,6 +222,9 @@ def measure(path: Path) -> list[dict[str, float]]:
                     "row_groups": groups,
                     "file_mb": out.stat().st_size / 1e6,
                     "scan_s": scan,
+                    "scan_mb": scan_mb,
+                    "scan_requests": scan_requests,
+                    "one_glacier_requests": _RangeHandler.requests,
                     "one_glacier_mb": fetched / 1e6,
                     "matches": float(found[0]) if found else 0.0,
                 },
@@ -224,11 +239,15 @@ def main() -> None:
     parser.add_argument("--measure", action="store_true")
     args = parser.parse_args()
     if args.measure:
-        print("rows/group  groups  file MB  scan s  one-glacier MB")
+        print(
+            "rows/group  groups  file MB  scan s (median of 3)  scan MB  scan req"
+            "  one-glacier MB  one-glacier req",
+        )
         for r in measure(args.path):
             print(
                 f"{r['rows_per_group']:>10,.0f}  {r['row_groups']:>6.0f}  {r['file_mb']:>7.1f}"
-                f"  {r['scan_s']:>6.2f}  {r['one_glacier_mb']:>14.2f}",
+                f"  {r['scan_s']:>20.3f}  {r['scan_mb']:>7.2f}  {r['scan_requests']:>8.0f}"
+                f"  {r['one_glacier_mb']:>14.2f}  {r['one_glacier_requests']:>15.0f}",
             )
         return
     width = max(len(name) for name, _ in reader_matrix(args.path))
