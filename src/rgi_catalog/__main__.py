@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from rgi_catalog import pipeline, sources
+from rgi_catalog import pipeline, sources, tiles
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -19,6 +19,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     sources.add_parser(subparsers)
     pipeline.add_parser(subparsers)
+    tiles.add_parser(subparsers)
     return parser
 
 

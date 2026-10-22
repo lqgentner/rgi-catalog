@@ -127,3 +127,101 @@ against the data in Task 11.
 The final glaciers file is 258.0 MB in 24 row groups of 10,269 to 12,122
 rows. The build takes 5 min 28 s and peaks at 5.9 GB of memory. Two builds
 from the same inputs gave identical bytes.
+
+## Web-map archive
+
+`src/rgi_catalog/tiles.py` builds `v7.0/glaciers/rgi7.0.pmtiles` from the
+staged glaciers file. The tiler is tylertoo 0.8.0.
+
+### The tylertoo binary
+
+The PyPI wheel of tylertoo 0.8.0 has only the Python API. That API writes one
+layer per archive and has no `pyramid`, `--entry-zoom` or
+`--include-property`. The build uses the release binary instead
+(`tylertoo-0.8.0-x86_64-unknown-linux-musl.tar.gz`). `tiles.TYLERTOO` pins it
+by sha256, and `sources.fetch` verifies it into `.cache/`.
+
+The 0.8.0 binary lacks two flags that the online documentation lists:
+`--size-valve` and `--name`/`--attribution`/`--description` on `tiles` and
+`pyramid`. The build writes the archive metadata itself
+(`tiles.set_metadata`). It copies the header, directories and tile data byte
+for byte and replaces only the metadata block.
+
+### How the archive is built
+
+1. `write_labels` writes one point per glacier with a `display_name`, at
+   RGI's own `cenlon`/`cenlat`, to `staging/v7.0/.tiles/labels.parquet`.
+2. `tylertoo tiles` builds each zoom band of each layer into its own archive.
+3. `tylertoo pyramid --band LO-HI:ARCHIVE:LAYER …` joins the bands. Bands of
+   different layers may share zooms. Each band's label must equal its layer
+   name, or `pyramid` refuses the build.
+
+| Layer | Band | Settings |
+| --- | --- | --- |
+| `glaciers` | z0–9 | tylertoo defaults: density budget, cell thinning, 500 KB tile cap |
+| `glaciers` | z10–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0 --simplify-factor 0.5` |
+| `glacier-labels` | z7–12 | `--entry-zoom label_minzoom:7=7,…,12=12 --no-density-drop` |
+
+Every band uses `--no-simple-clip-fastpath` and `--include-property` for
+each scalar column (`tile_properties`). List and struct columns
+(`hypso_permille`, `rgi6_links`, `bbox`) stay out. tylertoo would write them
+as JSON strings. Timestamps become strings in the tiles.
+
+A band marked `complete` must keep every feature at every zoom, or every
+feature that has entered by that zoom for the label layer. The build reads
+each band's tylertoo report and fails otherwise.
+
+### Findings that set the flags
+
+Measured on the full glaciers table:
+
+- With tylertoo defaults, the Alps keep 550 of 4,079 glaciers at z10. The
+  density budget thins polygons, unlike tippecanoe's default.
+  `--no-density-drop` keeps all of them there.
+- Worldwide, cell thinning (`--polygon-thinning`, default 1 GSD) still drops
+  4 glaciers at z10. With it off, simplification at 1 GSD collapses two
+  slivers of about 0.01 km² and 80 m width (`RGI2000-v7.0-G-02-15948`,
+  `RGI2000-v7.0-G-17-28135`). `--simplify-factor 0.5` keeps them.
+- Labels with `--entry-zoom` alone appear from their entry zoom but are
+  thinned after it (Alps z12: 981 of 1,005). `--no-density-drop` keeps all.
+
+### Zoom range
+
+The first build went to z14 and was 2.4 GB. z14 alone was 2.2 million tiles,
+mostly about 1 KB each: tiles inside ice caps that carry one clipped polygon
+and its 39 properties. A z12 tile resolves about 2.4 m at the equator, finer
+than the imagery behind the outlines, and clients overzoom above it. Every
+layer therefore stops at z12, because a client overzooms one source as a
+whole.
+
+Leaving the four long submission text columns out of the tiles saves 12% of
+the z10–12 band (550 to 485 MB). The tiles keep every scalar column.
+
+The glaciers layer starts at z0, so the default style shows data at the full
+extent. Below z10 the tiler thins by density. z9 keeps all 274,531 glaciers.
+
+### Result (measured 2026-10-22)
+
+`tiles --version 7.0` takes 80 s and peaks at 2.7 GB of memory. The archive
+is 759.0 MB. Two builds gave identical bytes.
+
+| z | Tiles | MB | p50 bytes | Max bytes |
+| ---: | ---: | ---: | ---: | ---: |
+| 0 | 1 | 0.03 | 25,678 | 25,678 |
+| 2 | 15 | 0.4 | 14,943 | 161,175 |
+| 4 | 91 | 3.2 | 8,178 | 257,923 |
+| 6 | 471 | 13.1 | 7,843 | 299,884 |
+| 8 | 2,796 | 41.8 | 4,578 | 289,538 |
+| 9 | 7,482 | 101.8 | 4,003 | 266,007 |
+| 10 | 20,895 | 104.8 | 1,994 | 95,433 |
+| 11 | 61,700 | 161.0 | 1,398 | 51,611 |
+| 12 | 192,849 | 328.2 | 1,123 | 33,401 |
+
+Decoded counts: 274,531 glaciers at z10, z11 and z12. Labels: 244 at z7,
+714 at z8, 1,462 at z9, 2,715 at z10, 4,514 at z11 and all 9,467 at z12.
+Each equals the number of named glaciers whose `label_minzoom` has been
+reached.
+
+`label_minzoom` falls by one zoom for every factor of 4 in area, because
+each zoom step quadruples a glacier's area on screen. A glacier of 1 km²
+gets its label at z11. The result is clamped to z7–z12.
