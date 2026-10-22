@@ -1,0 +1,30 @@
+# {{ meta.title }}
+
+{% include "_nav.md.j2" %}
+
+{{ disclaimer }}
+
+{{ meta.description.split() | join(" ") }}
+
+## What is here
+
+| Version | Mirror revision | Collections | Documentation |
+| --- | --- | --- | --- |
+{% for version, vspec in versions.items() %}
+| [RGI {{ version }}]({{ browser("v" ~ version ~ "/catalog.json") }}) | {{ records[version].mirror_revision }} | {{ vspec.collections | join(", ") }} | [README](v{{ version }}/README.md) · [AGENTS](v{{ version }}/AGENTS.md) |
+{% endfor %}
+
+## Access
+
+Every file is public over HTTPS and S3. No account is needed. This DuckDB
+query counts the glaciers of each first-order region without a download:
+
+```sql
+INSTALL httpfs; LOAD httpfs;
+SELECT o1region, count(*) AS glaciers, round(sum(area_km2)) AS area_km2
+FROM '{{ public("v7.0/glaciers/rgi7.0-glaciers.parquet") }}'
+GROUP BY o1region
+ORDER BY o1region;
+```
+
+{% include "_mirror.md.j2" %}

@@ -10,6 +10,22 @@ The template expects a hand-edited `catalog/`. This repository generates it.
 files in `metadata/`. A unit test fails when `catalog/` differs from a fresh
 render. Edit `metadata/`, never `catalog/`.
 
+`render --version 7.0` first measures the staged files into
+`metadata/builds/v7.0.json`: sizes, checksums, extents, row counts, schemas,
+the archive's layers, and RGI's `attributes_metadata.json` of each product
+used. The record keeps its `updated` time when nothing else changed, so a
+second render changes nothing. `render --no-record` renders from the
+committed record alone, which is how CI and the drift test run.
+
+The data lives in `staging/`, not beside `catalog/`. The `gates` task
+therefore sets `CI_LIGHT=1` as CI does, and `tests/test_links.py` exempts
+data hrefs of links as well as of assets, because the `rel: pmtiles` link
+points at data. The preview tree checks every href with the data present.
+
+The `source` assets at NSIDC carry no `file:size` or `file:checksum`.
+Without an Earthdata login NSIDC serves its login page, so rashid would
+measure that page and report a mismatch. rashid warns (PTL-AST-003) instead.
+
 ## GeoParquet writer
 
 `src/rgi_catalog/geoparquet.py` writes each file in two steps:

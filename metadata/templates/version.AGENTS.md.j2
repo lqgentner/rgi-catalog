@@ -1,0 +1,28 @@
+# AGENTS.md: {{ vspec.title }}
+
+**One rule survives every edit to this file.** Every claim here is either
+quoted from a source or measured from the data.
+
+{{ disclaimer }}
+
+## Collections
+
+{% for name, cspec, doc in collections %}
+- `{{ name }}/`: {{ "{:,}".format(record.collections[name].row_count) }} rows in
+  `{{ public("v" ~ version ~ "/" ~ name ~ "/" ~ record.collections[name].href) }}`.
+  Read `{{ name }}/AGENTS.md` for its columns, join keys and recipes.
+{% endfor %}
+
+## Join keys
+
+`rgi_id` is unique in every collection. Each glacier ID has the form
+`RGI2000-v{{ version }}-G-<o1region>-<number>`.
+{% if "complexes" in vspec.collections %}
+`glaciers.complex_id` joins `complexes.rgi_id`.
+{% endif %}
+
+## Versions
+
+The mirror revision (`{{ record.mirror_revision }}`) counts rebuilds of this
+mirror. It is not an RGI version. The collection field `version` and the
+footer key `rgi:mirror_revision` of each file carry it.

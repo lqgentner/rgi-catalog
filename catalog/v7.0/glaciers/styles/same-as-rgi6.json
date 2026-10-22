@@ -1,0 +1,81 @@
+{
+  "version": 8,
+  "name": "Same as RGI 6.0",
+  "metadata": {
+    "description": "Glaciers coloured by whether the outline is the same as in RGI 6.0 (is_rgi6) or was remapped."
+  },
+  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "data": {
+      "type": "vector",
+      "url": "pmtiles://../rgi7.0.pmtiles"
+    }
+  },
+  "layers": [
+    {
+      "id": "glaciers-same-as-rgi6",
+      "type": "fill",
+      "source-layer": "glaciers",
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "case",
+            [
+              "get",
+              "is_rgi6"
+            ],
+            "Same outline as RGI 6.0",
+            "Remapped from RGI 6.0"
+          ],
+          "Same outline as RGI 6.0",
+          "#1b9e77",
+          "Remapped from RGI 6.0",
+          "#d95f02",
+          "#bdbdbd"
+        ],
+        "fill-opacity": 0.8
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-outline",
+      "type": "line",
+      "source-layer": "glaciers",
+      "minzoom": 10,
+      "paint": {
+        "line-color": "#4d4d4d",
+        "line-width": 0.4
+      },
+      "source": "data"
+    },
+    {
+      "id": "glacier-labels",
+      "type": "symbol",
+      "layout": {
+        "text-field": [
+          "get",
+          "display_name"
+        ],
+        "text-font": [
+          "Open Sans Italic"
+        ],
+        "text-size": 12,
+        "symbol-sort-key": [
+          "-",
+          [
+            "get",
+            "area_km2"
+          ]
+        ]
+      },
+      "paint": {
+        "text-color": "#08306b",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source-layer": "glacier-labels",
+      "source": "data"
+    }
+  ]
+}

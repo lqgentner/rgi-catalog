@@ -1,32 +1,58 @@
-# Example Catalog
+# Randolph Glacier Inventory (unofficial mirror)
 
-TODO(setup): replace this file. It is the front door to the published catalog,
-the page people land on at the public base URL. It is not the same document as
-the README in the repository root, which is never published.
+[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/catalog.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
+
+This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is RGI at NSIDC (https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium: RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.
+
+The Randolph Glacier Inventory (RGI) is a globally complete inventory of glacier outlines. This catalog republishes it as GeoParquet files and a web map archive. The values are those of the RGI release. Fixes of documented upstream errors are listed in the provenance record.
 
 ## What is here
 
-TODO(setup): the datasets, in one paragraph. Say what each collection covers,
-the area and the time range, and what a reader can do with it.
-
-## License
-
-TODO(setup): the SPDX identifier, or `other` with a link to the terms. Say who
-holds the rights and what a reuser has to attribute.
-
-## Provenance
-
-TODO(setup): where the data came from. Say whether this catalog is the official
-publication from the producing organization, or a mirror of someone else's data.
-If it is a mirror, link the upstream and say how often it syncs.
+| Version | Mirror revision | Collections | Documentation |
+| --- | --- | --- | --- |
+| [RGI 7.0](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) | 7.0-r1 | glaciers | [README](v7.0/README.md) · [AGENTS](v7.0/AGENTS.md) |
 
 ## Access
 
-TODO(setup): one query someone can run without downloading anything, against a
-real published file. Run it before you paste it.
+Every file is public over HTTPS and S3. No account is needed. This DuckDB
+query counts the glaciers of each first-order region without a download:
 
 ```sql
--- Example shape. Replace the URL and the columns with your own.
-INSTALL spatial; LOAD spatial; INSTALL httpfs; LOAD httpfs;
-SELECT count(*) FROM 'https://example.invalid/prefix/collection/data.parquet';
+INSTALL httpfs; LOAD httpfs;
+SELECT o1region, count(*) AS glaciers, round(sum(area_km2)) AS area_km2
+FROM 'https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet'
+GROUP BY o1region
+ORDER BY o1region;
 ```
+
+## Citation
+
+Cite the RGI Consortium:
+
+> RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.
+
+The user guide describes every file and attribute:
+
+> Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., and Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 User guide. Zenodo. https://doi.org/10.5281/zenodo.8362857
+
+This mirror asks for no citation of its own. You may add "accessed via
+https://source.coop/lqgentner/rgi".
+
+## License
+
+[CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). The RGI user guide states: "The
+RGI may be used freely under the Creative Commons Attribution 4.0
+International License with due acknowledgement (by proper referencing, see
+below). Where appropriate (for example for regional studies), users are
+invited to cite the analysts who provided the RGI outlines."
+
+## Provenance
+
+- The authoritative distribution is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7),
+  doi:10.5067/f6jmovy5navz. It needs an Earthdata login.
+- The build downloads the same release without a login from the RGI
+  server of Fabien Maussion at the University of Bremen. Its four global zips are
+  byte-identical to NSIDC's.
+- The values are those of the RGI release. The build restructures the files
+  and fixes documented upstream errors. Each fix, with counts and IDs, is in
+  [docs/PROVENANCE.md](https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md).

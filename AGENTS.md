@@ -36,16 +36,14 @@ confident wrong answer that nothing downstream catches.
 
 ### The links back to this repository
 
-`catalog/catalog.json` ships a `vcs` link and an `issues` link. Both hrefs are
-setup placeholders, so `tests/test_setup.py` catches a half-edited repository.
-The Portolan spec recommends these two links for a git-backed catalog. See
+Every catalog and collection carries a `vcs` link and an `issues` link. The
+render builds both from `repository` in `metadata/catalog.yaml`. The Portolan
+spec recommends these two links for a git-backed catalog. See
 [git-backed catalogs](https://github.com/portolan-sdi/portolan-spec/blob/main/specs/best-practices/git-backed-catalogs.md),
 which merged in August 2026.
 
 Keep both hrefs absolute. The repository sits outside the published catalog,
-so a relative href resolves against the public base URL. Each placeholder
-holds a `://`, because `tests/test_links.py` treats an href without one as a
-path and looks for it on disk.
+so a relative href resolves against the public base URL.
 
 ## Working in this repository
 

@@ -1,0 +1,79 @@
+# Descriptions of the columns that RGI's attributes_metadata.json does not
+# describe: derived columns and columns folded in from side files. The
+# upstream columns take RGI's own text from that file.
+#
+# Every description is quoted from the cited source or measured from the data.
+
+glaciers:
+  display_name:
+    description: >-
+      Derived from glac_name for map labels: inventory codes such as
+      CN5Y673P0037 removed, names in capitals re-cased, and placeholders such
+      as S/N set to null. Null when no usable name is left. glac_name keeps
+      RGI's value. The rules are in docs/PROVENANCE.md.
+    source: https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md
+  complex_id:
+    description: >-
+      The rgi_id of the glacier complex that holds this glacier, from the
+      CtoG_links.json file of the glacier complex product. That file links
+      "the glacier complex to the glacier products, in a JSON dictionary".
+    source: https://rgidata.org/user_guide/products/glacier_complex_product.html
+  hypso_z0_m:
+    description: >-
+      Central elevation of the first band of hypso_permille, in m. The band
+      n has the central elevation hypso_z0_m + 50 * n. "The elevation bands
+      are all 50 m in height."
+    unit: m
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  hypso_permille:
+    description: >-
+      The glacier's hypsometry from the hypsometry.csv file: "elevation-band
+      areas in the form of integer thousandths of the glacier's total area in
+      km² (area_km2)". The values sum to 1000. Empty bands below the lowest
+      and above the highest glacierized band are left out.
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  rgi6_links:
+    description: >-
+      The overlaps with RGI 6.0 outlines from the corrected rgi6_links.csv
+      file, one struct per overlap, empty when there is none. The file lists
+      "all overlaps (greater than 200 m²) between pairs of RGI 7.0 and RGI 6.0
+      glacier outlines". Fields: rgi6_id, rgi7_reg, rgi6_reg,
+      overlap_area_km2, rgi7_area_fraction (overlap divided by the RGI 7.0
+      area), rgi6_area_fraction (overlap divided by the RGI 6.0 area),
+      cluster_id, n_rgi7 (RGI 7.0 outlines that overlap the RGI 6.0 outline)
+      and n_rgi6 (RGI 6.0 outlines that overlap the RGI 7.0 outline).
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  subm_n_outlines:
+    description: >-
+      "Number of outlines from this submission used in RGI 7.0." From the
+      submission_info.csv file of the glacier's first-order region, so it
+      counts the outlines of that region.
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  subm_anlys_time:
+    description: '"Representative time the outline analysis was carried out."'
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  subm_release_dt:
+    description: '"Date at which the submission was realeased on GLIMS."'
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  subm_proc_desc:
+    description: '"Description of the processing done to create the glacier outlines."'
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  subm_chief_affl:
+    description: >-
+      "Affiliation of the chief of the regional center or the person(s) who
+      submitted the data."
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  subm_submitters:
+    description: '"Person(s) who submitted the data."'
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  subm_analysts:
+    description: '"Person(s) who created the data."'
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  subm_rc_id:
+    description: '"GLIMS ID for the regional center."'
+    source: https://rgidata.org/user_guide/products/glacier_product.html
+  bbox:
+    description: >-
+      The bounding box of the outline (xmin, ymin, xmax, ymax), the GeoParquet
+      covering column. Readers use it to skip row groups in a spatial filter.
+    source: https://geoparquet.org/releases/v1.1.0/

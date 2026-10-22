@@ -1,0 +1,33 @@
+## Citation
+
+Cite the RGI Consortium:
+
+> {{ citation }}
+
+The user guide describes every file and attribute:
+
+{% for p in meta.publications %}
+> {{ p.citation.split() | join(" ") }}
+{% endfor %}
+
+This mirror asks for no citation of its own. You may add "accessed via
+{{ meta.about }}".
+
+## License
+
+[{{ meta.license }}]({{ meta.license_url }}). The RGI user guide states: "The
+RGI may be used freely under the Creative Commons Attribution 4.0
+International License with due acknowledgement (by proper referencing, see
+below). Where appropriate (for example for regional studies), users are
+invited to cite the analysts who provided the RGI outlines."
+
+## Provenance
+
+- The authoritative distribution is [RGI 7.0 at NSIDC]({{ meta.via.href }}),
+  doi:{{ meta.doi }}. It needs an Earthdata login.
+- The build downloads the same release without a login from the RGI
+  server of Fabien Maussion at the University of Bremen. Its four global zips are
+  byte-identical to NSIDC's.
+- The values are those of the RGI release. The build restructures the files
+  and fixes documented upstream errors. Each fix, with counts and IDs, is in
+  [docs/PROVENANCE.md]({{ meta.repository }}/blob/main/docs/PROVENANCE.md).

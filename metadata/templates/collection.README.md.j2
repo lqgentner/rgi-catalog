@@ -1,0 +1,64 @@
+{% set stats = record.collections[name] %}
+{% set data_rel = name ~ "/" ~ stats.href %}
+# {{ spec.title }}
+
+{% include "_nav.md.j2" %}
+
+{{ disclaimer }}
+
+{{ spec.description.split() | join(" ") }}
+
+## Files
+
+{% set archive_name = record.archive.href.split("/")[-1] %}
+- [`{{ stats.href }}`]({{ public("v" ~ version ~ "/" ~ data_rel) }}): {{ "{:,}".format(stats.row_count) }} rows, {{ "%.1f" | format(record.files[data_rel].size / 1e6) }} MB. GeoParquet {{ stats.geoparquet_version }} in {{ stats.row_groups }} row groups of up to {{ "{:,}".format(stats.row_group_size) }} rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
+- [`{{ archive_name }}`]({{ public("v" ~ version ~ "/" ~ record.archive.href) }}): the web map archive (PMTiles, vector tiles, z{{ record.archive.minzoom }} to z{{ record.archive.maxzoom }}), with the layers `{{ spec.pmtiles_layers | join("`, `") }}`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `{{ untiled | join("`, `") }}`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
+
+## Map styles
+
+{% for key, asset in collection.assets.items() if "style" in asset.roles %}
+- [{{ asset.title }}]({{ asset.href }}){{ " (default)" if "default" in asset.roles }}: {{ asset.description }}
+{% endfor %}
+
+## Access
+
+No account and no download are needed. This DuckDB query reads one glacier:
+
+```sql
+INSTALL httpfs; LOAD httpfs;
+SELECT rgi_id, display_name, area_km2, zmed_m
+FROM '{{ public("v" ~ version ~ "/" ~ data_rel) }}'
+WHERE rgi_id = 'RGI2000-v7.0-G-11-01706';
+```
+
+`{{ name }}/AGENTS.md` has more recipes. Each file is also readable over
+anonymous S3 at `{{ meta.public_s3_base }}/v{{ version }}/{{ data_rel }}`.
+
+## Columns
+
+| Column | Type | Description |
+| --- | --- | --- |
+{% for c in collection.assets.data["table:columns"] %}
+| `{{ c.name }}` | `{{ c.type if c.type | length < 40 else c.type.split("<")[0] }}` | {{ c.description | replace("|", "\\|") }}{{ " (" ~ c.unit ~ ")" if c.unit is defined }} |
+{% endfor %}
+
+## Coded columns
+
+The codes and their meanings are from the
+[RGI 7.0 user guide]({{ meta.user_guide }}).
+
+{% for c in collection.assets.data["table:columns"] if c["classification:classes"] is defined %}
+### `{{ c.name }}`
+
+| Value | Meaning |
+| --- | --- |
+{% for k in c["classification:classes"] %}
+| `{{ k.value }}` | {{ k.description }} |
+{% endfor %}
+{% if codes[c.name].note is defined %}
+
+{{ codes[c.name].note.split() | join(" ") }}
+{% endif %}
+
+{% endfor %}
+{% include "_mirror.md.j2" %}

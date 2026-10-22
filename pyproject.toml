@@ -160,5 +160,7 @@ types-pyyaml = "*"
 test = "pytest"
 lint = "ruff check && ruff format --check"
 typecheck = "pyrefly check"
-gates = "python tests/run_all.py"
+# The data lives in staging/, not beside catalog/, so the link gate exempts data
+# hrefs here as in CI. The preview tree checks them with the data present.
+gates = { cmd = "python tests/run_all.py", env = { CI_LIGHT = "1" } }
 check = { depends-on = ["lint", "typecheck", "test", "gates"] }

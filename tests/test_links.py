@@ -77,6 +77,10 @@ for path in documents:
         href = link.get("href", "")
         if not href or is_remote(href):
             continue
+        # A rel:pmtiles link points at data in object storage, like an asset.
+        if is_unpublished_data(href):
+            skipped += 1
+            continue
         checked += 1
         if not (path.parent / href).resolve().exists():
             errors.append(

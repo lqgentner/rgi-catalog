@@ -1,0 +1,693 @@
+{
+  "type": "Collection",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json",
+    "https://stac-extensions.github.io/table/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    "https://stac-extensions.github.io/web-map-links/v1.3.0/schema.json",
+    "https://stac-extensions.github.io/alternate-assets/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/classification/v2.0.0/schema.json"
+  ],
+  "id": "rgi-v7-0-glaciers",
+  "title": "RGI 7.0 glaciers (unofficial mirror)",
+  "description": "This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is RGI at NSIDC (https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium: RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.\n\nOne row per glacier: the outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and the GLIMS submission, in one GeoParquet file. A web map archive holds the outlines and the glacier names.",
+  "license": "CC-BY-4.0",
+  "keywords": [
+    "glaciers",
+    "glacier outlines",
+    "glacier inventory",
+    "cryosphere",
+    "RGI",
+    "GLIMS",
+    "glacier outlines",
+    "hypsometry"
+  ],
+  "version": "7.0-r1",
+  "updated": "2026-10-22T22:30:23Z",
+  "sci:doi": "10.5067/f6jmovy5navz",
+  "sci:citation": "RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.",
+  "sci:publications": [
+    {
+      "doi": "10.5281/zenodo.8362857",
+      "citation": "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., and Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 User guide. Zenodo. https://doi.org/10.5281/zenodo.8362857"
+    }
+  ],
+  "providers": [
+    {
+      "name": "RGI Consortium",
+      "description": "Produces the Randolph Glacier Inventory, a globally complete inventory of glacier outlines.",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://rgidata.org"
+    },
+    {
+      "name": "Luis Gentner",
+      "description": "Hosts this unofficial mirror. Converts the RGI files to cloud-native formats and maintains this catalog.",
+      "roles": [
+        "host"
+      ],
+      "url": "https://github.com/lqgentner/rgi-catalog"
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -179.934832,
+          -78.308328,
+          179.751191,
+          83.651107
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "1943-09-09T00:00:00Z",
+          "2021-02-26T00:00:00Z"
+        ]
+      ]
+    }
+  },
+  "assets": {
+    "data": {
+      "href": "./rgi7.0-glaciers.parquet",
+      "type": "application/vnd.apache.parquet",
+      "title": "RGI 7.0 glaciers (unofficial mirror), GeoParquet",
+      "roles": [
+        "data"
+      ],
+      "file:size": 258040260,
+      "file:checksum": "1220594b4f1c80ab5f5ce4fe1452b341ded24aa1d393feacc02f69574b4107dd6b4c",
+      "alternate": {
+        "s3": {
+          "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet",
+          "title": "Anonymous S3 access"
+        }
+      },
+      "table:primary_geometry": "geometry",
+      "table:row_count": 274531,
+      "table:columns": [
+        {
+          "name": "rgi_id",
+          "type": "string",
+          "description": "Unique identifier assigned to a single outline."
+        },
+        {
+          "name": "o1region",
+          "type": "string",
+          "description": "The code of the first-order region to which the glacier belongs."
+        },
+        {
+          "name": "o2region",
+          "type": "string",
+          "description": "The code of the second-order region to which the glacier belongs."
+        },
+        {
+          "name": "glims_id",
+          "type": "string",
+          "description": "Non-unique identifier assigned to glaciers by the Global Land Ice Measurements from Space service at NSIDC."
+        },
+        {
+          "name": "anlys_id",
+          "type": "uint32",
+          "description": "The unique identifier assigned within GLIMS for a particular outline of a glacier at a particular time."
+        },
+        {
+          "name": "subm_id",
+          "type": "uint16",
+          "description": "Unique identifier assigned by GLIMS to a specific data submission. Allows to obtain information about the analysts and data submitters."
+        },
+        {
+          "name": "src_date",
+          "type": "timestamp[us]",
+          "description": "The as-of date for the outline (usually the acquisition date of the image), in the format ISO 8601.",
+          "unit": "date"
+        },
+        {
+          "name": "cenlon",
+          "type": "double",
+          "description": "Longitude of an approximately central point within the glacier outlines (not the centroid).",
+          "unit": "degrees"
+        },
+        {
+          "name": "cenlat",
+          "type": "double",
+          "description": "Latitude of an approximately central point within the glacier outlines (not the centroid).",
+          "unit": "degrees"
+        },
+        {
+          "name": "utm_zone",
+          "type": "uint8",
+          "description": "Number of the UTM zone for this glacier, based on its representative point. Note that this attribute is for information only, the geometries are all in WGS84."
+        },
+        {
+          "name": "area_km2",
+          "type": "double",
+          "description": "Area of the glacier.",
+          "unit": "km2"
+        },
+        {
+          "name": "primeclass",
+          "type": "uint8",
+          "description": "WGMS primary classification of the glacier. For a categories description, see user guide.",
+          "classification:classes": [
+            {
+              "value": 0,
+              "name": "miscellaneous",
+              "description": "Miscellaneous"
+            },
+            {
+              "value": 1,
+              "name": "continental-ice-sheet",
+              "description": "Continental ice sheet"
+            },
+            {
+              "value": 2,
+              "name": "icefield",
+              "description": "Icefield"
+            },
+            {
+              "value": 3,
+              "name": "ice-cap",
+              "description": "Ice cap"
+            },
+            {
+              "value": 4,
+              "name": "outlet-glacier",
+              "description": "Outlet glacier"
+            },
+            {
+              "value": 5,
+              "name": "valley-glacier",
+              "description": "Valley glacier"
+            },
+            {
+              "value": 6,
+              "name": "mountain-glacier",
+              "description": "Mountain glacier"
+            },
+            {
+              "value": 7,
+              "name": "glacieret-and-snowfield",
+              "description": "Glacieret and snowfield"
+            },
+            {
+              "value": 8,
+              "name": "ice-shelf",
+              "description": "Ice shelf"
+            },
+            {
+              "value": 9,
+              "name": "rock-glacier",
+              "description": "Rock glacier"
+            },
+            {
+              "value": 10,
+              "name": "undefined",
+              "description": "Undefined"
+            }
+          ]
+        },
+        {
+          "name": "conn_lvl",
+          "type": "uint8",
+          "description": "Level of connection to the Greenland Icesheet (0: no connection; 1: weak connection).",
+          "classification:classes": [
+            {
+              "value": 0,
+              "name": "no-connection",
+              "description": "No connection"
+            },
+            {
+              "value": 1,
+              "name": "weak-connection",
+              "description": "Weak connection"
+            }
+          ]
+        },
+        {
+          "name": "surge_type",
+          "type": "uint8",
+          "description": "Flag indicating if surging behavior has been documented for this glacier. For a categories description, see user guide.",
+          "classification:classes": [
+            {
+              "value": 0,
+              "name": "no-evidence",
+              "description": "No evidence"
+            },
+            {
+              "value": 1,
+              "name": "possible",
+              "description": "Possible"
+            },
+            {
+              "value": 2,
+              "name": "probable",
+              "description": "Probable"
+            },
+            {
+              "value": 3,
+              "name": "observed",
+              "description": "Observed"
+            },
+            {
+              "value": 9,
+              "name": "not-assigned",
+              "description": "Not assigned"
+            }
+          ]
+        },
+        {
+          "name": "term_type",
+          "type": "uint8",
+          "description": "Flag indicating the terminus type of the glacier. For a categories description, see user guide.",
+          "classification:classes": [
+            {
+              "value": 0,
+              "name": "land-terminating",
+              "description": "Land-terminating"
+            },
+            {
+              "value": 1,
+              "name": "marine-terminating",
+              "description": "Marine-terminating"
+            },
+            {
+              "value": 2,
+              "name": "lake-terminating",
+              "description": "Lake-terminating"
+            },
+            {
+              "value": 3,
+              "name": "shelf-terminating",
+              "description": "Shelf-terminating"
+            },
+            {
+              "value": 9,
+              "name": "not-assigned",
+              "description": "Not assigned"
+            }
+          ]
+        },
+        {
+          "name": "glac_name",
+          "type": "string",
+          "description": "Glacier name (when available)."
+        },
+        {
+          "name": "is_rgi6",
+          "type": "bool",
+          "description": "Flag indicating if the outline is the same as in RGI 6.0 (1) or was remapped (0). Note that it does not guarantee strict equivalence of the polygon (in most of the cases it does)."
+        },
+        {
+          "name": "termlon",
+          "type": "double",
+          "description": "Longitude of the lowest elevation point on the glacier outline.",
+          "unit": "degrees"
+        },
+        {
+          "name": "termlat",
+          "type": "double",
+          "description": "Latitude of the lowest elevation point on the glacier outline.",
+          "unit": "degrees"
+        },
+        {
+          "name": "zmin_m",
+          "type": "double",
+          "description": "Minimum elevation (m above sea level) of the glacier.",
+          "unit": "m"
+        },
+        {
+          "name": "zmax_m",
+          "type": "double",
+          "description": "Maximum elevation (m above sea level) of the glacier.",
+          "unit": "m"
+        },
+        {
+          "name": "zmed_m",
+          "type": "double",
+          "description": "Median elevation (m above sea level) of the glacier.",
+          "unit": "m"
+        },
+        {
+          "name": "zmean_m",
+          "type": "double",
+          "description": "Mean elevation (m above sea level) of the glacier.",
+          "unit": "m"
+        },
+        {
+          "name": "slope_deg",
+          "type": "double",
+          "description": "Mean slope of the glacier surface.",
+          "unit": "degrees"
+        },
+        {
+          "name": "aspect_deg",
+          "type": "double",
+          "description": "The aspect (orientation) of the glacier surface presented as an azimuth relative to 0° at due north.",
+          "unit": "degrees"
+        },
+        {
+          "name": "aspect_sec",
+          "type": "uint8",
+          "description": "The aspect (orientation) of the glacier surface presented as a category. For a categories description, see user guide.",
+          "classification:classes": [
+            {
+              "value": 1,
+              "name": "north",
+              "description": "North"
+            },
+            {
+              "value": 2,
+              "name": "north-east",
+              "description": "North-east"
+            },
+            {
+              "value": 3,
+              "name": "east",
+              "description": "East"
+            },
+            {
+              "value": 4,
+              "name": "south-east",
+              "description": "South-east"
+            },
+            {
+              "value": 5,
+              "name": "south",
+              "description": "South"
+            },
+            {
+              "value": 6,
+              "name": "south-west",
+              "description": "South-west"
+            },
+            {
+              "value": 7,
+              "name": "west",
+              "description": "West"
+            },
+            {
+              "value": 8,
+              "name": "north-west",
+              "description": "North-west"
+            },
+            {
+              "value": 9,
+              "name": "not-assigned",
+              "description": "Not assigned"
+            }
+          ]
+        },
+        {
+          "name": "dem_source",
+          "type": "string",
+          "description": "The name of the dataset that was used to compute the topography attributes.",
+          "classification:classes": [
+            {
+              "value": "COPDEM30",
+              "name": "copernicus-dem--30-m",
+              "description": "Copernicus DEM, 30 m"
+            },
+            {
+              "value": "COPDEM90",
+              "name": "copernicus-dem--90-m",
+              "description": "Copernicus DEM, 90 m"
+            },
+            {
+              "value": "ASTER",
+              "name": "aster--an-alternative-product-where-the-copernicus-dem-is-not-available",
+              "description": "ASTER, an alternative product where the Copernicus DEM is not available"
+            },
+            {
+              "value": "DEM3",
+              "name": "dem3--an-alternative-product-where-the-copernicus-dem-is-not-available",
+              "description": "DEM3, an alternative product where the Copernicus DEM is not available"
+            },
+            {
+              "value": "RAMP",
+              "name": "ramp--an-alternative-product-where-the-copernicus-dem-is-not-available",
+              "description": "RAMP, an alternative product where the Copernicus DEM is not available"
+            },
+            {
+              "value": "TANDEM",
+              "name": "tandem--an-alternative-product-where-the-copernicus-dem-is-not-available",
+              "description": "TANDEM, an alternative product where the Copernicus DEM is not available"
+            }
+          ]
+        },
+        {
+          "name": "lmax_m",
+          "type": "uint32",
+          "description": "Length (m) of the longest surface centerline of the glacier.",
+          "unit": "m"
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "description": "Derived from glac_name for map labels: inventory codes such as CN5Y673P0037 removed, names in capitals re-cased, and placeholders such as S/N set to null. Null when no usable name is left. glac_name keeps RGI's value. The rules are in docs/PROVENANCE.md."
+        },
+        {
+          "name": "complex_id",
+          "type": "string",
+          "description": "The rgi_id of the glacier complex that holds this glacier, from the CtoG_links.json file of the glacier complex product. That file links \"the glacier complex to the glacier products, in a JSON dictionary\"."
+        },
+        {
+          "name": "hypso_z0_m",
+          "type": "int32",
+          "description": "Central elevation of the first band of hypso_permille, in m. The band n has the central elevation hypso_z0_m + 50 * n. \"The elevation bands are all 50 m in height.\"",
+          "unit": "m"
+        },
+        {
+          "name": "hypso_permille",
+          "type": "list<element: int16>",
+          "description": "The glacier's hypsometry from the hypsometry.csv file: \"elevation-band areas in the form of integer thousandths of the glacier's total area in km² (area_km2)\". The values sum to 1000. Empty bands below the lowest and above the highest glacierized band are left out."
+        },
+        {
+          "name": "rgi6_links",
+          "type": "list<element: struct<rgi6_id: string, rgi7_reg: string, rgi6_reg: string, overlap_area_km2: double, rgi7_area_fraction: double, rgi6_area_fraction: double, cluster_id: int32, n_rgi7: int32, n_rgi6: int32>>",
+          "description": "The overlaps with RGI 6.0 outlines from the corrected rgi6_links.csv file, one struct per overlap, empty when there is none. The file lists \"all overlaps (greater than 200 m²) between pairs of RGI 7.0 and RGI 6.0 glacier outlines\". Fields: rgi6_id, rgi7_reg, rgi6_reg, overlap_area_km2, rgi7_area_fraction (overlap divided by the RGI 7.0 area), rgi6_area_fraction (overlap divided by the RGI 6.0 area), cluster_id, n_rgi7 (RGI 7.0 outlines that overlap the RGI 6.0 outline) and n_rgi6 (RGI 6.0 outlines that overlap the RGI 7.0 outline)."
+        },
+        {
+          "name": "subm_n_outlines",
+          "type": "uint32",
+          "description": "\"Number of outlines from this submission used in RGI 7.0.\" From the submission_info.csv file of the glacier's first-order region, so it counts the outlines of that region."
+        },
+        {
+          "name": "subm_anlys_time",
+          "type": "timestamp[us]",
+          "description": "\"Representative time the outline analysis was carried out.\""
+        },
+        {
+          "name": "subm_release_dt",
+          "type": "timestamp[us]",
+          "description": "\"Date at which the submission was realeased on GLIMS.\""
+        },
+        {
+          "name": "subm_proc_desc",
+          "type": "string",
+          "description": "\"Description of the processing done to create the glacier outlines.\""
+        },
+        {
+          "name": "subm_chief_affl",
+          "type": "string",
+          "description": "\"Affiliation of the chief of the regional center or the person(s) who submitted the data.\""
+        },
+        {
+          "name": "subm_submitters",
+          "type": "string",
+          "description": "\"Person(s) who submitted the data.\""
+        },
+        {
+          "name": "subm_analysts",
+          "type": "string",
+          "description": "\"Person(s) who created the data.\""
+        },
+        {
+          "name": "subm_rc_id",
+          "type": "uint16",
+          "description": "\"GLIMS ID for the regional center.\""
+        },
+        {
+          "name": "geometry",
+          "type": "binary",
+          "description": "Glacier geometry (Polygon)",
+          "unit": "deg"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>",
+          "description": "The bounding box of the outline (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter."
+        }
+      ]
+    },
+    "source": {
+      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-G-global.zip",
+      "type": "application/zip",
+      "title": "RGI 7.0 glacier product, global zip at NSIDC (Earthdata login required)",
+      "roles": [
+        "source"
+      ]
+    },
+    "source-c": {
+      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-C-global.zip",
+      "type": "application/zip",
+      "title": "RGI 7.0 glacier complex product, global zip at NSIDC (Earthdata login required)",
+      "roles": [
+        "source"
+      ]
+    },
+    "source-rgi6-links": {
+      "href": "https://cluster.klima.uni-bremen.de/~fmaussion/misc/rgi7_data/rgi7_rgi6_links/RGI2000-v7.0-G-global-rgi6_links.csv",
+      "type": "text/csv",
+      "title": "RGI2000-v7.0-G-global-rgi6_links.csv, the corrected file (GLIMS-RGI/rgi_issue_tracker#41) on the University of Bremen server",
+      "roles": [
+        "source"
+      ],
+      "file:size": 36466420,
+      "file:checksum": "1220755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
+    },
+    "style-full-map": {
+      "href": "./styles/full-map.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Glaciers with names",
+      "description": "Glacier outlines (blue) with glacier names. Larger glaciers are named at lower zooms.",
+      "roles": [
+        "style",
+        "default"
+      ],
+      "file:size": 1393,
+      "file:checksum": "1220710d926c1a6a0a8bf7c20bff1101d1abc1306f7649c1fad15631a5b5784f9e70"
+    },
+    "style-median-elevation": {
+      "href": "./styles/median-elevation.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Median elevation",
+      "description": "Glaciers coloured by median elevation (zmed_m) in 1,000 m classes, from below 1,000 m (dark purple) to 5,000 m and above (yellow).",
+      "roles": [
+        "style"
+      ],
+      "file:size": 1738,
+      "file:checksum": "1220fb270aab09f4ff0681159d8c82816e89fd17a0686a2f0e835b172d8547e57b30"
+    },
+    "style-surge-evidence": {
+      "href": "./styles/surge-evidence.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Surge evidence",
+      "description": "Glaciers coloured by the evidence for surging (surge_type): no evidence, possible, probable or observed.",
+      "roles": [
+        "style"
+      ],
+      "file:size": 1931,
+      "file:checksum": "12202d91a759cbfde9ca3aedf3f663646c9de23c8d0139fac5c6218a850d7b5ee756"
+    },
+    "style-terminus-type": {
+      "href": "./styles/terminus-type.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Terminus type",
+      "description": "Glaciers coloured by terminus type (term_type). RGI 7.0 assigns only the marine-terminating class. Every other glacier is not assigned.",
+      "roles": [
+        "style"
+      ],
+      "file:size": 1817,
+      "file:checksum": "12204e918d9601f995460098c662d59a27b427215c5f894426f777e12764f51f50c9"
+    },
+    "style-same-as-rgi6": {
+      "href": "./styles/same-as-rgi6.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Same as RGI 6.0",
+      "description": "Glaciers coloured by whether the outline is the same as in RGI 6.0 (is_rgi6) or was remapped.",
+      "roles": [
+        "style"
+      ],
+      "file:size": 1755,
+      "file:checksum": "12208a8a7cbb702abe4f3f8129d3c66fd255f10bffb854720d908703094655bb1e91"
+    }
+  },
+  "links": [
+    {
+      "rel": "root",
+      "href": "../../catalog.json",
+      "type": "application/json",
+      "title": "Randolph Glacier Inventory (unofficial mirror)"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json",
+      "title": "RGI 7.0 (unofficial mirror)"
+    },
+    {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "RGI 7.0 glaciers (unofficial mirror) documentation"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "RGI 7.0 glaciers (unofficial mirror) agent guide"
+    },
+    {
+      "rel": "via",
+      "href": "https://nsidc.org/data/nsidc-0770/versions/7",
+      "type": "text/html",
+      "title": "RGI 7.0 at NSIDC (authoritative source)"
+    },
+    {
+      "rel": "cite-as",
+      "href": "https://doi.org/10.5067/F6JMOVY5NAVZ",
+      "type": "text/html",
+      "title": "DOI of RGI 7.0 at NSIDC"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "alternate",
+      "href": "https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/glaciers/collection.json",
+      "type": "text/html",
+      "title": "Open in the data browser"
+    },
+    {
+      "rel": "vcs",
+      "href": "https://github.com/lqgentner/rgi-catalog",
+      "type": "text/html",
+      "title": "Source repository"
+    },
+    {
+      "rel": "issues",
+      "href": "https://github.com/lqgentner/rgi-catalog/issues",
+      "type": "text/html",
+      "title": "Issue tracker"
+    },
+    {
+      "rel": "about",
+      "href": "https://source.coop/lqgentner/rgi",
+      "type": "text/html",
+      "title": "Hosting page on Source Cooperative"
+    },
+    {
+      "rel": "pmtiles",
+      "href": "./rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "pmtiles:layers": [
+        "glaciers",
+        "glacier-labels"
+      ],
+      "file:size": 758950494,
+      "file:checksum": "1220415ccea2f7a2236f56cf7ea4bb583242d76b31c07fdd492dd9dacbcc096b9d83"
+    }
+  ]
+}

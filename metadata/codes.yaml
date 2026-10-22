@@ -1,0 +1,78 @@
+# Decoded meanings of RGI's coded columns, from the RGI 7.0 user guide.
+#
+# Values only from the guide. A value the guide does not define is listed with
+# the title "Undefined".
+
+term_type:
+  source: https://rgidata.org/user_guide/products/glacier_product.html
+  note: >-
+    "All glaciers in RGI 7.0 have been assigned the "Not assigned" category,
+    except for the marine-terminating". "As of RGI 7.0, no region or glacier
+    has any attributes available for lake-terminating or shelf-terminating
+    glaciers."
+  classes:
+    0: Land-terminating
+    1: Marine-terminating
+    2: Lake-terminating
+    3: Shelf-terminating
+    9: Not assigned
+
+surge_type:
+  source: https://rgidata.org/user_guide/products/glacier_product.html
+  classes:
+    0: No evidence
+    1: Possible
+    2: Probable
+    3: Observed
+    9: Not assigned
+
+primeclass:
+  source: https://rgidata.org/user_guide/products/glacier_product.html
+  note: >-
+    "It is currently poorly populated, with only few submissions to GLIMS
+    having provided this information."
+  classes:
+    0: Miscellaneous
+    1: Continental ice sheet
+    2: Icefield
+    3: Ice cap
+    4: Outlet glacier
+    5: Valley glacier
+    6: Mountain glacier
+    7: Glacieret and snowfield
+    8: Ice shelf
+    9: Rock glacier
+    10: Undefined
+
+aspect_sec:
+  source: https://rgidata.org/user_guide/products/glacier_product.html
+  classes:
+    1: North
+    2: North-east
+    3: East
+    4: South-east
+    5: South
+    6: South-west
+    7: West
+    8: North-west
+    9: Not assigned
+
+conn_lvl:
+  source: https://rgidata.org/user_guide/products/glacier_product.html
+  classes:
+    0: No connection
+    1: Weak connection
+
+dem_source:
+  source: https://rgidata.org/user_guide/products/glacier_product.html
+  note: >-
+    "The main DEM product used for RGI 7.0 is the Copernicus DEM". "For all
+    glaciers which grid size is below 60 m we use the 30 m COP-DEM product as
+    source, and use the 90 m COP-DEM product for all other glaciers."
+  classes:
+    COPDEM30: Copernicus DEM, 30 m
+    COPDEM90: Copernicus DEM, 90 m
+    ASTER: ASTER, an alternative product where the Copernicus DEM is not available
+    DEM3: DEM3, an alternative product where the Copernicus DEM is not available
+    RAMP: RAMP, an alternative product where the Copernicus DEM is not available
+    TANDEM: TANDEM, an alternative product where the Copernicus DEM is not available
