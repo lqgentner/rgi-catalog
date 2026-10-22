@@ -19,22 +19,53 @@ render. Edit `metadata/`, never `catalog/`.
    `rgi:mirror_revision`, `rgi:sources`, `rgi:citation`, `rgi:catalog`).
 2. The gpio Python API reads that file, adds the bbox covering column,
    orders the rows on the Hilbert curve, and writes the published file in
-   one pass. The settings are GeoParquet 2.0, zstd level 15, and the chosen
+   one pass. The settings are GeoParquet 2.0, zstd level 19, and the chosen
    row group size. gpio carries the input's non-geo key-value metadata into
    the output (geoparquet-io #690).
 
 gpio does not repair geometries on this path. The build repairs geometries
 itself and reports each repair.
 
-The write uses gpio's `in-memory` strategy, which writes through pyarrow.
-gpio's default strategy writes through DuckDB, which made row groups of up
-to 12,122 rows on the full glaciers table when 10,240 were requested. The
-pyarrow writer keeps the size exactly. Its file is 321.7 MB against 293.6 MB
-from DuckDB at the same zstd level. The writer refuses a file whose row
-groups exceed the requested size.
+gpio rounds a requested row group size above 2,048 to a multiple of 2,048.
+Its default writer, DuckDB, treats the result as a target. On the glaciers
+table a request of 10,240 rows gives groups of 10,269 to 12,122 rows. The
+writer refuses a file with a row group above 150,000 rows, the Portolan cap
+(PORTO-FMT-009).
 
-gpio writes whole 2,048-row vectors, so a requested size is rounded up to a
-multiple of 2,048.
+### DuckDB or pyarrow
+
+gpio can also write through pyarrow (its `in-memory` strategy). pyarrow keeps
+the row group size exactly, but its file was 9.6% larger: 322.3 MB against
+294.2 MB from DuckDB at zstd 15 and the same row group size. Two causes:
+
+- pyarrow tries dictionary encoding on every column. On columns of mostly
+  unique values (`rgi_id`, coordinates, the measured floats) it writes the
+  dictionary pages and then falls back to plain encoding. That costs about
+  0.5 MB per column, 11 MB in all.
+- pyarrow writes 1 MB data pages, which zstd compresses less well than
+  DuckDB's pages. The geometry column was 16.8 MB larger.
+
+With dictionaries only on repetitive text columns and 8 MB pages, pyarrow
+reached 297.7 MB. gpio does not expose those settings, so the build keeps the
+DuckDB writer. An exact row group size is not needed.
+
+### Compression level
+
+The full glaciers table through the DuckDB writer, at about 10,000 rows per
+group:
+
+| zstd level | File MB | Write s | Local full read s |
+| ---: | ---: | ---: | ---: |
+| 15 | 294.4 | 100 | 0.17 |
+| 17 | 273.7 | 191 | |
+| 18 | 258.2 | 221 | |
+| 19 | 258.1 | 245 | 0.22 |
+| 22 | 258.2 | 282 | 0.22 |
+
+The size falls up to level 18 and stays flat after it. The build uses level
+19, the highest standard level. Level 22 gives the same size and only takes
+longer. A local full read decompresses about 30% slower than at level 15.
+Remote reads depend on the bytes fetched, which are 12% fewer.
 
 ### Byte stability
 
@@ -87,11 +118,12 @@ host each request adds round-trip latency instead.
 The one-glacier read fetches the whole geometry column chunk of the matching
 row group. Its size grows in proportion to the row group size.
 
-**Decision (author, 2026-10-22): 10,000 rows per group, written as
-10,240.** The later viewer fetches single glaciers, and this size makes that
-read about 4 times cheaper than 50,000. The cost is about 20 more requests
-per full scan. The size is below the 50,000 to 150,000 range that the
-distribution guide recommends. rashid runs against the data in Task 11.
+**Decision: about 10,000 rows per group.** The later viewer fetches single
+glaciers, and this size makes that read about 4 times cheaper than 50,000.
+The cost is about 20 more requests per full scan. The size is below the
+50,000 to 150,000 range that the distribution guide recommends. rashid runs
+against the data in Task 11.
 
-The final glaciers file has 27 row groups of at most 10,240 rows, 321.7 MB.
-The build takes 2 min 27 s and peaks at 5.9 GB of memory.
+The final glaciers file is 258.0 MB in 24 row groups of 10,269 to 12,122
+rows. The build takes 5 min 28 s and peaks at 5.9 GB of memory. Two builds
+from the same inputs gave identical bytes.

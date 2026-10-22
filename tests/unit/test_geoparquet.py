@@ -15,7 +15,13 @@ import pytest
 import shapely
 from shapely.geometry import Polygon
 
-from rgi_catalog.geoparquet import GEOPARQUET_VERSION, KV_KEYS, write_geoparquet
+from rgi_catalog import geoparquet
+from rgi_catalog.geoparquet import (
+    GEOPARQUET_VERSION,
+    KV_KEYS,
+    GeoParquetWriteError,
+    write_geoparquet,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -154,3 +160,13 @@ def test_write_geoparquet_keeps_invalid_geometry_exactly(tmp_path: Path) -> None
     write_geoparquet(frame, out, kv=KV, row_group_size=ROW_GROUP)
     got = gpd.read_parquet(out).set_index("rgi_id").loc[frame["rgi_id"].iloc[0], "geometry"]
     assert shapely.equals_exact(got, bowtie, 0)
+
+
+def test_write_geoparquet_refuses_row_groups_over_the_cap(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(geoparquet, "MAX_ROW_GROUP_ROWS", 1000)
+    with pytest.raises(GeoParquetWriteError, match="1000"):
+        write_geoparquet(_frame(), tmp_path / "big.parquet", kv=KV, row_group_size=ROW_GROUP)
+    assert not (tmp_path / "big.parquet").exists()

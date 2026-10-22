@@ -19,15 +19,13 @@ import pyarrow.parquet as pq
 if TYPE_CHECKING:
     import geopandas as gpd
 
-# The pyarrow writer. gpio's default DuckDB writer overshoots the requested
-# row group size by up to 18% on the full glaciers table.
-WRITE_STRATEGY = "in-memory"
 GEOPARQUET_VERSION: Literal["2.0", "1.1"] = "2.0"
-# 10,000 rows, rounded up to whole 2,048-row vectors. docs/DESIGN.md has the
-# measurements.
+# A target, not a limit: gpio's DuckDB writer makes groups of about 10,300 to
+# 12,100 rows on the glaciers table. docs/DESIGN.md has the measurements.
 ROW_GROUP_SIZE: int = 10_240
-COMPRESSION_LEVEL = 15
-VECTOR = 2_048
+COMPRESSION_LEVEL = 19
+# The Portolan cap on rows per row group (PORTO-FMT-009).
+MAX_ROW_GROUP_ROWS = 150_000
 KV_KEYS = ("rgi:version", "rgi:mirror_revision", "rgi:sources", "rgi:citation", "rgi:catalog")
 
 
@@ -56,15 +54,15 @@ def write_geoparquet(
     kv
         Footer key-value metadata. Must hold every key in :data:`KV_KEYS`.
     row_group_size
-        The maximum rows per row group. gpio snaps a value above 2,048 to a
-        multiple of 2,048.
+        The target rows per row group. gpio rounds a value above 2,048 to a
+        multiple of 2,048, and its writer treats the result as a target.
 
     Raises
     ------
     ValueError
         If ``kv`` lacks a key of :data:`KV_KEYS`.
     GeoParquetWriteError
-        If a written row group is larger than requested.
+        If a written row group has more than :data:`MAX_ROW_GROUP_ROWS` rows.
     """
     if missing := [k for k in KV_KEYS if k not in kv]:
         msg = f"kv metadata lacks {missing}"
@@ -85,17 +83,15 @@ def write_geoparquet(
             compression="ZSTD",
             compression_level=COMPRESSION_LEVEL,
             row_group_rows=row_group_size,
-            write_strategy=WRITE_STRATEGY,
         )
-        _check_row_groups(written, row_group_size)
+        _check_row_groups(written)
         written.replace(out)
 
 
-def _check_row_groups(path: Path, row_group_size: int) -> None:
-    """Refuse a file whose row groups exceed the requested size (rounded up to 2,048 rows)."""
-    limit = row_group_size if row_group_size <= VECTOR else -(-row_group_size // VECTOR) * VECTOR
+def _check_row_groups(path: Path) -> None:
+    """Refuse a file with a row group above :data:`MAX_ROW_GROUP_ROWS`."""
     meta = pq.ParquetFile(path).metadata
     largest = max(meta.row_group(i).num_rows for i in range(meta.num_row_groups))
-    if largest > limit:
-        msg = f"{path.name}: a row group has {largest} rows, more than {limit}"
+    if largest > MAX_ROW_GROUP_ROWS:
+        msg = f"{path.name}: a row group has {largest} rows, more than {MAX_ROW_GROUP_ROWS}"
         raise GeoParquetWriteError(msg)
