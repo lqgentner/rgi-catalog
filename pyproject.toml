@@ -150,6 +150,7 @@ boto3 = "*"
 stac-check = "*"
 pmtiles = "*"
 pyrefly = "*"
+types-pyyaml = "*"
 
 [tool.pixi.tasks]
 test = "pytest"
