@@ -185,7 +185,7 @@ def test_assets_and_links_resolve_relatively(rendered: Path) -> None:
     assert data["alternate"]["s3"]["href"].startswith("s3://")
     assert "opendata.source.coop" in data["alternate"]["s3"]["href"]
     pmtiles = next(link for link in glaciers["links"] if link["rel"] == "pmtiles")
-    assert pmtiles["href"] == "./rgi7.0.pmtiles"
+    assert pmtiles["href"] == "../rgi7.0.pmtiles"
     assert pmtiles["pmtiles:layers"] == ["glaciers", "glacier-labels"]
     asset = glaciers["assets"]["pmtiles"]
     assert asset["href"] == pmtiles["href"]

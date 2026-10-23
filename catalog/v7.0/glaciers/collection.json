@@ -26,7 +26,7 @@
     "hypsometry"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-23T08:33:55Z",
+  "updated": "2026-10-23T09:00:40Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -536,8 +536,8 @@
         "style",
         "default"
       ],
-      "file:size": 1580,
-      "file:checksum": "12206538601aa1539617da2c9e5437142e2ae17b45dc5a90c13c0a8605d7c05ab950"
+      "file:size": 2205,
+      "file:checksum": "12205f957849148074a8bcdbcf36144164188328390c12a26e9a0c48520082a50925"
     },
     "style-median-elevation": {
       "href": "./styles/median-elevation.json",
@@ -547,8 +547,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 2214,
-      "file:checksum": "122076d2c9e9cf30ecd66cfd741eefcdee1f4834c5a358f23313f0733a804370a185"
+      "file:size": 3129,
+      "file:checksum": "1220260a37cb7caf39fbc07bc7f9b26ffd9d94b4881df897a5852e5b633a33abaa3b"
     },
     "style-surge-evidence": {
       "href": "./styles/surge-evidence.json",
@@ -558,8 +558,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 2630,
-      "file:checksum": "1220a9bd35ed8a38e39d1343ef05fb04a4759d254f994f21cd0e6107e5e0039e19d2"
+      "file:size": 3768,
+      "file:checksum": "122000d80848011b78529b3e32dd9af6280b356e18680f1f30732dcc10a38e2b9e1e"
     },
     "style-terminus-type": {
       "href": "./styles/terminus-type.json",
@@ -569,29 +569,29 @@
       "roles": [
         "style"
       ],
-      "file:size": 2373,
-      "file:checksum": "1220d28d96e282f6c65f13ceadfbc4965f88a435186e6a5f353c482bd8ab4dce7c28"
+      "file:size": 3368,
+      "file:checksum": "12200520b9af227b52a624656c1fad058aeef7f0e18641b3ffa130ffac7a03ce7b7a"
     },
     "style-same-as-rgi6": {
       "href": "./styles/same-as-rgi6.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Same as RGI 6.0",
-      "description": "Glaciers coloured by whether the outline is the same as in RGI 6.0 (is_rgi6) or was remapped.",
+      "description": "Glaciers coloured by whether the outline is the same as in RGI 6.0 (is_rgi6) or new in RGI 7.0, as in the map of the RGI 7.0 user guide.",
       "roles": [
         "style"
       ],
-      "file:size": 2290,
-      "file:checksum": "12208a9f797272be0b109f3bbbf19aa1ee734a3c3314b87a0c7d440fb70bd072e4ca"
+      "file:size": 3217,
+      "file:checksum": "122086a36318f07f88f2445a9c3736ecacfe4213cf3a0de88d3563f0698a77853a73"
     },
     "pmtiles": {
-      "href": "./rgi7.0.pmtiles",
+      "href": "../rgi7.0.pmtiles",
       "type": "application/vnd.pmtiles",
       "title": "Web map archive (vector tiles)",
       "roles": [
         "visual"
       ],
-      "file:size": 758950494,
-      "file:checksum": "12203740123a399e40c86ba32fa3e95582dcef65fa26dcc09dcef902c4e298ed7ec1"
+      "file:size": 805443956,
+      "file:checksum": "1220a986fafa209b6c1df275149ff399e120cef0702ceaebef33bec0773417bbd442"
     }
   },
   "links": [
@@ -681,15 +681,15 @@
     },
     {
       "rel": "pmtiles",
-      "href": "./rgi7.0.pmtiles",
+      "href": "../rgi7.0.pmtiles",
       "type": "application/vnd.pmtiles",
       "title": "Web map archive (vector tiles)",
       "pmtiles:layers": [
         "glaciers",
         "glacier-labels"
       ],
-      "file:size": 758950494,
-      "file:checksum": "12203740123a399e40c86ba32fa3e95582dcef65fa26dcc09dcef902c4e298ed7ec1"
+      "file:size": 805443956,
+      "file:checksum": "1220a986fafa209b6c1df275149ff399e120cef0702ceaebef33bec0773417bbd442"
     }
   ]
 }

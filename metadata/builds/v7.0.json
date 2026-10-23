@@ -1,6 +1,6 @@
 {
   "archive": {
-    "href": "glaciers/rgi7.0.pmtiles",
+    "href": "rgi7.0.pmtiles",
     "layers": [
       "glaciers",
       "glacier-labels"
@@ -508,9 +508,9 @@
       "file:checksum": "1220594b4f1c80ab5f5ce4fe1452b341ded24aa1d393feacc02f69574b4107dd6b4c",
       "size": 258040260
     },
-    "glaciers/rgi7.0.pmtiles": {
-      "file:checksum": "12203740123a399e40c86ba32fa3e95582dcef65fa26dcc09dcef902c4e298ed7ec1",
-      "size": 758950494
+    "rgi7.0.pmtiles": {
+      "file:checksum": "1220a986fafa209b6c1df275149ff399e120cef0702ceaebef33bec0773417bbd442",
+      "size": 805443956
     }
   },
   "mirror_revision": "7.0-r1",
@@ -540,6 +540,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-10-23T08:33:55Z",
+  "updated": "2026-10-23T09:00:40Z",
   "version": "7.0"
 }

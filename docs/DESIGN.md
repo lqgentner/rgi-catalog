@@ -153,8 +153,10 @@ from the same inputs gave identical bytes.
 
 ## Web-map archive
 
-`src/rgi_catalog/tiles.py` builds `v7.0/glaciers/rgi7.0.pmtiles` from the
-staged glaciers file. The tiler is tylertoo 0.8.0.
+`src/rgi_catalog/tiles.py` builds `v7.0/rgi7.0.pmtiles` from the staged
+glaciers file. Every collection of the version draws from this one archive.
+Each lists it as a `visual` asset and a `rel: pmtiles` link at
+`../rgi7.0.pmtiles`. The tiler is tylertoo 0.8.0.
 
 ### The tylertoo binary
 
@@ -181,7 +183,7 @@ for byte and replaces only the metadata block.
 
 | Layer | Band | Settings |
 | --- | --- | --- |
-| `glaciers` | z0–9 | tylertoo defaults: density budget, cell thinning, 500 KB tile cap |
+| `glaciers` | z0–9 | `--representation 0-6:point,7-8:square --no-density-drop --sort-key area_km2` |
 | `glaciers` | z10–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0 --simplify-factor 0.5` |
 | `glacier-labels` | z7–12 | `--entry-zoom label_minzoom:7=7,…,12=12 --no-density-drop` |
 
@@ -221,12 +223,33 @@ Leaving the four long submission text columns out of the tiles saves 12% of
 the z10–12 band (550 to 485 MB). The tiles keep every scalar column.
 
 The glaciers layer starts at z0, so the default style shows data at the full
-extent. Below z10 the tiler thins by density. z9 keeps all 274,531 glaciers.
+extent. z9 keeps all 274,531 glaciers.
+
+### Low zooms
+
+With tylertoo defaults z0 held 117 of 274,531 glaciers. The visibility gate
+drops polygons smaller than 2 GSD, and the density budget thins the rest. The
+Alps and High Mountain Asia were almost empty at world scale.
+
+Up to z6 each glacier is now a point. Points skip the visibility gate and
+keep one per point-grid cell of 4 GSD, about one screen pixel. The largest
+glacier (`--sort-key area_km2`) wins each cell and gives the cell its
+attributes. Without the density budget every occupied cell keeps a point:
+z0 holds 1,310 points and z4 39,989. At z7–8 a polygon too small for the
+zoom is a placeholder square. The finest zoom of a band keeps the source
+geometry, so the squares stop at z8. A glacier at the antimeridian is a
+MultiPoint at z0, where the tile buffer wraps.
+
+`--collapse-square` alone kept polygons and gave z0 1,017 squares of about
+a quarter pixel. Only their outlines showed. tippecanoe's tiny-polygon
+reduction gives a similar result. The newer tylertoo documentation describes
+area-accumulated squares as the default, but 0.8.0 does not have them.
 
 ### Result (measured 2026-10-22)
 
 `tiles --version 7.0` takes 80 s and peaks at 2.7 GB of memory. The archive
-is 759.0 MB. Two builds gave identical bytes.
+was 759.0 MB with the default low zooms and is 805.4 MB with points and
+squares (measured 2026-10-23). Two builds gave identical bytes.
 
 | z | Tiles | MB | p50 bytes | Max bytes |
 | ---: | ---: | ---: | ---: | ---: |
@@ -290,8 +313,12 @@ map. The centerlines layer comes with the centerlines product.
 
 The outline of every style is a `line` layer from z0, about one pixel wide
 at low zooms. At world scale a glacier is smaller than a pixel, so a fill
-alone draws nothing there. Themed styles colour the outline with the
-theme's expression, and the legend still comes from the fill.
+alone draws nothing there. A `circle` layer filtered to points draws the
+z0–6 points, 1.5 to 2.5 px wide. Themed styles colour the outline and the
+dots with the theme's expression, and the legend still comes from the fill.
+
+The `same-as-rgi6` style follows the map in the RGI 7.0 user guide: "Same as
+RGI 6.0" in blue and "New in RGI 7.0" in red.
 
 ## Local preview
 

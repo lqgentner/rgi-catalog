@@ -39,7 +39,7 @@ TYLERTOO = SourcePin(
 TYLERTOO_MEMBER = "tylertoo-0.8.0-x86_64-unknown-linux-musl/tylertoo"
 
 ARCHIVE_NAME = "Randolph Glacier Inventory 7.0 Mirror"
-ARCHIVE_ATTRIBUTION = "RGI 7.0 Consortium (2023), doi:10.5067/f6jmovy5navz — unofficial mirror"
+ARCHIVE_ATTRIBUTION = "RGI 7.0 Consortium (2023)"
 ARCHIVE_DESCRIPTION = (
     "Glacier outlines and names from the Randolph Glacier Inventory 7.0. "
     "Unofficial mirror, not endorsed by the RGI Consortium."
@@ -50,6 +50,10 @@ ARCHIVE_DESCRIPTION = (
 # imagery the outlines were drawn from.
 MAXZOOM = 12
 GLACIERS_MINZOOM = 0
+# Up to this zoom each glacier is a point, one per grid cell, because a
+# glacier is smaller than a pixel there. Up to the zoom before the complete
+# band, a polygon too small for the zoom is a placeholder square.
+GLACIERS_POINT_MAXZOOM = 6
 # From this zoom on, the glaciers layer holds every glacier.
 GLACIERS_COMPLETE_ZOOM = 10
 LABEL_MINZOOM = 7
@@ -224,13 +228,32 @@ def glacier_layers(glaciers: Path, labels: Path) -> list[LayerSpec]:
     Returns
     -------
     list[LayerSpec]
-        Below :data:`GLACIERS_COMPLETE_ZOOM` the tiler thins glaciers by
-        density. From it on every glacier is kept. Each label enters at its
+        Up to :data:`GLACIERS_POINT_MAXZOOM` glaciers are points, one per
+        grid cell. Below :data:`GLACIERS_COMPLETE_ZOOM` small glaciers are
+        squares, one per grid cell. From it on every glacier is kept. Each label enters at its
         ``label_minzoom`` and is never thinned.
     """
     entry = ",".join(f"{z}={z}" for z in range(LABEL_MINZOOM, MAXZOOM + 1))
     return [
-        LayerSpec("glaciers", glaciers, GLACIERS_MINZOOM, GLACIERS_COMPLETE_ZOOM - 1),
+        LayerSpec(
+            "glaciers",
+            glaciers,
+            GLACIERS_MINZOOM,
+            GLACIERS_COMPLETE_ZOOM - 1,
+            # The finest zoom of a band keeps the source geometry, so the
+            # squares stop one zoom before it. The largest glacier wins each
+            # grid cell. Without the density budget every cell keeps one.
+            (
+                "--representation",
+                (
+                    f"{GLACIERS_MINZOOM}-{GLACIERS_POINT_MAXZOOM}:point,"
+                    f"{GLACIERS_POINT_MAXZOOM + 1}-{GLACIERS_COMPLETE_ZOOM - 2}:square"
+                ),
+                "--no-density-drop",
+                "--sort-key",
+                "area_km2",
+            ),
+        ),
         LayerSpec(
             "glaciers",
             glaciers,
@@ -436,7 +459,7 @@ def decode(archive: Path, out: Path, *, layer: str | None = None) -> Path:
 
 
 def archive_path(staging: Path, version: str) -> Path:
-    """Return the staged archive, which lives in the glaciers collection.
+    """Return the staged archive. Every collection of the version draws from it.
 
     Parameters
     ----------
@@ -448,9 +471,9 @@ def archive_path(staging: Path, version: str) -> Path:
     Returns
     -------
     Path
-        ``staging/v{version}/glaciers/rgi{version}.pmtiles``.
+        ``staging/v{version}/rgi{version}.pmtiles``.
     """
-    return staging / version_dir(version) / "glaciers" / f"rgi{version}.pmtiles"
+    return staging / version_dir(version) / f"rgi{version}.pmtiles"
 
 
 def build_tiles(version: str, *, staging: Path = STAGING) -> Path:

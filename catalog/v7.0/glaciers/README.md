@@ -11,7 +11,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 ## Files
 
 - [`rgi7.0-glaciers.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet): 274,531 rows, 258.0 MB. GeoParquet 2.0.0 in 24 row groups of up to 12,122 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
-- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `glaciers`, `glacier-labels`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `hypso_permille`, `rgi6_links`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `glaciers`, `glacier-labels`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `hypso_permille`, `rgi6_links`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
 
 ## Map styles
 
@@ -19,7 +19,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 - [Median elevation](./styles/median-elevation.json): Glaciers coloured by median elevation (zmed_m) in 1,000 m classes, from below 1,000 m (dark purple) to 5,000 m and above (yellow).
 - [Surge evidence](./styles/surge-evidence.json): Glaciers coloured by the evidence for surging (surge_type): no evidence, possible, probable or observed.
 - [Terminus type](./styles/terminus-type.json): Glaciers coloured by terminus type (term_type). RGI 7.0 assigns only the marine-terminating class. Every other glacier is not assigned.
-- [Same as RGI 6.0](./styles/same-as-rgi6.json): Glaciers coloured by whether the outline is the same as in RGI 6.0 (is_rgi6) or was remapped.
+- [Same as RGI 6.0](./styles/same-as-rgi6.json): Glaciers coloured by whether the outline is the same as in RGI 6.0 (is_rgi6) or new in RGI 7.0, as in the map of the RGI 7.0 user guide.
 
 ## Access
 

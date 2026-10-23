@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
@@ -23,9 +23,6 @@ from rgi_catalog.tiles import (
     tile_properties,
     write_labels,
 )
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 LINK = pa.struct([("rgi6_id", pa.string()), ("overlap_area_km2", pa.float64())])
 KV = {
@@ -183,6 +180,25 @@ def test_build_archive_glaciers_complete_from_complete_zoom(
     counts = rows.groupby("zoom")["rgi_id"].nunique()
     for zoom in range(tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM + 1):
         assert counts[zoom] == len(GLACIERS)
+
+
+def test_build_archive_glaciers_are_points_at_low_zoom(archive: Path, tmp_path: Path) -> None:
+    decoded = gpd.read_parquet(decode(archive, tmp_path / "low.parquet", layer="glaciers"))
+    for zoom, rows in decoded.groupby("zoom"):
+        types = set(rows.geom_type)
+        # A glacier at the antimeridian is a MultiPoint where the buffer wraps.
+        if zoom <= tiles.GLACIERS_POINT_MAXZOOM:
+            assert types <= {"Point", "MultiPoint"}, zoom
+        else:
+            assert not types & {"Point", "MultiPoint"}, zoom
+
+
+def test_archive_attribution_names_the_producer() -> None:
+    assert tiles.ARCHIVE_ATTRIBUTION == "RGI 7.0 Consortium (2023)"
+
+
+def test_archive_is_shared_by_the_version() -> None:
+    assert tiles.archive_path(Path("staging"), "7.0") == Path("staging/v7.0/rgi7.0.pmtiles")
 
 
 def test_build_archive_refuses_drop_in_complete_band(

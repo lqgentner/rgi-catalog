@@ -8,7 +8,7 @@
   "sources": {
     "data": {
       "type": "vector",
-      "url": "pmtiles://../rgi7.0.pmtiles"
+      "url": "pmtiles://../../rgi7.0.pmtiles"
     }
   },
   "layers": [
@@ -97,6 +97,69 @@
           12,
           1.0
         ]
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-dots",
+      "type": "circle",
+      "source-layer": "glaciers",
+      "filter": [
+        "in",
+        [
+          "geometry-type"
+        ],
+        [
+          "literal",
+          [
+            "Point",
+            "MultiPoint"
+          ]
+        ]
+      ],
+      "paint": {
+        "circle-color": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "surge_type"
+            ],
+            0,
+            "No evidence",
+            1,
+            "Possible",
+            2,
+            "Probable",
+            3,
+            "Observed",
+            ""
+          ],
+          "No evidence",
+          "#c6dbef",
+          "Possible",
+          "#fdd0a2",
+          "Probable",
+          "#fd8d3c",
+          "Observed",
+          "#d94801",
+          "#bdbdbd"
+        ],
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.5,
+          6,
+          2.5
+        ],
+        "circle-opacity": 0.85
       },
       "source": "data"
     },

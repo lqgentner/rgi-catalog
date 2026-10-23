@@ -85,13 +85,11 @@ def version_id(meta: dict[str, Any], version: str) -> str:
     return f"{meta['id']}-v{version.replace('.', '-')}"
 
 
-def collection_styles(name: str, version: str) -> dict[str, str]:
-    """Return the style documents of a collection, as rendered JSON text.
+def collection_styles(version: str) -> dict[str, str]:
+    """Return the style documents of the glaciers collection, as rendered JSON text.
 
     Parameters
     ----------
-    name
-        The collection name.
     version
         The RGI version.
 
@@ -102,7 +100,7 @@ def collection_styles(name: str, version: str) -> dict[str, str]:
     """
     return {
         key: _dump(style)
-        for key, style in styles.glacier_styles(styles.archive_href(name, version)).items()
+        for key, style in styles.glacier_styles(styles.archive_href(version)).items()
     }
 
 
@@ -303,7 +301,7 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
                     ),
                 }
             )
-    for key, text in collection_styles(name, version).items():
+    for key, text in collection_styles(version).items():
         style = json.loads(text)
         roles = ["style", "default"] if key == styles.DEFAULT_STYLE else ["style"]
         assets[f"style-{key}"] = {
@@ -314,15 +312,14 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
             "roles": roles,
             **_file_fields(text.encode()),
         }
-    archive_rel = (
-        "./" + archive.split("/", 1)[1] if archive.startswith(f"{name}/") else f"../{archive}"
-    )
+    archive_rel = f"../{archive}"
     archive_file = {
         "file:size": files[archive]["size"],
         "file:checksum": files[archive]["file:checksum"],
     }
     # The browser draws a collection from its assets, so the archive is an
     # asset as well as the rel:pmtiles link that the Portolan spec requires.
+    # Every collection of the version shares the one archive.
     assets["pmtiles"] = {
         "href": archive_rel,
         "type": PMTILES,
@@ -456,7 +453,7 @@ def render(out: Path = CATALOG) -> list[Path]:
             collections.append((name, cspec, doc))
             base = f"{vdir}/{name}"
             _write(out, f"{base}/collection.json", _dump(doc), written)
-            for key, text in collection_styles(name, version).items():
+            for key, text in collection_styles(version).items():
                 _write(out, f"{base}/styles/{key}.json", text, written)
             scope = {
                 **common,

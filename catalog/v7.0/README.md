@@ -15,7 +15,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 | --- | ---: | ---: | --- |
 | [glaciers](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/glaciers/collection.json) | 274,531 | 258.0 MB | [README](glaciers/README.md) · [AGENTS](glaciers/AGENTS.md) |
 
-The web map archive `glaciers/rgi7.0.pmtiles` (759.0 MB) holds the layers `glaciers`, `glacier-labels`, z0 to z12.
+The web map archive `rgi7.0.pmtiles` (805.4 MB) holds the layers `glaciers`, `glacier-labels`, z0 to z12.
 
 ## Citation
 

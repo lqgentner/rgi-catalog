@@ -5,9 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-# The archive lives in the glaciers collection. Styles live in each
+# The archive lives in the version directory. Styles live in each
 # collection's styles/ directory.
-ARCHIVE_COLLECTION = "glaciers"
 SOURCE_ID = "data"
 # The glyphs of the browser's default basemaps (CARTO), which cover Latin,
 # Cyrillic and Greek.
@@ -21,6 +20,22 @@ NO_DATA = "#bdbdbd"
 # At world scale a glacier is smaller than a pixel, so a fill alone draws
 # nothing. An outline of about one pixel keeps every tiled glacier visible.
 OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
+# At the lowest zooms the archive holds each glacier as a point. A glacier
+# at the antimeridian is a MultiPoint where the tile buffer wraps.
+POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
+DOT_RADIUS = ["interpolate", ["linear"], ["zoom"], 0, 1.5, 6, 2.5]
+
+
+def _dots(color: Any) -> dict[str, Any]:
+    """Return the circle layer that draws the glacier points."""
+    return {
+        "id": "glaciers-dots",
+        "type": "circle",
+        "source-layer": "glaciers",
+        "filter": POINTS,
+        "paint": {"circle-color": color, "circle-radius": DOT_RADIUS, "circle-opacity": 0.85},
+    }
+
 
 LABELS: dict[str, Any] = {
     "id": "glacier-labels",
@@ -52,6 +67,7 @@ LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
             "type": "line",
             "paint": {"line-color": GLACIER_LINE, "line-width": OUTLINE_WIDTH},
         },
+        _dots(GLACIER_LINE),
     ],
     "glacier-labels": [LABELS],
 }
@@ -139,35 +155,30 @@ THEMES: dict[str, Theme] = {
         title="Same as RGI 6.0",
         description=(
             "Glaciers coloured by whether the outline is the same as in RGI 6.0 "
-            "(is_rgi6) or was remapped."
+            "(is_rgi6) or new in RGI 7.0, as in the map of the RGI 7.0 user guide."
         ),
         column="is_rgi6",
-        codes={True: "Same outline as RGI 6.0", False: "Remapped from RGI 6.0"},
-        colors=("#1b9e77", "#d95f02"),
+        codes={True: "Same as RGI 6.0", False: "New in RGI 7.0"},
+        colors=("#1f77b4", "#d62728"),
     ),
 }
 DEFAULT_STYLE = "full-map"
 
 
-def archive_href(collection: str, version: str = "7.0") -> str:
+def archive_href(version: str = "7.0") -> str:
     """Return the archive's href relative to a collection's ``styles/`` directory.
 
     Parameters
     ----------
-    collection
-        The collection whose style links the archive.
     version
         The RGI version.
 
     Returns
     -------
     str
-        For example ``../rgi7.0.pmtiles`` for the glaciers collection.
+        For example ``../../rgi7.0.pmtiles``.
     """
-    name = f"rgi{version}.pmtiles"
-    if collection == ARCHIVE_COLLECTION:
-        return f"../{name}"
-    return f"../../{ARCHIVE_COLLECTION}/{name}"
+    return f"../../rgi{version}.pmtiles"
 
 
 def _style(name: str, description: str, href: str, layers: list[dict[str, Any]]) -> dict[str, Any]:
@@ -260,6 +271,7 @@ def thematic_style(theme: str, archive_href: str) -> dict[str, Any]:
             "source-layer": "glaciers",
             "paint": {"line-color": spec.fill_color(), "line-width": OUTLINE_WIDTH},
         },
+        _dots(spec.fill_color()),
         {**LABELS, "source-layer": "glacier-labels"},
     ]
     return _style(spec.title, spec.description, archive_href, layers)
