@@ -42,6 +42,14 @@ anonymous S3 at `s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/intersec
 | `geometry` | `binary` | Intersect geometry (LineString) (deg) |
 | `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
 
+## Processing notes
+
+The values are RGI's, except for these fixes of upstream errors.
+[docs/PROVENANCE.md](https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md) lists
+the IDs of the changed rows.
+
+- `drop-z` in `geometry`, 130,429 rows: Dropped the Z coordinate, which is 0 in every vertex. See [rgi_issue_tracker#43](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/43).
+
 ## Citation
 
 Cite the RGI Consortium:

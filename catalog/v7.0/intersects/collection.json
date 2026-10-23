@@ -25,7 +25,7 @@
     "glacier divides"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-23T09:56:37Z",
+  "updated": "2026-10-23T10:20:22Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -158,6 +158,17 @@
       ],
       "file:size": 1081883870,
       "file:checksum": "1220388d926151987265479a5df9c1af7ffe335043f60eb12b19e5bad9e888f54681"
+    },
+    "thumbnail": {
+      "href": "./thumbnail.webp",
+      "type": "image/webp",
+      "title": "Thumbnail",
+      "description": "The default style of the data, drawn by chiitiler over the Esri World Light Gray Base map. Basemap: Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community.",
+      "roles": [
+        "thumbnail"
+      ],
+      "file:size": 95598,
+      "file:checksum": "12202fdbe91e7bacc7f59fb9c2cf9c843c19240336543b145c86acc92047d0b1fb35"
     }
   },
   "links": [

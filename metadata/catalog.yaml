@@ -67,6 +67,30 @@ disclaimer: >-
   authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7).
   Citation and credit belong to the RGI Consortium:
 
+issue_tracker: https://github.com/GLIMS-RGI/rgi_issue_tracker/issues
+
+# The fixes of the convert report, as the processing notes of the collection
+# READMEs state them. The counts come from the build record.
+fixes:
+  text-encoding:
+    text: >-
+      Repaired text that an encoding error garbled, such as `AbbÃ© Glacier` for
+      `Abbé Glacier`.
+  drop-z:
+    text: Dropped the Z coordinate, which is 0 in every vertex.
+    issue: 43
+  polygon-validity:
+    text: Made the invalid outlines valid. Each repaired outline is one polygon.
+    issue: 48
+
+# The description of every thumbnail. The images live in metadata/thumbnails/
+# at the path of the document they belong to. The basemap credit is the
+# copyrightText of the Esri World Light Gray Base service.
+thumbnail: >-
+  The default style of the data, drawn by chiitiler over the Esri World Light
+  Gray Base map. Basemap: Esri, HERE, Garmin, (c) OpenStreetMap contributors,
+  and the GIS user community.
+
 description: >-
   The Randolph Glacier Inventory (RGI) is a globally complete inventory of
   glacier outlines. This catalog republishes it as GeoParquet files and a web
@@ -90,6 +114,20 @@ versions:
           file. A web map archive holds the outlines and the glacier names.
         keywords: [glacier outlines, hypsometry]
         pmtiles_layers: [glaciers, glacier-labels]
+        # Processing notes besides the fix counts. Known issues quote the
+        # issue titles.
+        processing_notes:
+          - text: >-
+              `rgi6_links` comes from the corrected links file, not from the
+              links in the glacier product zip.
+            issue: 41
+        known_issues:
+          - text: ANLYS_IDs are not truly unique
+            issue: 27
+          - text: Missing glaciers in Greenland
+            issue: 58
+          - text: Missing glaciers in the Aleutian Islands
+            issue: 63
         # The README's access query.
         example:
           what: one glacier
@@ -105,6 +143,9 @@ versions:
           one GeoParquet file. The web map archive holds the outlines.
         keywords: [glacier complexes]
         pmtiles_layers: [complexes]
+        known_issues:
+          - text: Glacier complex product may have artifacts at glacier divides
+            issue: 21
         example:
           what: the glacier complex of the Rhone glacier
           columns: rgi_id, area_km2, len(glacier_ids) AS n_glaciers

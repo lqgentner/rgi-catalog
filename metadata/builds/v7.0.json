@@ -830,6 +830,63 @@
       "size": 1081883870
     }
   },
+  "fixes": {
+    "centerlines": [
+      {
+        "column": "geometry",
+        "count": 0,
+        "fix": "drop-z"
+      }
+    ],
+    "complexes": [
+      {
+        "column": "geometry",
+        "count": 192869,
+        "fix": "drop-z"
+      },
+      {
+        "column": "geometry",
+        "count": 7,
+        "fix": "polygon-validity"
+      }
+    ],
+    "glaciers": [
+      {
+        "column": "glac_name",
+        "count": 328,
+        "fix": "text-encoding"
+      },
+      {
+        "column": "geometry",
+        "count": 274531,
+        "fix": "drop-z"
+      },
+      {
+        "column": "geometry",
+        "count": 0,
+        "fix": "polygon-validity"
+      }
+    ],
+    "intersects": [
+      {
+        "column": "geometry",
+        "count": 130429,
+        "fix": "drop-z"
+      }
+    ],
+    "regions": [
+      {
+        "column": "geometry",
+        "count": 0,
+        "fix": "drop-z"
+      },
+      {
+        "column": "geometry",
+        "count": 0,
+        "fix": "polygon-validity"
+      }
+    ]
+  },
   "mirror_revision": "7.0-r1",
   "sources": {
     "C": {
@@ -857,6 +914,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-10-23T09:56:37Z",
+  "updated": "2026-10-23T10:20:22Z",
   "version": "7.0"
 }

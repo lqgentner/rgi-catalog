@@ -407,3 +407,37 @@ docker run -d --rm --name rgi-chiitiler -p 13579:3000 -e CHIITILER_PROCESSES=0 \
 
 A `/clip` bbox that spans the full ±180° renders only part of the data. Frame
 world views at ±170° or less.
+
+## Thumbnails (rendered 2026-10-23)
+
+Each collection, the root catalog and the version catalog have a 1024 px
+WebP thumbnail (quality 85). The images live in `metadata/thumbnails/` at the
+path of their document. `render` copies each one next to its document and
+registers it. A collection lists it as an asset with the `thumbnail` role. A
+catalog carries no assets (PTL-AST-005), so a catalog lists it as a
+`rel: preview` link, which the browser reads when a document has no assets.
+
+`scripts/thumbnails.sh` renders them with the scripts of the
+`portolan-thumbnails` skill. Its `buildstyle.py` points the
+default style at the local archive and puts it over the Esri World Light Gray
+Base map at opacity 0.55. The Esri service names its credit as "Esri, HERE,
+Garmin, (c) OpenStreetMap contributors, and the GIS user community". Every
+thumbnail description repeats it.
+
+| Image | Style | bbox | Zoom |
+| --- | --- | --- | --- |
+| root and `v7.0` | glaciers, Reference map | -170,-60.3,170,82 | full extent |
+| regions | Glacier regions | -170,-60.3,170,82 | full extent |
+| glaciers | Reference map | 6.855631,45.739253,8.844369,46.656915 | 9.5 |
+| complexes | Glacier complexes | 75.455631,35.210183,77.444369,36.286180 | 9.5 |
+| centerlines | Centerlines | -74.394369,-50.027756,-72.405631,-49.168459 | 9.5 |
+| intersects | Intersects | 86.601408,27.803504,87.098592,28.096298 | 11.5 |
+
+The zoom is that of `frame.py`, at 256 px tiles. At 10.5 the intersects
+window showed no intersect lines, because the layer starts at z10 and
+MapLibre counts zoom in 512 px tiles.
+
+chiitiler can answer `/clip` before every tile has loaded. A long-running
+server also dropped a whole layer from a render. The render script therefore
+repeats each request until two images are byte-identical, on a freshly
+started server. Two full runs and the script gave identical images.

@@ -161,6 +161,22 @@ The codes and their meanings are from the
 
 "The main DEM product used for RGI 7.0 is the Copernicus DEM". "For all glaciers which grid size is below 60 m we use the 30 m COP-DEM product as source, and use the 90 m COP-DEM product for all other glaciers."
 
+## Processing notes
+
+The values are RGI's, except for these fixes of upstream errors.
+[docs/PROVENANCE.md](https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md) lists
+the IDs of the changed rows.
+
+- `text-encoding` in `glac_name`, 328 rows: Repaired text that an encoding error garbled, such as `AbbÃ© Glacier` for `Abbé Glacier`.
+- `drop-z` in `geometry`, 274,531 rows: Dropped the Z coordinate, which is 0 in every vertex. See [rgi_issue_tracker#43](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/43).
+- `rgi6_links` comes from the corrected links file, not from the links in the glacier product zip. See [rgi_issue_tracker#41](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/41).
+
+The build does not fix these known upstream issues:
+
+- [rgi_issue_tracker#27](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/27): "ANLYS_IDs are not truly unique"
+- [rgi_issue_tracker#58](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/58): "Missing glaciers in Greenland"
+- [rgi_issue_tracker#63](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/63): "Missing glaciers in the Aleutian Islands"
+
 ## Citation
 
 Cite the RGI Consortium:

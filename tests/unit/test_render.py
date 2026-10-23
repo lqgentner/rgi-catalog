@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -222,3 +223,48 @@ def test_sources_are_links_not_assets(rendered: Path) -> None:
     links_csv = [h for h in related if h.endswith("RGI2000-v7.0-G-global-rgi6_links.csv")]
     assert len(links_csv) == 1
     assert related[links_csv[0]]["type"] == "text/csv"
+
+
+def test_thumbnails_registered_and_copied(rendered: Path) -> None:
+    docs = _stac(rendered)
+    assert len(docs) == 7
+    for path, doc in docs.items():
+        if doc["type"] == "Catalog":
+            # Catalogs carry no assets (PTL-AST-005). A client reads the
+            # thumbnail of a catalog from its rel:preview link.
+            assert "assets" not in doc
+            thumbs = [link for link in doc["links"] if link["rel"] == "preview"]
+        else:
+            thumbs = [a for a in doc["assets"].values() if "thumbnail" in a["roles"]]
+        assert len(thumbs) == 1, path
+        thumb = thumbs[0]
+        assert thumb["href"] == "./thumbnail.webp"
+        assert thumb["type"] == "image/webp"
+        rel = (Path(path).parent / "thumbnail.webp").as_posix()
+        data = (rendered / rel).read_bytes()
+        assert data == (METADATA / "thumbnails" / rel).read_bytes()
+        assert thumb["file:size"] == len(data)
+        assert thumb["file:checksum"] == "1220" + hashlib.sha256(data).hexdigest()
+        # The basemap's credit, as the Esri service states it.
+        assert "Esri, HERE, Garmin, (c) OpenStreetMap contributors" in thumb["description"]
+
+
+def _section(text: str, heading: str) -> str:
+    return text.split(f"## {heading}\n", 1)[1].split("\n## ", 1)[0]
+
+
+def test_processing_notes_state_the_computed_fix_counts(rendered: Path) -> None:
+    record = json.loads((METADATA / "builds" / "v7.0.json").read_text())
+    for name, fixes in record["fixes"].items():
+        readme = (rendered / "v7.0" / name / "README.md").read_text()
+        notes = _section(readme, "Processing notes")
+        assert "docs/PROVENANCE.md" in notes
+        lines = [line for line in notes.splitlines() if line.startswith("- ")]
+        for fix in fixes:
+            stated = [line for line in lines if f"`{fix['fix']}`" in line]
+            if fix["count"]:
+                assert len(stated) == 1, (name, fix)
+                assert f"{fix['count']:,} " in stated[0]
+                assert f"`{fix['column']}`" in stated[0]
+            else:
+                assert not stated, (name, fix)

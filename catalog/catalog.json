@@ -7,7 +7,7 @@
   "id": "rgi",
   "title": "Randolph Glacier Inventory Mirror",
   "description": "The Randolph Glacier Inventory (RGI) is a globally complete inventory of glacier outlines. This catalog republishes it as GeoParquet files and a web map archive. The values are those of the RGI release. Fixes of documented upstream errors are listed in the provenance record.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
-  "updated": "2026-10-23T09:56:37Z",
+  "updated": "2026-10-23T10:20:22Z",
   "links": [
     {
       "rel": "root",
@@ -31,6 +31,15 @@
       "href": "./AGENTS.md",
       "type": "text/markdown",
       "title": "Randolph Glacier Inventory Mirror agent guide"
+    },
+    {
+      "rel": "preview",
+      "href": "./thumbnail.webp",
+      "type": "image/webp",
+      "title": "Thumbnail",
+      "description": "The default style of the data, drawn by chiitiler over the Esri World Light Gray Base map. Basemap: Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community.",
+      "file:size": 60304,
+      "file:checksum": "12203c2ad98515ec0172daf2ec0c5837a0197e8922bb04adcf81564db7453bd5f8a7"
     },
     {
       "rel": "child",

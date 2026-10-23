@@ -43,6 +43,12 @@ anonymous S3 at `s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/regions/
 | `geometry` | `binary` | The region outline, a polygon in EPSG:4326. Regions 10 and 19-15 are split at the antimeridian into an eastern and a western row. |
 | `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
 
+## Processing notes
+
+The values are RGI's. The build fixed no upstream error in this collection.
+[docs/PROVENANCE.md](https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md) lists
+every fix.
+
 ## Citation
 
 Cite the source of this collection:

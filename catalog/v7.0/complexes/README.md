@@ -46,6 +46,19 @@ anonymous S3 at `s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/complexe
 | `geometry` | `binary` | Glacier complex geometry (Polygon) (deg) |
 | `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
 
+## Processing notes
+
+The values are RGI's, except for these fixes of upstream errors.
+[docs/PROVENANCE.md](https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md) lists
+the IDs of the changed rows.
+
+- `drop-z` in `geometry`, 192,869 rows: Dropped the Z coordinate, which is 0 in every vertex. See [rgi_issue_tracker#43](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/43).
+- `polygon-validity` in `geometry`, 7 rows: Made the invalid outlines valid. Each repaired outline is one polygon. See [rgi_issue_tracker#48](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/48).
+
+The build does not fix these known upstream issues:
+
+- [rgi_issue_tracker#21](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/21): "Glacier complex product may have artifacts at glacier divides"
+
 ## Citation
 
 Cite the RGI Consortium:

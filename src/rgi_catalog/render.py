@@ -44,7 +44,10 @@ STYLE = "application/vnd.mapbox.style+json"
 JSON = "application/json"
 HTML = "text/html"
 MARKDOWN = "text/markdown"
+WEBP = "image/webp"
 TEMPLATES = METADATA / "templates"
+THUMBNAILS = METADATA / "thumbnails"
+THUMBNAIL = "thumbnail.webp"
 # The products NSIDC distributes as global zips, by pin key.
 NSIDC_PRODUCTS = {
     "G": "glacier",
@@ -150,6 +153,22 @@ class Context:
     def describe(self, text: str) -> str:
         """Return a STAC description: the text, then the disclaimer."""
         return f"{' '.join(text.split())}\n\n{self.disclaimer}"
+
+    def thumbnail(self, doc_dir: str) -> dict[str, Any]:
+        """Return the thumbnail asset of the document in a catalog directory.
+
+        The image is ``metadata/thumbnails/<doc_dir>/thumbnail.webp``. The
+        render copies it next to the document.
+        """
+        data = (THUMBNAILS / doc_dir / THUMBNAIL).read_bytes()
+        return {
+            "href": f"./{THUMBNAIL}",
+            "type": WEBP,
+            "title": "Thumbnail",
+            "description": " ".join(self.meta["thumbnail"].split()),
+            "roles": ["thumbnail"],
+            **_file_fields(data),
+        }
 
     def nav_links(self, path: str, spec: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """Return the mirror and navigation links every document carries.
@@ -341,6 +360,7 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
         "roles": ["visual"],
         **archive_file,
     }
+    assets["thumbnail"] = ctx.thumbnail(f"{vdir}/{name}")
     links = [
         {"rel": "root", "href": "../../catalog.json", "type": JSON, "title": meta["title"]},
         {
@@ -412,6 +432,11 @@ def _catalog(
             {"rel": "parent", "href": "../catalog.json", "type": JSON, "title": ctx.meta["title"]}
         )
     links += ctx.docs_links(title)
+    # A catalog carries no assets (PTL-AST-005), so its thumbnail is a
+    # rel:preview link, which clients read when a document has no assets.
+    thumbnail = ctx.thumbnail(path.rpartition("/")[0])
+    del thumbnail["roles"]
+    links.append({"rel": "preview", **thumbnail})
     links += [
         {"rel": "child", "href": f"./{href}", "type": JSON, "title": t} for href, t in children
     ]
@@ -428,11 +453,19 @@ def _catalog(
     }
 
 
-def _write(out: Path, rel: str, text: str, written: list[Path]) -> None:
+def _write(out: Path, rel: str, text: str | bytes, written: list[Path]) -> None:
     path = out / rel
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text)
+    if isinstance(text, bytes):
+        path.write_bytes(text)
+    else:
+        path.write_text(text)
     written.append(path)
+
+
+def _write_thumbnail(out: Path, doc_dir: str, written: list[Path]) -> None:
+    rel = f"{doc_dir}/{THUMBNAIL}" if doc_dir else THUMBNAIL
+    _write(out, rel, (THUMBNAILS / rel).read_bytes(), written)
 
 
 def render(out: Path = CATALOG) -> list[Path]:
@@ -467,6 +500,7 @@ def render(out: Path = CATALOG) -> list[Path]:
             collections.append((name, cspec, doc))
             base = f"{vdir}/{name}"
             _write(out, f"{base}/collection.json", _dump(doc), written)
+            _write_thumbnail(out, base, written)
             for key, text in collection_styles(name, version).items():
                 _write(out, f"{base}/styles/{key}.json", text, written)
             scope = {
@@ -506,6 +540,7 @@ def render(out: Path = CATALOG) -> list[Path]:
             updated=record["updated"],
         )
         _write(out, f"{vdir}/catalog.json", _dump(catalog), written)
+        _write_thumbnail(out, vdir, written)
         scope = {
             **common,
             "version": version,
@@ -528,6 +563,7 @@ def render(out: Path = CATALOG) -> list[Path]:
         updated=max(version_updated),
     )
     _write(out, "catalog.json", _dump(root), written)
+    _write_thumbnail(out, "", written)
     scope = {
         **common,
         "versions": meta["versions"],

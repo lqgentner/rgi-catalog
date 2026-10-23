@@ -20,6 +20,7 @@ from rgi_catalog.tiles import archive_path
 from rgi_catalog.upstream import read_attribute_metadata
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from pathlib import Path
 
     from rgi_catalog.upstream import Product
@@ -87,6 +88,42 @@ def _archive(path: Path) -> dict[str, Any]:
     }
 
 
+def fix_counts(report: Path, collections: Iterable[str]) -> dict[str, list[dict[str, Any]]]:
+    """Return the fix counts of each collection from the convert report.
+
+    Parameters
+    ----------
+    report
+        The ``fixes.json`` file that ``convert`` writes.
+    collections
+        The collections of the version.
+
+    Returns
+    -------
+    dict[str, list[dict[str, Any]]]
+        The fix, column and count of each report entry, by collection, in
+        the order of the report.
+
+    Raises
+    ------
+    ValueError
+        If the report has no entry for a collection. ``convert`` of some
+        products writes a report of those products only.
+    """
+    entries = json.loads(report.read_text())
+    out: dict[str, list[dict[str, Any]]] = {}
+    for name in collections:
+        out[name] = [
+            {"fix": e["fix"], "column": e["column"], "count": e["count"]}
+            for e in entries
+            if e["product"] == name
+        ]
+        if not out[name]:
+            msg = f"{report} has no fixes of {name}; run convert for every product"
+            raise ValueError(msg)
+    return out
+
+
 def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
     """Measure the staged files of a version.
 
@@ -101,8 +138,8 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
     -------
     dict[str, Any]
         Sizes, checksums, extents, row counts and schemas of the staged files,
-        the archive's layers, the upstream pins, and RGI's column metadata of
-        each product used.
+        the archive's layers, the upstream pins, the fix counts of the
+        convert report, and RGI's column metadata of each product used.
     """
     meta = catalog_metadata()
     versions = cast("dict[str, Any]", meta["versions"])
@@ -127,6 +164,7 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
         "files": files,
         "collections": collections,
         "archive": {"href": archive.relative_to(vdir).as_posix(), **_archive(archive)},
+        "fixes": fix_counts(vdir / ".reports" / "fixes.json", spec["collections"]),
         "attributes_metadata": {
             product: read_attribute_metadata(fetch(pins[product]), cast("Product", product))
             for product in sorted(products & set(DESCRIBED_PRODUCTS))

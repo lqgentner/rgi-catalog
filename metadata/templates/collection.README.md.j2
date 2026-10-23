@@ -64,4 +64,36 @@ The codes and their meanings are from the
 
 {% endfor %}
 {% endif %}
+## Processing notes
+
+{% set fixes = record.fixes[name] | selectattr("count") | list %}
+{% set notes = spec.processing_notes | default([]) %}
+{% if fixes or notes %}
+The values are RGI's, except for these fixes of upstream errors.
+[docs/PROVENANCE.md]({{ meta.repository }}/blob/main/docs/PROVENANCE.md) lists
+the IDs of the changed rows.
+
+{% for fix in fixes %}
+{% set text = meta.fixes[fix.fix] %}
+- `{{ fix.fix }}` in `{{ fix.column }}`, {{ "{:,}".format(fix.count) }} rows: {{ text.text.split() | join(" ") }}{% if text.issue is defined %} See [rgi_issue_tracker#{{ text.issue }}]({{ meta.issue_tracker }}/{{ text.issue }}).{% endif %}
+
+{% endfor %}
+{% for note in notes %}
+- {{ note.text.split() | join(" ") }}{% if note.issue is defined %} See [rgi_issue_tracker#{{ note.issue }}]({{ meta.issue_tracker }}/{{ note.issue }}).{% endif %}
+
+{% endfor %}
+{% else %}
+The values are RGI's. The build fixed no upstream error in this collection.
+[docs/PROVENANCE.md]({{ meta.repository }}/blob/main/docs/PROVENANCE.md) lists
+every fix.
+{% endif %}
+{% if spec.known_issues is defined %}
+
+The build does not fix these known upstream issues:
+
+{% for issue in spec.known_issues %}
+- [rgi_issue_tracker#{{ issue.issue }}]({{ meta.issue_tracker }}/{{ issue.issue }}): "{{ issue.text }}"
+{% endfor %}
+{% endif %}
+
 {% include "_mirror.md.j2" %}

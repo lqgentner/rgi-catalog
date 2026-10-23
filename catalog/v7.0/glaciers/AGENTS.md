@@ -79,6 +79,8 @@ WHERE rgi_id = 'RGI2000-v7.0-G-11-01706';
   distinct values.
 - `glims_id` is not unique: 274,326 distinct values in 274,531 rows. Do not
   join on it.
+- `anlys_id` is not unique: 148 values are shared by 353 glaciers
+  (rgi_issue_tracker#27, "ANLYS_IDs are not truly unique"). Do not join on it.
 - `complex_id` holds the `rgi_id` of the glacier complex. Every glacier has
   one.
 - `rgi6_links[].rgi6_id` holds RGI 6.0 IDs (`RGI60-…`).
