@@ -15,7 +15,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 ## Map styles
 
 - [Intersects](./styles/intersects.json) (default): Intersects (black): the divides between adjacent glaciers, from z10, over the glacier outlines (pale blue).
-- [Glaciers with names](./styles/full-map.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
+- [Reference map](./styles/reference.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
 
 ## Access
 

@@ -15,7 +15,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 ## Map styles
 
 - [Glacier regions](./styles/regions.json) (default): First-order (orange) and second-order (purple) glacier regions, with their names.
-- [Glaciers with names](./styles/full-map.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
+- [Reference map](./styles/reference.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
 
 ## Access
 

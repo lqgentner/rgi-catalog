@@ -340,7 +340,7 @@ builds the styles of the glaciers collection.
 
 | Style | Column | Expression | Legend |
 | --- | --- | --- | --- |
-| `full-map` (default) | none | blue fill and outline, names | no |
+| `reference` (default) | none | blue fill and outline, names | no |
 | `median-elevation` | `zmed_m` | `step` at 1,000 m to 5,000 m | 6 classes |
 | `surge-evidence` | `surge_type` | `match` on 0 to 3 | 4 classes |
 | `terminus-type` | `term_type` | `match` on 1 and 9 | 2 classes |

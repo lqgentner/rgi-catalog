@@ -108,7 +108,7 @@ LABELS: dict[str, Any] = {
 
 # The style layers that draw each archive layer, bottom to top.
 LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
-    # Boundaries only: a region fill would give the full map a legend.
+    # Boundaries only: a region fill would give the reference map a legend.
     "regions": [
         {
             "id": "regions-outline-1",
@@ -156,7 +156,7 @@ LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
     "glacier-labels": [LABELS],
 }
 ARCHIVE_LAYERS = tuple(LAYER_STYLES)
-FULL_MAP_LAYERS = ("regions", "glaciers", "centerlines", "region-labels", "glacier-labels")
+REFERENCE_LAYERS = ("regions", "glaciers", "centerlines", "region-labels", "glacier-labels")
 # The glaciers drawn pale, under the centerlines or the intersects.
 GLACIER_CONTEXT = _polygons("glaciers", CONTEXT_FILL, CONTEXT_LINE, 0.6)
 
@@ -249,7 +249,7 @@ THEMES: dict[str, Theme] = {
         colors=("#1f77b4", "#d62728"),
     ),
 }
-DEFAULT_STYLE = "full-map"
+DEFAULT_STYLE = "reference"
 # The default style of each collection.
 DEFAULT_STYLES = {
     "glaciers": DEFAULT_STYLE,
@@ -323,8 +323,11 @@ def collection_style(collection: str, archive_href: str, layers: list[str]) -> d
     )
 
 
-def full_map_style(archive_href: str) -> dict[str, Any]:
-    """Return the style that draws every archive layer with labels.
+def reference_style(archive_href: str) -> dict[str, Any]:
+    """Return the reference map: regions, glaciers, centerlines and names.
+
+    The complexes and the intersects follow the glacier outlines, so only
+    their own styles draw them.
 
     Parameters
     ----------
@@ -337,14 +340,14 @@ def full_map_style(archive_href: str) -> dict[str, Any]:
         A MapLibre style (version 8). The labels are the top layer.
     """
     return _style(
-        "Glaciers with names",
+        "Reference map",
         (
             "Glacier outlines (blue) and centerlines (red), with glacier names and the "
             "boundaries and names of the glacier regions. Larger glaciers are named at "
             "lower zooms."
         ),
         archive_href,
-        _layers_of(list(FULL_MAP_LAYERS)),
+        _layers_of(list(REFERENCE_LAYERS)),
     )
 
 
@@ -397,7 +400,7 @@ def glacier_styles(archive_href: str) -> dict[str, dict[str, Any]]:
         Styles by file stem. :data:`DEFAULT_STYLE` is the first.
     """
     return {
-        DEFAULT_STYLE: full_map_style(archive_href),
+        DEFAULT_STYLE: reference_style(archive_href),
         **{theme: thematic_style(theme, archive_href) for theme in THEMES},
     }
 
@@ -451,9 +454,9 @@ def collection_styles(name: str, archive_href: str) -> dict[str, dict[str, Any]]
     Returns
     -------
     dict[str, dict[str, Any]]
-        Styles by file stem. The glaciers have the full map and the thematic
-        styles. Every other collection has its own style and the full map.
+        Styles by file stem. The glaciers have the reference map and the thematic
+        styles. Every other collection has its own style and the reference map.
     """
     if name == "glaciers":
         return glacier_styles(archive_href)
-    return {name: _own_style(name, archive_href), DEFAULT_STYLE: full_map_style(archive_href)}
+    return {name: _own_style(name, archive_href), DEFAULT_STYLE: reference_style(archive_href)}

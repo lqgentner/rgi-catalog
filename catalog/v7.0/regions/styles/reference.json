@@ -1,6 +1,6 @@
 {
   "version": 8,
-  "name": "Glaciers with names",
+  "name": "Reference map",
   "metadata": {
     "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms."
   },

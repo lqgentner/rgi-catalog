@@ -162,16 +162,16 @@
       "file:size": 2873,
       "file:checksum": "122013b30fb3f1622996e81ad142ee9cd4f6b107be3b42b49e3d8e24f872fb490833"
     },
-    "style-full-map": {
-      "href": "./styles/full-map.json",
+    "style-reference": {
+      "href": "./styles/reference.json",
       "type": "application/vnd.mapbox.style+json",
-      "title": "Glaciers with names",
+      "title": "Reference map",
       "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.",
       "roles": [
         "style"
       ],
-      "file:size": 5049,
-      "file:checksum": "122056ecdf6a37ee704581ba32808497802f84891206c47650efa54093b6769f44ea"
+      "file:size": 5043,
+      "file:checksum": "1220a855f87beb9f20e504533d9fab279b538b572be5c7d81f2753b3d02714ffaba7"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",

@@ -21,7 +21,7 @@ def test_styles_reference_the_shared_archive() -> None:
     style = styles.collection_style("glaciers", styles.archive_href(), ["glaciers"])
     assert style["version"] == 8
     assert style["sources"]["data"]["url"] == "pmtiles://../../rgi7.0.pmtiles"
-    full = styles.full_map_style(styles.archive_href())
+    full = styles.reference_style(styles.archive_href())
     assert full["sources"]["data"]["url"] == "pmtiles://../../rgi7.0.pmtiles"
 
 
@@ -44,16 +44,17 @@ def test_style_layers_draw_from_the_archive(style: dict[str, Any]) -> None:
     json.dumps(style)
 
 
-def test_glacier_styles_default_is_the_full_map() -> None:
+def test_glacier_styles_default_is_the_reference_map() -> None:
     assert list(ALL_STYLES) == [
-        "full-map",
+        "reference",
         "median-elevation",
         "surge-evidence",
         "terminus-type",
         "same-as-rgi6",
     ]
-    assert styles.DEFAULT_STYLE == "full-map"
-    assert ALL_STYLES["full-map"] == styles.full_map_style("../../rgi7.0.pmtiles")
+    assert styles.DEFAULT_STYLE == "reference"
+    assert ALL_STYLES["reference"]["name"] == "Reference map"
+    assert ALL_STYLES["reference"] == styles.reference_style("../../rgi7.0.pmtiles")
 
 
 @pytest.mark.parametrize("style", ALL_STYLES.values())
@@ -97,7 +98,7 @@ def test_thematic_styles_have_readable_legends() -> None:
         "4000",
         "5000",
     ]
-    assert _legend(ALL_STYLES["full-map"]) == []
+    assert _legend(ALL_STYLES["reference"]) == []
 
 
 @pytest.mark.skipif(not GLACIERS_FILE.exists(), reason="needs the staged glaciers file")
@@ -165,11 +166,11 @@ COLLECTIONS = ("glaciers", "complexes", "centerlines", "intersects", "regions")
 
 
 @pytest.mark.parametrize("name", COLLECTIONS)
-def test_every_collection_has_a_default_and_the_full_map(name: str) -> None:
+def test_every_collection_has_a_default_and_the_reference_map(name: str) -> None:
     found = styles.collection_styles(name, HREF)
     assert next(iter(found)) == styles.DEFAULT_STYLES[name]
-    assert "full-map" in found
-    assert found["full-map"] == styles.full_map_style(HREF)
+    assert "reference" in found
+    assert found["reference"] == styles.reference_style(HREF)
     default = found[styles.DEFAULT_STYLES[name]]
     if name != "glaciers":
         assert name in {layer["source-layer"] for layer in default["layers"]}
@@ -177,8 +178,8 @@ def test_every_collection_has_a_default_and_the_full_map(name: str) -> None:
         assert style["sources"]["data"]["url"] == f"pmtiles://{HREF}"
 
 
-def test_full_map_draws_regions_glaciers_and_centerlines() -> None:
-    full = styles.full_map_style(HREF)
+def test_reference_map_draws_regions_glaciers_and_centerlines() -> None:
+    full = styles.reference_style(HREF)
     assert {layer["source-layer"] for layer in full["layers"]} == {
         "regions",
         "region-labels",
@@ -186,7 +187,7 @@ def test_full_map_draws_regions_glaciers_and_centerlines() -> None:
         "centerlines",
         "glacier-labels",
     }
-    # Only the glacier fill is a fill, so the full map has no legend.
+    # Only the glacier fill is a fill, so the reference map has no legend.
     assert [layer["id"] for layer in full["layers"] if layer["type"] == "fill"] == [
         "glaciers-fill",
     ]
