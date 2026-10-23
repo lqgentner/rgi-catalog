@@ -11,8 +11,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 ## Files
 
 - [`rgi7.0-glaciers.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet): 274,531 rows, 258.0 MB. GeoParquet 2.0.0 in 24 row groups of up to 12,122 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
-- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `glaciers`, `glacier-labels`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `hypso_permille`, `rgi6_links`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
-
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `glaciers`, `glacier-labels`. Below z10 the layer is an overview: up to z6 each feature is a point, one per grid cell, and at z7 and z8 a feature too small to draw is a square. Overview features carry only `rgi_id`, `display_name`, `area_km2`, `zmed_m`, `surge_type`, `term_type`, `is_rgi6`. From z10 the tiles carry every column except the list and struct columns, which vector tiles cannot store: `hypso_permille`, `rgi6_links`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
 ## Map styles
 
 - [Glaciers with names](./styles/full-map.json) (default): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.

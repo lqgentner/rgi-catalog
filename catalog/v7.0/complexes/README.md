@@ -11,8 +11,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 ## Files
 
 - [`rgi7.0-complexes.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet): 192,869 rows, 213.3 MB. GeoParquet 2.0.0 in 18 row groups of up to 12,157 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
-- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `complexes`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `glacier_ids`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
-
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `complexes`. Below z10 the layer is an overview: up to z6 each feature is a point, one per grid cell, and at z7 and z8 a feature too small to draw is a square. Overview features carry only `rgi_id`, `area_km2`. From z10 the tiles carry every column except the list and struct columns, which vector tiles cannot store: `glacier_ids`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 
 - [Glacier complexes](./styles/complexes.json) (default): Glacier complexes (purple): connected glaciers merged into one outline.

@@ -20,6 +20,7 @@ from rgi_catalog.paths import CATALOG, METADATA, STAGING, version_dir
 from rgi_catalog.pipeline import PRODUCT_SOURCES
 from rgi_catalog.record import record_path, write_build_record
 from rgi_catalog.sources import load_pins
+from rgi_catalog.tiles import GLACIERS_COMPLETE_ZOOM, GLACIERS_POINT_MAXZOOM, OVERVIEW_COLUMNS
 
 if TYPE_CHECKING:
     import argparse
@@ -477,7 +478,15 @@ def render(out: Path = CATALOG) -> list[Path]:
                 "collection": doc,
                 "path": f"{base}/collection.json",
                 "codes": ctx.codes,
+                "complete_zoom": GLACIERS_COMPLETE_ZOOM,
+                "point_maxzoom": GLACIERS_POINT_MAXZOOM,
+                "has_timestamps": any(
+                    c["type"].startswith("timestamp")
+                    for c in record["collections"][name]["columns"]
+                ),
                 # The columns vector tiles cannot store.
+                # The columns of the overview zooms, if the layer has an overview.
+                "overview": list(OVERVIEW_COLUMNS.get(name, ())),
                 "untiled": [
                     c["name"]
                     for c in record["collections"][name]["columns"]

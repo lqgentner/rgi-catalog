@@ -11,8 +11,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 ## Files
 
 - [`rgi7.0-intersects.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet): 130,429 rows, 17.0 MB. GeoParquet 2.0.0 in 13 row groups of up to 10,240 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
-- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `intersects`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
-
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `intersects`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 
 - [Intersects](./styles/intersects.json) (default): Intersects (black): the divides between adjacent glaciers, from z10, over the glacier outlines (pale blue).

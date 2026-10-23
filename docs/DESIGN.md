@@ -292,8 +292,8 @@ area-accumulated squares as the default, but 0.8.0 does not have them.
 
 ### Result (measured 2026-10-23)
 
-`tiles --version 7.0` takes 6 min 13 s and peaks at 4.4 GB of memory. The
-archive is 1,242.8 MB with every layer. The glaciers-only archive was
+`tiles --version 7.0` takes 5 min 52 s and peaks at 4.4 GB of memory. The
+archive is 1,081.9 MB with every layer. The glaciers-only archive was
 805.4 MB, and 759.0 MB before the points and squares.
 
 The region polygons cover the oceans and the Antarctic, so z12 addresses
@@ -301,21 +301,25 @@ The region polygons cover the oceans and the Antarctic, so z12 addresses
 archive stores 425,392 distinct tiles, and its directories are 4.2 MB. "MB
 addressed" counts each addressed tile, so it repeats the shared ones.
 
-The z0 tile is 314 KB. Its glacier and complex points carry every scalar
-column of the largest feature of each grid cell.
+The overview bands (z0–9) of the glaciers and the complexes carry only the
+key and the columns the styles read (`tiles.GLACIER_OVERVIEW_COLUMNS`,
+`tiles.COMPLEX_OVERVIEW_COLUMNS`). With every scalar column the z0 tile was
+314 KB. It is now 92 KB. Every column is in the tiles from z10. The largest
+tiles cover High Mountain Asia: the z5 tile 22/12 holds 6,252 glacier points
+and 8,464 complex points (394 KB).
 
 | z | Tiles | MB addressed | p50 bytes | Max bytes |
 | ---: | ---: | ---: | ---: | ---: |
-| 0 | 1 | 0.3 | 313,720 | 313,720 |
-| 1 | 4 | 0.7 | 174,944 | 329,677 |
-| 2 | 16 | 1.7 | 53,134 | 359,727 |
-| 3 | 64 | 4.1 | 10,804 | 381,292 |
-| 4 | 225 | 7.8 | 1,198 | 485,586 |
-| 5 | 832 | 15.0 | 233 | 480,988 |
-| 6 | 3,100 | 26.2 | 197 | 479,794 |
-| 7 | 12,106 | 49.7 | 193 | 583,718 |
-| 8 | 47,447 | 96.9 | 192 | 588,053 |
-| 9 | 187,891 | 205.3 | 192 | 471,843 |
+| 0 | 1 | 0.1 | 92,369 | 92,369 |
+| 1 | 4 | 0.2 | 51,103 | 92,350 |
+| 2 | 16 | 0.5 | 15,640 | 138,268 |
+| 3 | 64 | 1.3 | 3,423 | 159,760 |
+| 4 | 225 | 2.7 | 806 | 357,332 |
+| 5 | 832 | 5.2 | 233 | 393,999 |
+| 6 | 3,100 | 9.3 | 197 | 391,145 |
+| 7 | 12,106 | 22.5 | 193 | 451,992 |
+| 8 | 47,447 | 54.3 | 192 | 420,447 |
+| 9 | 187,891 | 150.9 | 192 | 351,583 |
 | 10 | 748,229 | 298.1 | 192 | 156,538 |
 | 11 | 2,983,757 | 782.0 | 192 | 87,217 |
 | 12 | 11,916,787 | 2667.4 | 192 | 61,220 |

@@ -13,7 +13,7 @@ import pyarrow.parquet as pq
 import pytest
 from shapely.geometry import Polygon
 
-from rgi_catalog import assemble, tiles
+from rgi_catalog import assemble, styles, tiles
 from rgi_catalog.geoparquet import write_geoparquet
 from rgi_catalog.tiles import (
     LayerSpec,
@@ -317,3 +317,22 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     for layer in layers:
         if layer.name in {"centerlines", "intersects"} and layer.complete:
             assert "--no-coalesce-lines" in layer.extra_args
+
+
+def test_build_archive_overview_carries_style_columns_only(
+    archive: Path,
+    tmp_path: Path,
+) -> None:
+    decoded = pq.read_table(decode(archive, tmp_path / "g.parquet", layer="glaciers")).to_pandas()
+    overview = decoded[decoded["zoom"] < tiles.GLACIERS_COMPLETE_ZOOM]
+    complete = decoded[decoded["zoom"] >= tiles.GLACIERS_COMPLETE_ZOOM]
+    assert overview["o1region"].isna().all()
+    assert overview["rgi_id"].notna().all()
+    assert overview["area_km2"].notna().all()
+    assert complete["o1region"].notna().all()
+
+
+def test_overview_columns_cover_the_styles() -> None:
+    themed = {theme.column for theme in styles.THEMES.values()}
+    assert themed | {"rgi_id", "display_name", "area_km2"} <= set(tiles.GLACIER_OVERVIEW_COLUMNS)
+    assert set(tiles.COMPLEX_OVERVIEW_COLUMNS) == {"rgi_id", "area_km2"}

@@ -11,8 +11,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 ## Files
 
 - [`rgi7.0-centerlines.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/centerlines/rgi7.0-centerlines.parquet): 367,724 rows, 211.0 MB. GeoParquet 2.0.0 in 36 row groups of up to 10,784 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
-- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `centerlines`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
-
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `centerlines`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 
 - [Centerlines](./styles/centerlines.json) (default): Glacier centerlines (red), the main centerline wider, from z8, over the glacier outlines (pale blue).

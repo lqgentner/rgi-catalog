@@ -88,6 +88,9 @@ class LayerSpec:
     # The column of a feature's entry zoom (``--entry-zoom``). A complete band
     # must keep a feature from that zoom on.
     entry_zoom_column: str | None = None
+    # The properties the band carries, of those the source has. None carries
+    # every scalar column (:func:`tile_properties`).
+    properties: tuple[str, ...] | None = None
 
 
 def tylertoo_binary(cache_dir: Path = CACHE) -> Path:
@@ -230,6 +233,20 @@ POLYGON_OVERVIEW = (
     "--sort-key",
     "area_km2",
 )
+# The overview carries only the key and what the styles read. Each point
+# stands for a grid cell, and every column would make the z0 tile 314 KB.
+GLACIER_OVERVIEW_COLUMNS = (
+    "rgi_id",
+    "display_name",
+    "area_km2",
+    "zmed_m",
+    "surge_type",
+    "term_type",
+    "is_rgi6",
+)
+COMPLEX_OVERVIEW_COLUMNS = ("rgi_id", "area_km2")
+# The overview columns by layer, for the documentation.
+OVERVIEW_COLUMNS = {"glaciers": GLACIER_OVERVIEW_COLUMNS, "complexes": COMPLEX_OVERVIEW_COLUMNS}
 # Polygons from GLACIERS_COMPLETE_ZOOM on. Density drop, cell thinning and the
 # visibility gate each drop glaciers. Simplification at the default 1 GSD
 # collapses two slivers of 0.01 km² at z10. Half a GSD keeps them.
@@ -285,6 +302,7 @@ def glacier_layers(glaciers: Path, labels: Path) -> list[LayerSpec]:
             GLACIERS_MINZOOM,
             GLACIERS_COMPLETE_ZOOM - 1,
             POLYGON_OVERVIEW,
+            properties=GLACIER_OVERVIEW_COLUMNS,
         ),
         LayerSpec(
             "glaciers",
@@ -388,6 +406,7 @@ def version_layers(
             GLACIERS_MINZOOM,
             GLACIERS_COMPLETE_ZOOM - 1,
             POLYGON_OVERVIEW,
+            properties=COMPLEX_OVERVIEW_COLUMNS,
         ),
         LayerSpec(
             "complexes",
@@ -464,7 +483,10 @@ def build_archive(
         for i, layer in enumerate(layers):
             band = work / f"band-{i}.pmtiles"
             report = work / f"band-{i}.json"
-            props = [a for p in tile_properties(layer.source) for a in ("--include-property", p)]
+            available = tile_properties(layer.source)
+            if layer.properties is not None:
+                available = [p for p in available if p in layer.properties]
+            props = [a for p in available for a in ("--include-property", p)]
             _run(
                 "tiles",
                 layer.source,
