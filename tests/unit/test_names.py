@@ -40,6 +40,10 @@ CASES = [
     ("GLACIER D'ARGENTIERE", "Glacier d'Argentiere"),
     ("ORNY GLACIER D'", "Orny Glacier d'"),
     ("DE LA PLAINE MORTE", "De la Plaine Morte"),
+    # A Swiss canton code at the end stays in capitals. Elsewhere it is a word.
+    ("FIESCHERGLETSCHER VS", "Fieschergletscher VS"),
+    ("FIESCHERGLETSCHER BE", "Fieschergletscher BE"),
+    ("UR GLETSCHER", "Ur Gletscher"),
     # Inventory codes with range or query suffixes are stripped.
     ("FR4N01166H08-10 de la Grande Montagne", "de la Grande Montagne"),
     ("FR4N01166D14+66D15 du Says", "du Says"),

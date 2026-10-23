@@ -16,9 +16,10 @@ The rules are deterministic and run in this order:
    the Swiss Glacier Inventory: ``Tälligletscher-E`` → ``Tälligletscher E``.
 5. A name with no lowercase letter is re-cased: each word starts with a
    capital and continues in lowercase. Roman numerals and compass points stay
-   in capitals. Particles (``de``, ``du``, ``del``, ``la``, ``d'``, …) are
-   lowercase unless they start the name. Words are never reordered.
-   Mixed-case names are kept as written.
+   in capitals, and so does a Swiss canton code that ends the name
+   (``FIESCHERGLETSCHER VS`` → ``Fieschergletscher VS``). Particles (``de``,
+   ``du``, ``del``, ``la``, ``d'``, …) are lowercase unless they start the name.
+   Words are never reordered. Mixed-case names are kept as written.
 
 ``glac_name`` keeps RGI's value. ``rgi_id`` is the key, never the name.
 """
@@ -56,14 +57,21 @@ _KEEP_UPPER = re.compile(rf"{_COMPASS}|{_ROMAN}", re.IGNORECASE)
 _PARTICLES = frozenset(
     {"da", "de", "del", "della", "der", "des", "di", "du", "la", "las", "le", "les", "los", "von"},
 )
+# The Swiss Glacier Inventory ends some names with the canton code.
+_CANTONS = frozenset(
+    {
+        "AG", "AI", "AR", "BE", "BL", "BS", "FR", "GE", "GL", "GR", "JU", "LU", "NE",
+        "NW", "OW", "SG", "SH", "SO", "SZ", "TG", "TI", "UR", "VD", "VS", "ZG", "ZH",
+    },
+)  # fmt: skip
 _ELISION = re.compile(r"([dl])'(.*)", re.IGNORECASE)
 # A word starts at the beginning, or after a space, hyphen, slash, bracket or
 # full stop. An apostrophe does not start one: "D'ARGENTIERE" → "D'argentiere".
 _WORD_START = re.compile(r"(^|[\s\-/(.])(\w)")
 
 
-def _recase_word(word: str, *, first: bool) -> str:
-    if _KEEP_UPPER.fullmatch(word):
+def _recase_word(word: str, *, first: bool, last: bool) -> str:
+    if _KEEP_UPPER.fullmatch(word) or (last and not first and word in _CANTONS):
         return word.upper()
     if not first and word.lower() in _PARTICLES:
         return word.lower()
@@ -76,7 +84,9 @@ def _recase_word(word: str, *, first: bool) -> str:
 
 def _recase(name: str) -> str:
     words = name.split(" ")
-    return " ".join(_recase_word(w, first=i == 0) for i, w in enumerate(words))
+    return " ".join(
+        _recase_word(w, first=i == 0, last=i == len(words) - 1) for i, w in enumerate(words)
+    )
 
 
 def _normalise(raw: str) -> tuple[str, list[str]]:
