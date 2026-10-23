@@ -12,14 +12,17 @@ The rules are deterministic and run in this order:
    with an optional number; for names that are only digits; for codes of one
    to three capitals; and for names that are only a bracket, such as
    ``(Severny Island)``.
-4. A hyphen before a compass point or a Roman numeral becomes a space, as in
-   the Swiss Glacier Inventory: ``Tälligletscher-E`` → ``Tälligletscher E``.
+4. A hyphen before a compass point, a Roman numeral or ``Mitte`` becomes a
+   space, as in the Swiss Glacier Inventory: ``Tälligletscher-E`` →
+   ``Tälligletscher E``.
 5. A name with no lowercase letter is re-cased: each word starts with a
    capital and continues in lowercase. Roman numerals and compass points stay
    in capitals, and so does a Swiss canton code that ends the name
    (``FIESCHERGLETSCHER VS`` → ``Fieschergletscher VS``). Particles (``de``,
    ``du``, ``del``, ``la``, ``d'``, …) are lowercase unless they start the name.
-   Words are never reordered. Mixed-case names are kept as written.
+   Words are never reordered. In a mixed-case name only the words of four or
+   more capitals are re-cased (``TUNGELGLETSCHER09n`` → ``Tungelgletscher09n``).
+   A word that mixes cases is kept as written (``MIIGAiK``).
 
 ``glac_name`` keeps RGI's value. ``rgi_id`` is the key, never the name.
 """
@@ -52,7 +55,9 @@ _SHORT_CODE = re.compile(r"[A-Z]{1,3}")
 _BRACKET_ONLY = re.compile(r"\(.*\)")
 _ROMAN = r"(?:X{0,3}(?:IX|IV|V?I{1,3}|V)|X{1,3})"
 _COMPASS = r"(?:[NS][EW]?|[EW])"
-_SUFFIX_HYPHEN = re.compile(rf"-(?=(?:{_COMPASS}|{_ROMAN})(?:-|\s|$))")
+_SUFFIX_HYPHEN = re.compile(rf"-(?=(?:{_COMPASS}|{_ROMAN}|Mitte|MITTE)(?:-|\s|$))")
+# A word of four or more letters, all capitals, bounded by non-letters.
+_CAPITAL_WORD = re.compile(r"(?<![^\W\d_])[^\W\d_]{4,}(?![^\W\d_])")
 _KEEP_UPPER = re.compile(rf"{_COMPASS}|{_ROMAN}", re.IGNORECASE)
 _PARTICLES = frozenset(
     {"da", "de", "del", "della", "der", "des", "di", "du", "la", "las", "le", "les", "los", "von"},
@@ -142,6 +147,16 @@ def apply_rules(raw: str | None) -> tuple[str | None, list[str]]:
         fired.append("suffix-hyphen")
     if not any(c.islower() for c in name) and any(c.isupper() for c in name):
         name = _recase(name)
+        fired.append("recased")
+    elif any(m.group().isupper() for m in _CAPITAL_WORD.finditer(name)):
+        name = _CAPITAL_WORD.sub(
+            lambda m: (
+                _recase_word(m.group(), first=m.start() == 0, last=False)
+                if m.group().isupper()
+                else m.group()
+            ),
+            name,
+        )
         fired.append("recased")
     return name, fired or ["unchanged"]
 

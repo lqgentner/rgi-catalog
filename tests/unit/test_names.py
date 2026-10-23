@@ -44,6 +44,15 @@ CASES = [
     ("FIESCHERGLETSCHER VS", "Fieschergletscher VS"),
     ("FIESCHERGLETSCHER BE", "Fieschergletscher BE"),
     ("UR GLETSCHER", "Ur Gletscher"),
+    # In a mixed-case name, a word of four or more capitals is re-cased. A word
+    # that mixes cases stays. "Mitte" is a Swiss suffix like a compass point.
+    ("TUNGELGLETSCHER09n", "Tungelgletscher09n"),
+    ("HINT. TRIFTGLETSCHER-Mitte", "Hint. Triftgletscher Mitte"),
+    ("UNNERBÄCHGLETSCHER-Mitte", "Unnerbächgletscher Mitte"),
+    ("PLAN NEVE  l'", "Plan Neve l'"),
+    ("MIIGAiK", "MIIGAiK"),
+    ("SHCHuchij", "SHCHuchij"),
+    ("Mitter Kees M", "Mitter Kees M"),
     # Inventory codes with range or query suffixes are stripped.
     ("FR4N01166H08-10 de la Grande Montagne", "de la Grande Montagne"),
     ("FR4N01166D14+66D15 du Says", "du Says"),
