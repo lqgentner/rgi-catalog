@@ -38,7 +38,7 @@ ALL_STYLES = styles.glacier_styles("../../rgi7.0.pmtiles")
 def test_style_layers_draw_from_the_archive(style: dict[str, Any]) -> None:
     layers = style["layers"]
     assert {layer["source"] for layer in layers} == {"data"}
-    assert {layer["source-layer"] for layer in layers} <= {"glaciers", "glacier-labels"}
+    assert {layer["source-layer"] for layer in layers} <= set(styles.ARCHIVE_LAYERS)
     assert len({layer["id"] for layer in layers}) == len(layers)
     assert style["metadata"]["description"]
     json.dumps(style)
@@ -127,7 +127,11 @@ def test_glacier_outlines_drawn_from_zoom_0(style: dict[str, Any]) -> None:
 def test_thematic_outline_uses_the_theme_colour() -> None:
     style = ALL_STYLES["surge-evidence"]
     fill = next(layer for layer in style["layers"] if layer["type"] == "fill")
-    line = next(layer for layer in style["layers"] if layer["type"] == "line")
+    line = next(
+        layer
+        for layer in style["layers"]
+        if layer["type"] == "line" and layer["source-layer"] == "glaciers"
+    )
     assert line["paint"]["line-color"] == fill["paint"]["fill-color"]
 
 
@@ -148,5 +152,55 @@ def test_glaciers_drawn_as_dots_at_low_zoom(style: dict[str, Any]) -> None:
         ["geometry-type"],
         ["literal", ["Point", "MultiPoint"]],
     ]
-    line = next(layer for layer in style["layers"] if layer["type"] == "line")
+    line = next(
+        layer
+        for layer in style["layers"]
+        if layer["type"] == "line" and layer["source-layer"] == "glaciers"
+    )
     assert dots[0]["paint"]["circle-color"] == line["paint"]["line-color"]
+
+
+HREF = "../../rgi7.0.pmtiles"
+COLLECTIONS = ("glaciers", "complexes", "centerlines", "intersects", "regions")
+
+
+@pytest.mark.parametrize("name", COLLECTIONS)
+def test_every_collection_has_a_default_and_the_full_map(name: str) -> None:
+    found = styles.collection_styles(name, HREF)
+    assert next(iter(found)) == styles.DEFAULT_STYLES[name]
+    assert "full-map" in found
+    assert found["full-map"] == styles.full_map_style(HREF)
+    default = found[styles.DEFAULT_STYLES[name]]
+    if name != "glaciers":
+        assert name in {layer["source-layer"] for layer in default["layers"]}
+    for style in found.values():
+        assert style["sources"]["data"]["url"] == f"pmtiles://{HREF}"
+
+
+def test_full_map_draws_regions_glaciers_and_centerlines() -> None:
+    full = styles.full_map_style(HREF)
+    assert {layer["source-layer"] for layer in full["layers"]} == {
+        "regions",
+        "region-labels",
+        "glaciers",
+        "centerlines",
+        "glacier-labels",
+    }
+    # Only the glacier fill is a fill, so the full map has no legend.
+    assert [layer["id"] for layer in full["layers"] if layer["type"] == "fill"] == [
+        "glaciers-fill",
+    ]
+    lines = next(layer for layer in full["layers"] if layer["source-layer"] == "centerlines")
+    assert lines["paint"]["line-color"] == styles.CENTERLINE_COLOR
+
+
+def test_regions_style_legend_names_the_levels() -> None:
+    regions = styles.collection_styles("regions", HREF)["regions"]
+    assert _legend(regions) == ["First-order region", "Second-order region"]
+
+
+@pytest.mark.parametrize("name", ["centerlines", "intersects"])
+def test_line_styles_draw_the_glaciers_as_context(name: str) -> None:
+    default = styles.collection_styles(name, HREF)[name]
+    layers = [layer["source-layer"] for layer in default["layers"]]
+    assert layers.index("glaciers") < layers.index(name)

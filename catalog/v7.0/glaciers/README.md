@@ -15,7 +15,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 ## Map styles
 
-- [Glaciers with names](./styles/full-map.json) (default): Glacier outlines (blue) with glacier names. Larger glaciers are named at lower zooms.
+- [Glaciers with names](./styles/full-map.json) (default): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
 - [Median elevation](./styles/median-elevation.json): Glaciers coloured by median elevation (zmed_m) in 1,000 m classes, from below 1,000 m (dark purple) to 5,000 m and above (yellow).
 - [Surge evidence](./styles/surge-evidence.json): Glaciers coloured by the evidence for surging (surge_type): no evidence, possible, probable or observed.
 - [Terminus type](./styles/terminus-type.json): Glaciers coloured by terminus type (term_type). RGI 7.0 assigns only the marine-terminating class. Every other glacier is not assigned.
@@ -81,7 +81,7 @@ anonymous S3 at `s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/glaciers
 | `subm_analysts` | `string` | "Person(s) who created the data." |
 | `subm_rc_id` | `uint16` | "GLIMS ID for the regional center." |
 | `geometry` | `binary` | Glacier geometry (Polygon) (deg) |
-| `bbox` | `struct` | The bounding box of the outline (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
+| `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
 
 ## Coded columns
 

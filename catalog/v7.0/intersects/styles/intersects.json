@@ -1,0 +1,124 @@
+{
+  "version": 8,
+  "name": "Intersects",
+  "metadata": {
+    "description": "Intersects (black): the divides between adjacent glaciers, from z10, over the glacier outlines (pale blue)."
+  },
+  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "data": {
+      "type": "vector",
+      "url": "pmtiles://../../rgi7.0.pmtiles"
+    }
+  },
+  "layers": [
+    {
+      "id": "glaciers-fill",
+      "type": "fill",
+      "source-layer": "glaciers",
+      "paint": {
+        "fill-color": "#deebf7",
+        "fill-opacity": 0.6
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-outline",
+      "type": "line",
+      "source-layer": "glaciers",
+      "paint": {
+        "line-color": "#9ecae1",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.2,
+          8,
+          0.6,
+          12,
+          1.0
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-dots",
+      "type": "circle",
+      "source-layer": "glaciers",
+      "filter": [
+        "in",
+        [
+          "geometry-type"
+        ],
+        [
+          "literal",
+          [
+            "Point",
+            "MultiPoint"
+          ]
+        ]
+      ],
+      "paint": {
+        "circle-color": "#9ecae1",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.5,
+          6,
+          2.5
+        ],
+        "circle-opacity": 0.85
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "intersects",
+      "id": "intersects",
+      "type": "line",
+      "paint": {
+        "line-color": "#252525",
+        "line-width": 1.2
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "glacier-labels",
+      "id": "glacier-labels",
+      "type": "symbol",
+      "layout": {
+        "text-field": [
+          "get",
+          "display_name"
+        ],
+        "text-font": [
+          "Open Sans Italic"
+        ],
+        "text-size": 12,
+        "symbol-sort-key": [
+          "-",
+          [
+            "get",
+            "area_km2"
+          ]
+        ]
+      },
+      "paint": {
+        "text-color": "#08306b",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    }
+  ]
+}

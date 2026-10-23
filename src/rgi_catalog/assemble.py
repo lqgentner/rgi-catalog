@@ -15,15 +15,23 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 
-from rgi_catalog.dtypes import narrow_int, to_timestamp, type_upstream
+from rgi_catalog.dtypes import (
+    CENTERLINE_DTYPES,
+    UPSTREAM_DTYPES,
+    narrow_int,
+    to_timestamp,
+    type_upstream,
+)
 from rgi_catalog.fixes import FixCounts, drop_z, make_polygons_valid, repair_text_columns
 from rgi_catalog.names import display_name
 from rgi_catalog.upstream import (
+    WGS84,
     UpstreamMismatchError,
     join_attributes,
     read_attributes,
     read_ctog_links,
     read_hypsometry,
+    read_regions,
     read_rgi6_links,
     read_shapefiles,
     read_submission_info,
@@ -33,6 +41,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from rgi_catalog.fixes import FixReport
+    from rgi_catalog.upstream import Product
 
 HYPSO_BAND_M = 50
 
@@ -86,6 +95,26 @@ GLACIER_COLUMNS = [
     *SUBMISSION_COLUMNS.values(),
     "geometry",
 ]
+C_UPSTREAM_COLUMNS = [
+    "rgi_id",
+    "o1region",
+    "o2region",
+    "cenlon",
+    "cenlat",
+    "utm_zone",
+    "area_km2",
+]
+L_UPSTREAM_COLUMNS = [
+    "rgi_id",
+    "rgi_g_id",
+    "segment_id",
+    "is_main",
+    "outflow_id",
+    "strahler_n",
+    "length_m",
+]
+I_UPSTREAM_COLUMNS = ["rgi_id", "rgi_g_id_1", "rgi_g_id_2", "length_m"]
+REGION_COLUMNS = ["level", "o1region", "o2region", "full_name", "long_code", "geometry"]
 RGI6_LINK_FIELDS: dict[str, pa.DataType] = {
     "rgi6_id": pa.string(),
     "rgi7_reg": pa.string(),
@@ -309,3 +338,179 @@ def glaciers(src: GlacierSources) -> tuple[gpd.GeoDataFrame, FixReport]:
     gdf, validity = make_polygons_valid(gdf, "glaciers")
     report.append(validity)
     return gpd.GeoDataFrame(gdf[GLACIER_COLUMNS], crs=gdf.crs), report
+
+
+def _upstream_table(
+    global_zip: Path,
+    product: Product,
+    columns: list[str],
+    dtypes: dict[str, str],
+) -> gpd.GeoDataFrame:
+    """Read a product's outlines and attributes CSV, joined and typed."""
+    shp = read_shapefiles(global_zip, product)
+    joined = join_attributes(
+        shp[["rgi_id", "geometry"]],
+        read_attributes(global_zip, product),
+        shp.drop(columns="geometry"),
+    )
+    attrs = type_upstream(pd.DataFrame(joined.drop(columns="geometry")), dtypes)
+    if list(attrs.columns) != columns:
+        msg = f"{global_zip.name}: columns {list(attrs.columns)}, expected {columns}"
+        raise UpstreamMismatchError(msg)
+    return gpd.GeoDataFrame(attrs, geometry=joined.geometry.to_numpy(), crs=joined.crs)
+
+
+def _apply_fixes(
+    gdf: gpd.GeoDataFrame,
+    product: str,
+    *,
+    polygons: bool,
+) -> tuple[gpd.GeoDataFrame, FixReport]:
+    """Repair text, drop Z, and make polygons valid, as for the glaciers."""
+    table, report = repair_text_columns(pd.DataFrame(gdf.drop(columns="geometry")), product)
+    out = gpd.GeoDataFrame(table, geometry=gdf.geometry.to_numpy(), crs=gdf.crs)
+    with_z = int(out.has_z.sum())
+    out = drop_z(out)
+    report.append(FixCounts(fix="drop-z", product=product, column="geometry", count=with_z))
+    if polygons:
+        out, validity = make_polygons_valid(out, product)
+        report.append(validity)
+    return out, report
+
+
+def complexes(c_zip: Path) -> tuple[gpd.GeoDataFrame, FixReport]:
+    """Assemble the complexes table with each complex's member glaciers.
+
+    Parameters
+    ----------
+    c_zip
+        The complexes global zip.
+
+    Returns
+    -------
+    tuple[gpd.GeoDataFrame, FixReport]
+        One row per complex: the upstream columns, ``glacier_ids``
+        (``list<string>``, sorted, empty when the links name no glacier) and
+        ``geometry``. Then the fixes applied.
+
+    Raises
+    ------
+    UpstreamMismatchError
+        If the links name a complex that the outlines do not have.
+    """
+    gdf = _upstream_table(c_zip, "C", C_UPSTREAM_COLUMNS, UPSTREAM_DTYPES)
+    links = read_ctog_links(c_zip)
+    if unknown := sorted(links.keys() - set(gdf["rgi_id"])):
+        msg = f"complex links name unknown complexes: {unknown[:10]}"
+        raise UpstreamMismatchError(msg)
+    members = [sorted(links.get(c, [])) for c in gdf["rgi_id"]]
+    gdf["glacier_ids"] = _arrow_series(pa.array(members, type=pa.list_(pa.string())))
+    gdf, report = _apply_fixes(gdf, "complexes", polygons=True)
+    return gpd.GeoDataFrame(gdf[[*C_UPSTREAM_COLUMNS, "glacier_ids", "geometry"]]), report
+
+
+def centerlines(l_zip: Path) -> tuple[gpd.GeoDataFrame, FixReport]:
+    """Assemble the centerlines table: one row per centerline segment.
+
+    Parameters
+    ----------
+    l_zip
+        The centerlines global zip.
+
+    Returns
+    -------
+    tuple[gpd.GeoDataFrame, FixReport]
+        The upstream columns, typed, then ``geometry``. Then the fixes applied.
+    """
+    gdf = _upstream_table(l_zip, "L", L_UPSTREAM_COLUMNS, CENTERLINE_DTYPES)
+    return _apply_fixes(gdf, "centerlines", polygons=False)
+
+
+def intersects(i_zip: Path) -> tuple[gpd.GeoDataFrame, FixReport]:
+    """Assemble the intersects table: one row per line shared by two glaciers.
+
+    Parameters
+    ----------
+    i_zip
+        The intersects global zip.
+
+    Returns
+    -------
+    tuple[gpd.GeoDataFrame, FixReport]
+        The upstream columns, then ``geometry`` in 2D. Then the fixes applied.
+    """
+    gdf = _upstream_table(i_zip, "I", I_UPSTREAM_COLUMNS, {})
+    return _apply_fixes(gdf, "intersects", polygons=False)
+
+
+def _region_attrs(shp: gpd.GeoDataFrame, summary: pd.DataFrame, level: str) -> pd.DataFrame:
+    """Return a shapefile's attributes after checking them against the summary CSV."""
+    attrs = pd.DataFrame(shp.drop(columns="geometry")).astype(str)
+    witness = summary[list(attrs.columns)].astype(str)
+    if sorted(map(tuple, attrs.to_numpy())) != sorted(map(tuple, witness.to_numpy())):
+        msg = f"the {level} regions summary differs from the shapefile attributes"
+        raise UpstreamMismatchError(msg)
+    return attrs
+
+
+def region_table(
+    o1: gpd.GeoDataFrame,
+    o2: gpd.GeoDataFrame,
+    o1_summary: pd.DataFrame,
+    o2_summary: pd.DataFrame,
+) -> gpd.GeoDataFrame:
+    """Stack the first- and second-order regions into one table.
+
+    The summary CSVs hold the same codes and names as the shapefiles, and no
+    other column. They are only the witness.
+
+    Parameters
+    ----------
+    o1, o2
+        The first- and second-order region outlines.
+    o1_summary, o2_summary
+        The summary CSVs.
+
+    Returns
+    -------
+    gpd.GeoDataFrame
+        Columns in :data:`REGION_COLUMNS` order. ``o2region`` is null for
+        level 1.
+
+    Raises
+    ------
+    UpstreamMismatchError
+        If a summary differs from its shapefile, or the CRS is not EPSG:4326.
+    """
+    for shp in (o1, o2):
+        if shp.crs is None or shp.crs.to_epsg() != WGS84:
+            msg = f"regions: expected EPSG:{WGS84}, found {shp.crs}"
+            raise UpstreamMismatchError(msg)
+    level1 = _region_attrs(o1, o1_summary, "o1")
+    level1.insert(0, "level", 1)
+    level1.insert(2, "o2region", None)
+    level2 = _region_attrs(o2, o2_summary, "o2")
+    level2.insert(0, "level", 2)
+    table = pd.concat([level1, level2], ignore_index=True)
+    table["level"] = table["level"].astype("uint8")
+    for column in ("o1region", "o2region", "full_name", "long_code"):
+        table[column] = table[column].astype("str")
+    geometry = np.concatenate([o1.geometry.to_numpy(), o2.geometry.to_numpy()])
+    return gpd.GeoDataFrame(table, geometry=geometry, crs=f"EPSG:{WGS84}")
+
+
+def regions(regions_zip: Path) -> tuple[gpd.GeoDataFrame, FixReport]:
+    """Assemble the regions table, first and second order in one file.
+
+    Parameters
+    ----------
+    regions_zip
+        The regions zip.
+
+    Returns
+    -------
+    tuple[gpd.GeoDataFrame, FixReport]
+        Columns in :data:`REGION_COLUMNS` order, then the fixes applied.
+    """
+    gdf, report = _apply_fixes(region_table(*read_regions(regions_zip)), "regions", polygons=True)
+    return gpd.GeoDataFrame(gdf[REGION_COLUMNS], crs=gdf.crs), report

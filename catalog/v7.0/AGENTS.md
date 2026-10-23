@@ -12,11 +12,33 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 - `glaciers/`: 274,531 rows in
   `https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet`.
   Read `glaciers/AGENTS.md` for its columns, join keys and recipes.
+- `complexes/`: 192,869 rows in
+  `https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet`.
+  Read `complexes/AGENTS.md` for its columns, join keys and recipes.
+- `centerlines/`: 367,724 rows in
+  `https://data.source.coop/lqgentner/rgi/v7.0/centerlines/rgi7.0-centerlines.parquet`.
+  Read `centerlines/AGENTS.md` for its columns, join keys and recipes.
+- `intersects/`: 130,429 rows in
+  `https://data.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet`.
+  Read `intersects/AGENTS.md` for its columns, join keys and recipes.
+- `regions/`: 112 rows in
+  `https://data.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet`.
+  Read `regions/AGENTS.md` for its columns, join keys and recipes.
 
 ## Join keys
 
-`rgi_id` is unique in every collection. Each glacier ID has the form
-`RGI2000-v7.0-G-<o1region>-<number>`.
+`rgi_id` is unique in every collection that has it. The regions have none.
+Each glacier ID has the form `RGI2000-v7.0-G-<o1region>-<number>`.
+The letter after the version names the product: `G`, `C`, `L` or `I`.
+
+- `glaciers.complex_id` joins `complexes.rgi_id`.
+  `complexes.glacier_ids` lists the same links from the other side.
+- `centerlines.rgi_g_id` joins `glaciers.rgi_id`.
+- `intersects.rgi_g_id_1` and `intersects.rgi_g_id_2` each join
+  `glaciers.rgi_id`.
+- `glaciers.o1region` joins `regions.o1region` where `level = 1`, and
+  `glaciers.o2region` joins `regions.o2region` where `level = 2`. The
+  complexes carry the same two codes.
 
 ## Versions
 

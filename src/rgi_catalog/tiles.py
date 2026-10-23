@@ -14,9 +14,11 @@ import tempfile
 from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
+import pandas as pd
 from pmtiles.tile import Compression, deserialize_header, serialize_header
 import pyarrow as pa
 import pyarrow.parquet as pq
+import shapely
 
 from rgi_catalog.paths import CACHE, STAGING, version_dir
 from rgi_catalog.pipeline import output_path
@@ -215,6 +217,48 @@ def write_labels(glaciers_parquet: Path, out: Path) -> Path:
     return out
 
 
+# Polygons below GLACIERS_COMPLETE_ZOOM. The finest zoom of a band keeps the
+# source geometry, so the squares stop one zoom before it. The largest feature
+# wins each grid cell. Without the density budget every cell keeps one.
+POLYGON_OVERVIEW = (
+    "--representation",
+    (
+        f"{GLACIERS_MINZOOM}-{GLACIERS_POINT_MAXZOOM}:point,"
+        f"{GLACIERS_POINT_MAXZOOM + 1}-{GLACIERS_COMPLETE_ZOOM - 2}:square"
+    ),
+    "--no-density-drop",
+    "--sort-key",
+    "area_km2",
+)
+# Polygons from GLACIERS_COMPLETE_ZOOM on. Density drop, cell thinning and the
+# visibility gate each drop glaciers. Simplification at the default 1 GSD
+# collapses two slivers of 0.01 km² at z10. Half a GSD keeps them.
+POLYGON_COMPLETE = (
+    "--no-density-drop",
+    "--polygon-thinning",
+    "0",
+    "--polygon-visibility",
+    "0",
+    "--simplify-factor",
+    "0.5",
+)
+# Lines that must all be kept. Line coalescing joins touching segments into
+# one feature with one set of attributes, so it is off.
+LINE_COMPLETE = (
+    "--no-density-drop",
+    "--line-thinning",
+    "0",
+    "--line-visibility",
+    "0",
+    "--no-coalesce-lines",
+)
+CENTERLINES_MINZOOM = 8
+# Intersects are divides between glaciers, readable only at high zooms.
+INTERSECTS_MINZOOM = 10
+# The products the archive draws, by collection name.
+ARCHIVE_PRODUCTS = ("regions", "complexes", "glaciers", "centerlines", "intersects")
+
+
 def glacier_layers(glaciers: Path, labels: Path) -> list[LayerSpec]:
     """Return the bands of the ``glaciers`` and ``glacier-labels`` layers.
 
@@ -230,8 +274,8 @@ def glacier_layers(glaciers: Path, labels: Path) -> list[LayerSpec]:
     list[LayerSpec]
         Up to :data:`GLACIERS_POINT_MAXZOOM` glaciers are points, one per
         grid cell. Below :data:`GLACIERS_COMPLETE_ZOOM` small glaciers are
-        squares, one per grid cell. From it on every glacier is kept. Each label enters at its
-        ``label_minzoom`` and is never thinned.
+        squares, one per grid cell. From it on every glacier is kept. Each
+        label enters at its ``label_minzoom`` and is never thinned.
     """
     entry = ",".join(f"{z}={z}" for z in range(LABEL_MINZOOM, MAXZOOM + 1))
     return [
@@ -240,37 +284,14 @@ def glacier_layers(glaciers: Path, labels: Path) -> list[LayerSpec]:
             glaciers,
             GLACIERS_MINZOOM,
             GLACIERS_COMPLETE_ZOOM - 1,
-            # The finest zoom of a band keeps the source geometry, so the
-            # squares stop one zoom before it. The largest glacier wins each
-            # grid cell. Without the density budget every cell keeps one.
-            (
-                "--representation",
-                (
-                    f"{GLACIERS_MINZOOM}-{GLACIERS_POINT_MAXZOOM}:point,"
-                    f"{GLACIERS_POINT_MAXZOOM + 1}-{GLACIERS_COMPLETE_ZOOM - 2}:square"
-                ),
-                "--no-density-drop",
-                "--sort-key",
-                "area_km2",
-            ),
+            POLYGON_OVERVIEW,
         ),
         LayerSpec(
             "glaciers",
             glaciers,
             GLACIERS_COMPLETE_ZOOM,
             MAXZOOM,
-            # Density drop, cell thinning and the visibility gate each drop
-            # glaciers. Simplification at the default 1 GSD collapses two
-            # slivers of 0.01 km² at z10. Half a GSD keeps them.
-            (
-                "--no-density-drop",
-                "--polygon-thinning",
-                "0",
-                "--polygon-visibility",
-                "0",
-                "--simplify-factor",
-                "0.5",
-            ),
+            POLYGON_COMPLETE,
             complete=True,
         ),
         LayerSpec(
@@ -281,6 +302,125 @@ def glacier_layers(glaciers: Path, labels: Path) -> list[LayerSpec]:
             ("--entry-zoom", f"label_minzoom:{entry}", "--no-density-drop"),
             complete=True,
             entry_zoom_column="label_minzoom",
+        ),
+    ]
+
+
+def write_region_labels(regions_parquet: Path, out: Path) -> Path:
+    """Write one label point per region, inside its largest polygon.
+
+    The regions file has no label point, so the point is derived: the
+    ``point_on_surface`` of the region's largest polygon. Region 10 and
+    region 19-15 are two polygons each, split at the antimeridian.
+
+    Parameters
+    ----------
+    regions_parquet
+        The regions GeoParquet file.
+    out
+        The label GeoParquet file to write.
+
+    Returns
+    -------
+    Path
+        ``out``.
+    """
+    regions = gpd.read_parquet(regions_parquet)
+    # Square degrees, enough to choose between the parts of one region.
+    areas = pd.Series(shapely.area(regions.geometry.to_numpy()), index=regions.index)
+    largest = regions.loc[areas.groupby([regions["level"], regions["long_code"]]).idxmax()]
+    labels = gpd.GeoDataFrame(
+        largest[["level", "o1region", "o2region", "full_name"]].reset_index(drop=True),
+        geometry=shapely.point_on_surface(largest.geometry.to_numpy()),
+        crs=regions.crs,
+    )
+    out.parent.mkdir(parents=True, exist_ok=True)
+    labels.to_parquet(out, index=False)
+    return out
+
+
+def version_layers(
+    products: dict[str, Path],
+    labels: Path,
+    region_labels: Path,
+) -> list[LayerSpec]:
+    """Return the bands of every layer of the archive, bottom to top.
+
+    Parameters
+    ----------
+    products
+        The GeoParquet file of each name in :data:`ARCHIVE_PRODUCTS`.
+    labels
+        The glacier label file from :func:`write_labels`.
+    region_labels
+        The region label file from :func:`write_region_labels`.
+
+    Returns
+    -------
+    list[LayerSpec]
+        The regions and their labels at every zoom. The complexes and the
+        glaciers as in :func:`glacier_layers`. The centerlines from
+        :data:`CENTERLINES_MINZOOM`, all of them from
+        :data:`GLACIERS_COMPLETE_ZOOM`. The intersects from
+        :data:`INTERSECTS_MINZOOM`, all of them.
+    """
+    lines = (*LINE_COMPLETE, "--simplify-factor", "0.5")
+    return [
+        LayerSpec(
+            "regions",
+            products["regions"],
+            0,
+            MAXZOOM,
+            ("--no-density-drop", "--polygon-thinning", "0", "--polygon-visibility", "0"),
+            complete=True,
+        ),
+        LayerSpec(
+            "region-labels",
+            region_labels,
+            0,
+            MAXZOOM,
+            ("--no-density-drop", "--point-thinning", "0"),
+            complete=True,
+        ),
+        LayerSpec(
+            "complexes",
+            products["complexes"],
+            GLACIERS_MINZOOM,
+            GLACIERS_COMPLETE_ZOOM - 1,
+            POLYGON_OVERVIEW,
+        ),
+        LayerSpec(
+            "complexes",
+            products["complexes"],
+            GLACIERS_COMPLETE_ZOOM,
+            MAXZOOM,
+            POLYGON_COMPLETE,
+            complete=True,
+        ),
+        *glacier_layers(products["glaciers"], labels),
+        LayerSpec(
+            "centerlines",
+            products["centerlines"],
+            CENTERLINES_MINZOOM,
+            GLACIERS_COMPLETE_ZOOM - 1,
+            lines,
+        ),
+        LayerSpec(
+            "centerlines",
+            products["centerlines"],
+            GLACIERS_COMPLETE_ZOOM,
+            MAXZOOM,
+            lines,
+            complete=True,
+        ),
+        # Simplification at half a GSD still collapses short divides.
+        LayerSpec(
+            "intersects",
+            products["intersects"],
+            INTERSECTS_MINZOOM,
+            MAXZOOM,
+            (*LINE_COMPLETE, "--simplify-factor", "0"),
+            complete=True,
         ),
     ]
 
@@ -491,10 +631,12 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
     Path
         The archive.
     """
-    glaciers = output_path(staging, version, "glaciers")
-    labels = write_labels(glaciers, staging / version_dir(version) / ".tiles" / "labels.parquet")
+    products = {name: output_path(staging, version, name) for name in ARCHIVE_PRODUCTS}
+    work = staging / version_dir(version) / ".tiles"
+    labels = write_labels(products["glaciers"], work / "labels.parquet")
+    region_labels = write_region_labels(products["regions"], work / "region-labels.parquet")
     return build_archive(
-        glacier_layers(glaciers, labels),
+        version_layers(products, labels, region_labels),
         archive_path(staging, version),
         name=ARCHIVE_NAME,
         attribution=ARCHIVE_ATTRIBUTION,

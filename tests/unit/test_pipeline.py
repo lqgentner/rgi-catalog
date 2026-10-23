@@ -59,3 +59,37 @@ def test_convert_glaciers_on_fixture(
 def test_convert_refuses_unknown_product(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="nonsense"):
         pipeline.convert("7.0", ["nonsense"], staging=tmp_path)
+
+
+def test_convert_every_product_on_fixture(
+    fake_rgi: FakeRGI,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    files = {
+        "G": fake_rgi.g_zip,
+        "C": fake_rgi.c_zip,
+        "L": fake_rgi.l_zip,
+        "I": fake_rgi.i_zip,
+        "regions": fake_rgi.regions_zip,
+        "rgi6_links": fake_rgi.rgi6_links,
+    }
+
+    def fake_source_files(version: str) -> dict[str, tuple[Path, str]]:
+        assert version == "7.0"
+        return {k: (v, f"sha-{k}") for k, v in files.items()}
+
+    monkeypatch.setattr(pipeline, "source_files", fake_source_files)
+    staging = tmp_path / "staging"
+    result = pipeline.convert("7.0", list(pipeline.BUILDERS), staging=staging)
+    assert result.row_counts == {
+        "glaciers": 3,
+        "complexes": 2,
+        "centerlines": 3,
+        "intersects": 1,
+        "regions": 6,
+    }
+    footer = pq.ParquetFile(result.paths["regions"]).metadata.metadata
+    assert json.loads(footer[b"rgi:sources"]) == {fake_rgi.regions_zip.name: "sha-regions"}
+    report = json.loads((staging / "v7.0" / ".reports" / "fixes.json").read_text())
+    assert {r["product"] for r in report} == set(pipeline.BUILDERS)

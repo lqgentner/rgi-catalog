@@ -72,8 +72,58 @@ glaciers:
   subm_rc_id:
     description: '"GLIMS ID for the regional center."'
     source: https://rgidata.org/user_guide/products/glacier_product.html
-  bbox:
+  bbox: &bbox
     description: >-
-      The bounding box of the outline (xmin, ymin, xmax, ymax), the GeoParquet
+      The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet
       covering column. Readers use it to skip row groups in a spatial filter.
     source: https://geoparquet.org/releases/v1.1.0/
+
+complexes:
+  glacier_ids:
+    description: >-
+      The rgi_id of every glacier in this complex, sorted, from the
+      CtoG_links.json file. Its keys are "the glacier complex identifiers" and
+      its values "the corresponding glacier product identifiers (one or more
+      depending on the size of the cluster)".
+    source: https://rgidata.org/user_guide/products/glacier_complex_product.html
+  bbox: *bbox
+
+centerlines:
+  bbox: *bbox
+
+intersects:
+  bbox: *bbox
+
+# The regions files ship no attributes metadata.
+regions:
+  level:
+    description: >-
+      1 for a first-order region, 2 for a second-order region. RGI ships the
+      two levels as two shapefiles. This file holds both, one row per
+      polygon.
+    source: https://rgidata.org/user_guide/02_regions_definition.html
+  o1region:
+    description: >-
+      The code of the first-order region. "The RGI_CODE column is now called
+      o1region (first order files) and o2region (second-order files)."
+    source: https://rgidata.org/user_guide/02_regions_definition.html
+  o2region:
+    description: >-
+      The code of the second-order region. Null for a first-order region.
+    source: https://rgidata.org/user_guide/02_regions_definition.html
+  full_name:
+    description: >-
+      The region name. "All abbreviations in the second-order regions file
+      have been replaced by their full name."
+    source: https://rgidata.org/user_guide/02_regions_definition.html
+  long_code:
+    description: >-
+      The code and the name in one text. "This field is used to name the
+      corresponding RGI shapefiles."
+    source: https://rgidata.org/user_guide/02_regions_definition.html
+  geometry:
+    description: >-
+      The region outline, a polygon in EPSG:4326. Regions 10 and 19-15 are
+      split at the antimeridian into an eastern and a western row.
+    source: https://rgidata.org/user_guide/02_regions_definition.html
+  bbox: *bbox

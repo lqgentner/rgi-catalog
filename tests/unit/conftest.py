@@ -12,7 +12,7 @@ import zipfile
 import geopandas as gpd
 import pandas as pd
 import pytest
-from shapely.geometry import Polygon
+from shapely.geometry import LineString, Polygon
 
 G_COLUMNS: dict[str, str] = {
     "rgi_id": "str",
@@ -53,6 +53,21 @@ C_COLUMNS: dict[str, str] = {
     "utm_zone": "int",
     "area_km2": "float",
 }
+L_COLUMNS: dict[str, str] = {
+    "rgi_id": "str",
+    "rgi_g_id": "str",
+    "segment_id": "int",
+    "is_main": "int",
+    "outflow_id": "int",
+    "strahler_n": "int",
+    "length_m": "int",
+}
+I_COLUMNS: dict[str, str] = {
+    "rgi_id": "str",
+    "rgi_g_id_1": "str",
+    "rgi_g_id_2": "str",
+    "length_m": "float",
+}
 SUBM_COLUMNS = [
     "subm_id",
     "n_outlines",
@@ -70,6 +85,21 @@ SUBM_COLUMNS = [
 def _square(lon: float, lat: float, size: float = 0.01) -> Polygon:
     return Polygon(
         [(lon, lat), (lon + size, lat), (lon + size, lat + size), (lon, lat + size)],
+    )
+
+
+def _spiked(lon: float, lat: float, size: float = 0.01) -> Polygon:
+    """Return a square with a zero-width spike, which is invalid (rgi_issue_tracker#48)."""
+    top = lat + size
+    return Polygon(
+        [
+            (lon, lat),
+            (lon + size, lat),
+            (lon + size, top),
+            (lon + 2 * size, top),
+            (lon + size, top),
+            (lon, top),
+        ],
     )
 
 
@@ -176,6 +206,64 @@ CTOG: dict[str, dict[str, list[str]]] = {
     "08_scandinavia": {"RGI2000-v7.0-C-08-00001": ["RGI2000-v7.0-G-08-00001"]},
     "11_central_europe": {"RGI2000-v7.0-C-11-00001": ["RGI2000-v7.0-G-11-00001"]},
 }
+# Glacier 11-00001 has a main segment and a tributary. Glacier 08-00001 has one
+# main segment. The intersect between the two region-11 glaciers is LineString
+# Z (Z = 0), as in the release.
+L_ROWS: dict[str, list[dict[str, Any]]] = {
+    "08_scandinavia": [
+        {
+            "rgi_id": "RGI2000-v7.0-L-08-00001",
+            "rgi_g_id": "RGI2000-v7.0-G-08-00001",
+            "segment_id": 0,
+            "is_main": 1,
+            "outflow_id": -1,
+            "strahler_n": 1,
+            "length_m": 812,
+        },
+    ],
+    "11_central_europe": [
+        {
+            "rgi_id": "RGI2000-v7.0-L-11-00001",
+            "rgi_g_id": "RGI2000-v7.0-G-11-00001",
+            "segment_id": 0,
+            "is_main": 1,
+            "outflow_id": -1,
+            "strahler_n": 2,
+            "length_m": 950,
+        },
+        {
+            "rgi_id": "RGI2000-v7.0-L-11-00002",
+            "rgi_g_id": "RGI2000-v7.0-G-11-00001",
+            "segment_id": 1,
+            "is_main": 0,
+            "outflow_id": 0,
+            "strahler_n": 1,
+            "length_m": 300,
+        },
+    ],
+}
+I_ROWS: dict[str, list[dict[str, Any]]] = {
+    "11_central_europe": [
+        {
+            "rgi_id": "RGI2000-v7.0-I-11-00001",
+            "rgi_g_id_1": "RGI2000-v7.0-G-11-00001",
+            "rgi_g_id_2": "RGI2000-v7.0-G-11-00002",
+            "length_m": 123.456789,
+        },
+    ],
+}
+# Region 10 crosses the antimeridian and is two rows, as in the release. The
+# second-order region 08-01 has a garbled name, and 11-01 has a spike.
+O1_REGIONS = [
+    ("08", "Scandinavia", "08_scandinavia", _square(5.0, 58.0, 10.0)),
+    ("10", "North Asia", "10_north_asia", _square(170.0, 60.0, 10.0)),
+    ("10", "North Asia", "10_north_asia", _square(-180.0, 60.0, 10.0)),
+    ("11", "Central Europe", "11_central_europe", _square(5.0, 43.0, 10.0)),
+]
+O2_REGIONS = [
+    ("08", "08-01", "SÃ¸r-Norge", "08-01_sor_norge", _square(5.0, 58.0, 5.0)),
+    ("11", "11-01", "Alps", "11-01_alps", _spiked(5.0, 43.0, 5.0)),
+]
 RGI6_LINKS = pd.DataFrame(
     {
         "rgi7_id": [
@@ -234,10 +322,71 @@ class FakeRGI:
     g_zip: Path
     c_zip: Path
     rgi6_links: Path
+    l_zip: Path
+    i_zip: Path
+    regions_zip: Path
+
+
+def _line(lon: float, lat: float, *, z: bool = False) -> LineString:
+    if z:
+        return LineString([(lon, lat, 0.0), (lon + 0.005, lat + 0.005, 0.0)])
+    return LineString([(lon, lat), (lon + 0.005, lat + 0.005)])
+
+
+def _line_product(
+    root: Path,
+    letter: str,
+    rows: dict[str, list[dict[str, Any]]],
+    columns: dict[str, str],
+) -> Path:
+    regions: dict[str, bytes] = {}
+    for region, region_rows in rows.items():
+        stem = f"RGI2000-v7.0-{letter}-{region}"
+        attrs = pd.DataFrame(region_rows)
+        geoms = [_line(7.0 + i * 0.01, 46.0, z=letter == "I") for i in range(len(region_rows))]
+        gdf = gpd.GeoDataFrame(attrs.copy(), geometry=geoms, crs="EPSG:4326")
+        work = root / "work" / stem
+        work.mkdir(parents=True)
+        members = _shapefile_members(gdf, stem, work)
+        members[f"{stem}-attributes.csv"] = attrs.to_csv(index=False).encode()
+        members[f"{stem}-attributes_metadata.json"] = _metadata(columns).encode()
+        members["README.md"] = b"# RGI 7.0\n"
+        regions[f"{stem}.zip"] = _zip_bytes(members)
+    out = root / f"RGI2000-v7.0-{letter}-global.zip"
+    out.write_bytes(_zip_bytes({"README.md": b"# RGI 7.0\n", **regions}))
+    return out
+
+
+def _regions_zip(root: Path) -> Path:
+    work = root / "work" / "regions"
+    work.mkdir(parents=True)
+    members: dict[str, bytes] = {"README.md": b"# RGI 7.0 regions\n"}
+    o1 = gpd.GeoDataFrame(
+        pd.DataFrame([r[:3] for r in O1_REGIONS], columns=["o1region", "full_name", "long_code"]),
+        geometry=[r[3] for r in O1_REGIONS],
+        crs="EPSG:4326",
+    )
+    o2 = gpd.GeoDataFrame(
+        pd.DataFrame(
+            [r[:4] for r in O2_REGIONS],
+            columns=["o1region", "o2region", "full_name", "long_code"],
+        ),
+        geometry=[r[4] for r in O2_REGIONS],
+        crs="EPSG:4326",
+    )
+    for level, gdf in (("o1regions", o1), ("o2regions", o2)):
+        stem = f"RGI2000-v7.0-{level}"
+        members.update(_shapefile_members(gdf, stem, work))
+        # The summaries carry an unnamed index column, as in the release.
+        summary = pd.DataFrame(gdf.drop(columns="geometry"))
+        members[f"{stem}-summary.csv"] = summary.to_csv(index_label="").encode()
+    out = root / "RGI2000-v7.0-regions.zip"
+    out.write_bytes(_zip_bytes(members))
+    return out
 
 
 def build_fake_rgi(root: Path) -> FakeRGI:
-    """Write the miniature global zips for G and C, and the RGI 6 links CSV.
+    """Write the miniature global zips for G, C, L and I, the regions zip, and the RGI 6 links CSV.
 
     Parameters
     ----------
@@ -279,7 +428,9 @@ def build_fake_rgi(root: Path) -> FakeRGI:
             if r["rgi_id"] != "RGI2000-v7.0-G-11-00002"
         ]
         c_attrs = pd.DataFrame(c_rows)
-        c_geoms = [_square(float(r["cenlon"]) - 0.005, float(r["cenlat"]) - 0.005) for r in c_rows]
+        # The region-08 complex has a spike, which makes it invalid.
+        c_make = _spiked if region.startswith("08") else _square
+        c_geoms = [c_make(float(r["cenlon"]) - 0.005, float(r["cenlat"]) - 0.005) for r in c_rows]
         c_gdf = gpd.GeoDataFrame(c_attrs.copy(), geometry=c_geoms, crs="EPSG:4326")
         c_work = root / "work" / c_stem
         c_work.mkdir(parents=True)
@@ -298,7 +449,14 @@ def build_fake_rgi(root: Path) -> FakeRGI:
     )
     links = root / "RGI2000-v7.0-G-global-rgi6_links.csv"
     links.write_text(RGI6_LINKS.to_csv(index=False))
-    return FakeRGI(g_zip=g_zip, c_zip=c_zip, rgi6_links=links)
+    return FakeRGI(
+        g_zip=g_zip,
+        c_zip=c_zip,
+        rgi6_links=links,
+        l_zip=_line_product(root, "L", L_ROWS, L_COLUMNS),
+        i_zip=_line_product(root, "I", I_ROWS, I_COLUMNS),
+        regions_zip=_regions_zip(root),
+    )
 
 
 @pytest.fixture

@@ -151,6 +151,38 @@ The final glaciers file is 258.0 MB in 24 row groups of 10,269 to 12,122
 rows. The build takes 5 min 28 s and peaks at 5.9 GB of memory. Two builds
 from the same inputs gave identical bytes.
 
+## The other products (measured 2026-10-23)
+
+`convert` builds all five files in 12 min 5 s and peaks at 5.8 GB of memory.
+
+| Collection | Rows | File |
+| --- | ---: | ---: |
+| glaciers | 274,531 | 258.0 MB |
+| complexes | 192,869 | 213.3 MB |
+| centerlines | 367,724 | 211.0 MB |
+| intersects | 130,429 | 17.0 MB |
+| regions | 112 | 1.0 MB |
+
+- **Typing.** The I table's `length_m` is a float and the L table's is an
+  integer, so the centerline dtypes are a table of their own
+  (`dtypes.CENTERLINE_DTYPES`). The I table keeps float64.
+- **Fixes.** The text repair, the Z drop and the validity repair run on every
+  product (`assemble._apply_fixes`). 7 complex outlines are invalid and are
+  repaired. No glacier outline is invalid under the GEOS in the environment.
+- **Links.** Each of the 274,531 glaciers is in exactly one complex. Each
+  has exactly one main centerline, and its `length_m` equals the glacier's
+  `lmax_m`. Every intersect and centerline names a glacier that exists.
+- **Regions.** The summary CSVs hold only the codes and names of the
+  shapefiles, and no statistics. The build uses them as a witness and fails
+  when they differ. The file stacks both levels with a `level` column.
+- **Region labels.** The regions have no label point. The tiles use the
+  `point_on_surface` of each region's largest polygon. The label points are
+  not a column of the GeoParquet file.
+- **Regions license.** The regions are GTN-G's. Their DataCite record states
+  "Open access for scientific and educational purposes under requirement of
+  correct citation", not CC-BY-4.0. The collection declares `license: other`
+  with a link to the GTN-G page. The author decides this before publishing.
+
 ## Web-map archive
 
 `src/rgi_catalog/tiles.py` builds `v7.0/rgi7.0.pmtiles` from the staged
@@ -186,6 +218,19 @@ for byte and replaces only the metadata block.
 | `glaciers` | z0–9 | `--representation 0-6:point,7-8:square --no-density-drop --sort-key area_km2` |
 | `glaciers` | z10–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0 --simplify-factor 0.5` |
 | `glacier-labels` | z7–12 | `--entry-zoom label_minzoom:7=7,…,12=12 --no-density-drop` |
+| `regions` | z0–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0` |
+| `region-labels` | z0–12 | `--no-density-drop --point-thinning 0` |
+| `complexes` | z0–9, z10–12 | as `glaciers` |
+| `centerlines` | z8–9, z10–12 | `--no-density-drop --line-thinning 0 --line-visibility 0 --no-coalesce-lines --simplify-factor 0.5` |
+| `intersects` | z10–12 | as `centerlines`, with `--simplify-factor 0` |
+
+Every band from z10 is complete, and so are the region bands.
+
+- **Line coalescing** joins touching segments into one feature with the
+  attributes of one of them. It is on by default. With it on, z10 kept
+  127,439 of 130,429 intersects and z8 lost 4,116 centerlines.
+- **Simplification** at half a GSD still collapsed short divides: z10 kept
+  127,730 intersects. With `--simplify-factor 0` it keeps all of them.
 
 Every band uses `--no-simple-clip-fastpath` and `--include-property` for
 each scalar column (`tile_properties`). List and struct columns
@@ -245,23 +290,35 @@ a quarter pixel. Only their outlines showed. tippecanoe's tiny-polygon
 reduction gives a similar result. The newer tylertoo documentation describes
 area-accumulated squares as the default, but 0.8.0 does not have them.
 
-### Result (measured 2026-10-22)
+### Result (measured 2026-10-23)
 
-`tiles --version 7.0` takes 80 s and peaks at 2.7 GB of memory. The archive
-was 759.0 MB with the default low zooms and is 805.4 MB with points and
-squares (measured 2026-10-23). Two builds gave identical bytes.
+`tiles --version 7.0` takes 6 min 13 s and peaks at 4.4 GB of memory. The
+archive is 1,242.8 MB with every layer. The glaciers-only archive was
+805.4 MB, and 759.0 MB before the points and squares.
 
-| z | Tiles | MB | p50 bytes | Max bytes |
+The region polygons cover the oceans and the Antarctic, so z12 addresses
+11.9 million tiles. Most are the same small tile inside a region. The
+archive stores 425,392 distinct tiles, and its directories are 4.2 MB. "MB
+addressed" counts each addressed tile, so it repeats the shared ones.
+
+The z0 tile is 314 KB. Its glacier and complex points carry every scalar
+column of the largest feature of each grid cell.
+
+| z | Tiles | MB addressed | p50 bytes | Max bytes |
 | ---: | ---: | ---: | ---: | ---: |
-| 0 | 1 | 0.03 | 25,678 | 25,678 |
-| 2 | 15 | 0.4 | 14,943 | 161,175 |
-| 4 | 91 | 3.2 | 8,178 | 257,923 |
-| 6 | 471 | 13.1 | 7,843 | 299,884 |
-| 8 | 2,796 | 41.8 | 4,578 | 289,538 |
-| 9 | 7,482 | 101.8 | 4,003 | 266,007 |
-| 10 | 20,895 | 104.8 | 1,994 | 95,433 |
-| 11 | 61,700 | 161.0 | 1,398 | 51,611 |
-| 12 | 192,849 | 328.2 | 1,123 | 33,401 |
+| 0 | 1 | 0.3 | 313,720 | 313,720 |
+| 1 | 4 | 0.7 | 174,944 | 329,677 |
+| 2 | 16 | 1.7 | 53,134 | 359,727 |
+| 3 | 64 | 4.1 | 10,804 | 381,292 |
+| 4 | 225 | 7.8 | 1,198 | 485,586 |
+| 5 | 832 | 15.0 | 233 | 480,988 |
+| 6 | 3,100 | 26.2 | 197 | 479,794 |
+| 7 | 12,106 | 49.7 | 193 | 583,718 |
+| 8 | 47,447 | 96.9 | 192 | 588,053 |
+| 9 | 187,891 | 205.3 | 192 | 471,843 |
+| 10 | 748,229 | 298.1 | 192 | 156,538 |
+| 11 | 2,983,757 | 782.0 | 192 | 87,217 |
+| 12 | 11,916,787 | 2667.4 | 192 | 61,220 |
 
 Decoded counts: 274,531 glaciers at z10, z11 and z12. Labels: 244 at z7,
 714 at z8, 1,462 at z9, 2,715 at z10, 4,514 at z11 and all 9,467 at z12.

@@ -1,0 +1,80 @@
+# RGI 7.0 glacier complexes
+
+[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/complexes/collection.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
+
+One row per glacier complex: the glaciers that touch, merged into one outline, with RGI's attributes and the IDs of the member glaciers, in one GeoParquet file. The web map archive holds the outlines.
+
+This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
+
+> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
+
+## Files
+
+- [`rgi7.0-complexes.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet): 192,869 rows, 213.3 MB. GeoParquet 2.0.0 in 18 row groups of up to 12,157 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `complexes`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `glacier_ids`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
+
+## Map styles
+
+- [Glacier complexes](./styles/complexes.json) (default): Glacier complexes (purple): connected glaciers merged into one outline.
+- [Glaciers with names](./styles/full-map.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
+
+## Access
+
+No account and no download are needed. This DuckDB query reads the glacier complex of the Rhone glacier:
+
+```sql
+INSTALL httpfs; LOAD httpfs;
+SELECT rgi_id, area_km2, len(glacier_ids) AS n_glaciers
+FROM 'https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet'
+WHERE rgi_id = 'RGI2000-v7.0-C-11-01208';
+```
+
+`complexes/AGENTS.md` has more recipes. Each file is also readable over
+anonymous S3 at `s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet`.
+
+## Columns
+
+| Column | Type | Description |
+| --- | --- | --- |
+| `rgi_id` | `string` | Unique identifier assigned to a single glacier complex by the RGI |
+| `o1region` | `string` | The code of the first-order region to which the glacier belongs. |
+| `o2region` | `string` | The code of the second-order region to which the glacier belongs. |
+| `cenlon` | `double` | Longitude of the representative point of the glacier complex, guaranteed to be located within the glacier outlines and approximatively central (not the centroid). (degrees) |
+| `cenlat` | `double` | Latitude of the representative point of the glacier complex, guaranteed to be located within the glacier outlines and approximatively central (not the centroid). (degrees) |
+| `utm_zone` | `uint8` | Number of the UTM zone for this glacier complex, based on its representative point. Note that this attribute is for information only, the geometries are all in WGS84. |
+| `area_km2` | `double` | Area of the glacier complex. (km2) |
+| `glacier_ids` | `list<element: string>` | The rgi_id of every glacier in this complex, sorted, from the CtoG_links.json file. Its keys are "the glacier complex identifiers" and its values "the corresponding glacier product identifiers (one or more depending on the size of the cluster)". |
+| `geometry` | `binary` | Glacier complex geometry (Polygon) (deg) |
+| `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
+
+## Citation
+
+Cite the RGI Consortium:
+
+> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
+
+The user guide describes every file and attribute:
+
+> Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). *The Randolph Glacier Inventory version 7.0 user guide*. Zenodo. https://doi.org/10.5281/zenodo.8362857
+
+This mirror asks for no citation of its own. You may add "accessed via
+https://source.coop/lqgentner/rgi".
+
+## License
+
+[CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). The RGI user guide states: "The
+RGI may be used freely under the Creative Commons Attribution 4.0
+International License with due acknowledgement (by proper referencing, see
+below). Where appropriate (for example for regional studies), users are
+invited to cite the analysts who provided the RGI outlines."
+
+## Provenance
+
+- The authoritative distribution is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7),
+  https://doi.org/10.5067/F6JMOVY5NAVZ. It needs an Earthdata login.
+- The build downloads the same release without a login from the RGI
+  server of Fabien Maussion at the University of Bremen. Its four global zips are
+  byte-identical to NSIDC's.
+- The values are those of the RGI release. The build restructures the files
+  and fixes documented upstream errors. Each fix, with counts and IDs, is in
+  [docs/PROVENANCE.md](https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md).

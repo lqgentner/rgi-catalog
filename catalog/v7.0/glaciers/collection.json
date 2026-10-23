@@ -26,7 +26,7 @@
     "hypsometry"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-23T09:00:40Z",
+  "updated": "2026-10-23T09:36:57Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -82,8 +82,8 @@
       "roles": [
         "data"
       ],
-      "file:size": 258040260,
-      "file:checksum": "1220594b4f1c80ab5f5ce4fe1452b341ded24aa1d393feacc02f69574b4107dd6b4c",
+      "file:size": 258040219,
+      "file:checksum": "12202ab137a904684ab063d282450dc4cc62e9cab6098b15c44558f1d0a3e818bbe3",
       "alternate": {
         "s3": {
           "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet",
@@ -523,7 +523,7 @@
         {
           "name": "bbox",
           "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>",
-          "description": "The bounding box of the outline (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter."
+          "description": "The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter."
         }
       ]
     },
@@ -531,13 +531,13 @@
       "href": "./styles/full-map.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Glaciers with names",
-      "description": "Glacier outlines (blue) with glacier names. Larger glaciers are named at lower zooms.",
+      "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 2205,
-      "file:checksum": "12205f957849148074a8bcdbcf36144164188328390c12a26e9a0c48520082a50925"
+      "file:size": 5049,
+      "file:checksum": "122056ecdf6a37ee704581ba32808497802f84891206c47650efa54093b6769f44ea"
     },
     "style-median-elevation": {
       "href": "./styles/median-elevation.json",
@@ -590,8 +590,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 805443956,
-      "file:checksum": "1220a986fafa209b6c1df275149ff399e120cef0702ceaebef33bec0773417bbd442"
+      "file:size": 1242784970,
+      "file:checksum": "1220162f270b658ca5478b3350376c2e9b4a8902c1f5d0d80f1269673335a05ddf1e"
     }
   },
   "links": [
@@ -688,8 +688,8 @@
         "glaciers",
         "glacier-labels"
       ],
-      "file:size": 805443956,
-      "file:checksum": "1220a986fafa209b6c1df275149ff399e120cef0702ceaebef33bec0773417bbd442"
+      "file:size": 1242784970,
+      "file:checksum": "1220162f270b658ca5478b3350376c2e9b4a8902c1f5d0d80f1269673335a05ddf1e"
     }
   ]
 }

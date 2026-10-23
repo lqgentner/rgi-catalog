@@ -90,3 +90,93 @@ versions:
           file. A web map archive holds the outlines and the glacier names.
         keywords: [glacier outlines, hypsometry]
         pmtiles_layers: [glaciers, glacier-labels]
+        # The README's access query.
+        example:
+          what: one glacier
+          columns: rgi_id, display_name, area_km2, zmed_m
+          where: rgi_id = 'RGI2000-v7.0-G-11-01706'
+      complexes:
+        product: C
+        title: RGI 7.0 glacier complexes
+        row_noun: glacier complex
+        description: >-
+          One row per glacier complex: the glaciers that touch, merged into one
+          outline, with RGI's attributes and the IDs of the member glaciers, in
+          one GeoParquet file. The web map archive holds the outlines.
+        keywords: [glacier complexes]
+        pmtiles_layers: [complexes]
+        example:
+          what: the glacier complex of the Rhone glacier
+          columns: rgi_id, area_km2, len(glacier_ids) AS n_glaciers
+          where: rgi_id = 'RGI2000-v7.0-C-11-01208'
+      centerlines:
+        product: L
+        title: RGI 7.0 glacier centerlines
+        row_noun: centerline
+        description: >-
+          One row per centerline: the main centerline and the tributary
+          centerlines of every glacier, with RGI's attributes, in one
+          GeoParquet file. The web map archive holds the lines from z8.
+        keywords: [glacier centerlines, glacier length]
+        pmtiles_layers: [centerlines]
+        # The centerlines page of the user guide asks for these as well.
+        publications:
+          - doi: 10.5194/tc-8-503-2014
+            citation: >-
+              Kienholz, C., Rich, J. L., Arendt, A. A., & Hock, R. (2014). A new
+              method for deriving glacier centerlines applied to glaciers in
+              Alaska and northwest Canada. *The Cryosphere, 8*(2), 503–519.
+              https://doi.org/10.5194/tc-8-503-2014
+          - doi: 10.5194/gmd-12-909-2019
+            citation: >-
+              Maussion, F., Butenko, A., Champollion, N., Dusch, M., Eis, J.,
+              Fourteau, K., Gregor, P., Jarosch, A. H., Landmann, J., Oesterle,
+              F., Recinos, B., Rothenpieler, T., Vlug, A., Wild, C. T., &
+              Marzeion, B. (2019). The Open Global Glacier Model (OGGM) v1.1.
+              *Geoscientific Model Development, 12*(3), 909–931.
+              https://doi.org/10.5194/gmd-12-909-2019
+        example:
+          what: the main centerline of the Rhone glacier
+          columns: rgi_id, rgi_g_id, segment_id, length_m
+          where: rgi_g_id = 'RGI2000-v7.0-G-11-01706' AND is_main
+      intersects:
+        product: I
+        title: RGI 7.0 glacier intersects
+        row_noun: intersect
+        description: >-
+          One row per intersect: a line that divides two adjacent glaciers,
+          with the IDs of both glaciers, in one GeoParquet file. The web map
+          archive holds the lines from z10.
+        keywords: [glacier divides]
+        pmtiles_layers: [intersects]
+        example:
+          what: the intersects of the Rhone glacier
+          columns: rgi_id, rgi_g_id_1, rgi_g_id_2, length_m
+          where: "'RGI2000-v7.0-G-11-01706' IN (rgi_g_id_1, rgi_g_id_2)"
+      regions:
+        product: regions
+        title: RGI 7.0 glacier regions
+        row_noun: region polygon
+        key: long_code
+        description: >-
+          The 20 first-order and 90 second-order glacier regions of RGI 7.0, in
+          one GeoParquet file. Regions 10 and 19-15 cross the antimeridian and
+          are two rows each. The web map archive holds the boundaries and the
+          names.
+        keywords: [glacier regions, GTN-G]
+        pmtiles_layers: [regions, region-labels]
+        # The regions are GTN-G's, with their own citation and terms.
+        doi: 10.5904/gtng-glacreg-2023-07
+        citation: >-
+          World Glacier Monitoring Service. (2023). *GTN-G glacier regions
+          (GlacReg)* [Data set]. Global Terrestrial Network for Glaciers.
+          https://doi.org/10.5904/gtng-glacreg-2023-07
+        license: other
+        license_url: https://www.gtn-g.ch/glacreg/
+        license_title: >-
+          GTN-G Glacier Regions: "Open access for scientific and educational
+          purposes under requirement of correct citation"
+        example:
+          what: the first-order regions
+          columns: o1region, full_name, long_code
+          where: level = 1

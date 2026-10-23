@@ -1,0 +1,156 @@
+{
+  "version": 8,
+  "name": "Glacier regions",
+  "metadata": {
+    "description": "First-order (orange) and second-order (purple) glacier regions, with their names."
+  },
+  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "data": {
+      "type": "vector",
+      "url": "pmtiles://../../rgi7.0.pmtiles"
+    }
+  },
+  "layers": [
+    {
+      "id": "regions-fill",
+      "type": "fill",
+      "source-layer": "regions",
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "match",
+            [
+              "get",
+              "level"
+            ],
+            1,
+            "First-order region",
+            2,
+            "Second-order region",
+            ""
+          ],
+          "First-order region",
+          "#fdae6b",
+          "Second-order region",
+          "#9e9ac8",
+          "#bdbdbd"
+        ],
+        "fill-opacity": 0.15
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "regions",
+      "id": "regions-outline-1",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "paint": {
+        "line-color": "#636363",
+        "line-width": 1.2,
+        "line-dasharray": [
+          4,
+          2
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "regions",
+      "id": "regions-outline-2",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        2
+      ],
+      "minzoom": 3,
+      "paint": {
+        "line-color": "#636363",
+        "line-width": 0.6,
+        "line-dasharray": [
+          2,
+          2
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-labels",
+      "id": "region-labels-1",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "minzoom": 1,
+      "maxzoom": 6,
+      "layout": {
+        "text-field": [
+          "get",
+          "full_name"
+        ],
+        "text-font": [
+          "Open Sans Bold"
+        ],
+        "text-size": 12,
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.08
+      },
+      "paint": {
+        "text-color": "#525252",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-labels",
+      "id": "region-labels-2",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        2
+      ],
+      "minzoom": 4,
+      "maxzoom": 9,
+      "layout": {
+        "text-field": [
+          "get",
+          "full_name"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 11,
+        "text-transform": "none",
+        "text-letter-spacing": 0
+      },
+      "paint": {
+        "text-color": "#525252",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    }
+  ]
+}

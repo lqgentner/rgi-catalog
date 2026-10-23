@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
 # The temporal extent of a collection comes from this column, if it has it.
 DATE_COLUMN = "src_date"
+# The products that ship an attributes_metadata.json file.
+DESCRIBED_PRODUCTS = ("G", "C", "I", "L")
 
 
 def checksum(path: Path) -> str:
@@ -114,8 +116,7 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
         path = output_path(staging, version, name)
         files[path.relative_to(vdir).as_posix()] = _file_entry(path)
         collections[name] = _collection(path)
-        products.add(collection["product"])
-        products.update(k for k in PRODUCT_SOURCES[name] if k in {"G", "C", "I", "L"})
+        products.update((collection["product"], *PRODUCT_SOURCES[name]))
     archive = archive_path(staging, version)
     files[archive.relative_to(vdir).as_posix()] = _file_entry(archive)
     return {
@@ -128,7 +129,7 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
         "archive": {"href": archive.relative_to(vdir).as_posix(), **_archive(archive)},
         "attributes_metadata": {
             product: read_attribute_metadata(fetch(pins[product]), cast("Product", product))
-            for product in sorted(products)
+            for product in sorted(products & set(DESCRIBED_PRODUCTS))
         },
     }
 

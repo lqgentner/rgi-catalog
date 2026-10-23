@@ -48,6 +48,17 @@ Then add the rule id to ACCEPTED in tests/test_conformance.py. Both, or
 neither.
 -->
 
+## Known warnings
+
+Warnings do not fail the gate. These are the ones that `rashid check --data`
+reports on the preview tree, and why they stay.
+
+- **PTL-DAT-005 on each collection's `pmtiles` asset.** Every collection of
+  a version draws from one archive, `v7.0/rgi7.0.pmtiles`. Its bounds cover
+  every layer, and the regions reach ±180° and the Antarctic. A collection's
+  own extent is smaller, so the two bounding boxes differ. One archive per
+  collection would remove the warning and repeat the shared layers in each.
+
 ## Validator workarounds
 
 ### stac-check reports a dialect crash on every collection

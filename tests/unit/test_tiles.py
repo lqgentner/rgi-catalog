@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import geopandas as gpd
 import pandas as pd
@@ -12,7 +13,7 @@ import pyarrow.parquet as pq
 import pytest
 from shapely.geometry import Polygon
 
-from rgi_catalog import tiles
+from rgi_catalog import assemble, tiles
 from rgi_catalog.geoparquet import write_geoparquet
 from rgi_catalog.tiles import (
     LayerSpec,
@@ -23,6 +24,9 @@ from rgi_catalog.tiles import (
     tile_properties,
     write_labels,
 )
+
+if TYPE_CHECKING:
+    from tests.unit.conftest import FakeRGI
 
 LINK = pa.struct([("rgi6_id", pa.string()), ("overlap_area_km2", pa.float64())])
 KV = {
@@ -268,3 +272,48 @@ def test_set_metadata_keeps_tiles(archive: Path, tmp_path: Path) -> None:
         old_header.pop("metadata_length")
         new_header.pop("metadata_length")
         assert new_header == old_header
+
+
+def test_write_region_labels_one_per_region(fake_rgi: FakeRGI, tmp_path: Path) -> None:
+    regions, _ = assemble.regions(fake_rgi.regions_zip)
+    source = tmp_path / "regions.parquet"
+    regions.to_parquet(source)
+    labels = gpd.read_parquet(tiles.write_region_labels(source, tmp_path / "labels.parquet"))
+    assert list(labels.columns) == ["level", "o1region", "o2region", "full_name", "geometry"]
+    assert sorted(zip(labels["level"], labels["full_name"], strict=True)) == [
+        (1, "Central Europe"),
+        (1, "North Asia"),
+        (1, "Scandinavia"),
+        (2, "Alps"),
+        (2, "Sør-Norge"),
+    ]
+    for _, label in labels.iterrows():
+        same = regions[(regions["level"] == label["level"])]
+        same = same[same["full_name"] == label["full_name"]]
+        assert same.geometry.contains(label.geometry).any()
+
+
+def test_version_layers_cover_every_product(tmp_path: Path) -> None:
+    paths = {name: tmp_path / f"{name}.parquet" for name in tiles.ARCHIVE_PRODUCTS}
+    layers = tiles.version_layers(paths, tmp_path / "labels.parquet", tmp_path / "rl.parquet")
+    assert {layer.name for layer in layers} == {
+        "regions",
+        "region-labels",
+        "complexes",
+        "glaciers",
+        "glacier-labels",
+        "centerlines",
+        "intersects",
+    }
+    complete = {(layer.name, layer.minzoom, layer.maxzoom) for layer in layers if layer.complete}
+    assert complete >= {
+        ("regions", 0, tiles.MAXZOOM),
+        ("region-labels", 0, tiles.MAXZOOM),
+        ("complexes", tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM),
+        ("glaciers", tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM),
+        ("centerlines", tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM),
+        ("intersects", tiles.INTERSECTS_MINZOOM, tiles.MAXZOOM),
+    }
+    for layer in layers:
+        if layer.name in {"centerlines", "intersects"} and layer.complete:
+            assert "--no-coalesce-lines" in layer.extra_args

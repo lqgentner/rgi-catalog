@@ -1,0 +1,253 @@
+{
+  "type": "Collection",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json",
+    "https://stac-extensions.github.io/table/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    "https://stac-extensions.github.io/web-map-links/v1.3.0/schema.json",
+    "https://stac-extensions.github.io/alternate-assets/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/classification/v2.0.0/schema.json"
+  ],
+  "id": "rgi-v7-0-regions",
+  "title": "RGI 7.0 glacier regions",
+  "description": "The 20 first-order and 90 second-order glacier regions of RGI 7.0, in one GeoParquet file. Regions 10 and 19-15 cross the antimeridian and are two rows each. The web map archive holds the boundaries and the names.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "license": "other",
+  "keywords": [
+    "glaciers",
+    "glacier outlines",
+    "glacier inventory",
+    "cryosphere",
+    "RGI",
+    "GLIMS",
+    "glacier regions",
+    "GTN-G"
+  ],
+  "version": "7.0-r1",
+  "updated": "2026-10-23T09:36:57Z",
+  "sci:doi": "10.5904/gtng-glacreg-2023-07",
+  "sci:citation": "World Glacier Monitoring Service. (2023). GTN-G glacier regions (GlacReg) [Data set]. Global Terrestrial Network for Glaciers. https://doi.org/10.5904/gtng-glacreg-2023-07",
+  "sci:publications": [
+    {
+      "doi": "10.5281/zenodo.8362857",
+      "citation": "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 user guide. Zenodo. https://doi.org/10.5281/zenodo.8362857"
+    }
+  ],
+  "providers": [
+    {
+      "name": "RGI Consortium",
+      "description": "Produces the Randolph Glacier Inventory, a globally complete inventory of glacier outlines.",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://rgidata.org"
+    },
+    {
+      "name": "Luis Q. Gentner",
+      "description": "Hosts this unofficial mirror. Converts the RGI files to cloud-native formats and maintains this catalog.",
+      "roles": [
+        "host"
+      ],
+      "url": "https://orcid.org/0009-0006-4453-0881"
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -180.0,
+          -90.0,
+          180.0,
+          85.0
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "1943-09-09T00:00:00Z",
+          "2021-02-26T00:00:00Z"
+        ]
+      ]
+    }
+  },
+  "assets": {
+    "data": {
+      "href": "./rgi7.0-regions.parquet",
+      "type": "application/vnd.apache.parquet",
+      "title": "RGI 7.0 glacier regions, GeoParquet",
+      "roles": [
+        "data"
+      ],
+      "file:size": 952683,
+      "file:checksum": "12205949100d20e060914ef93c5871211f5a1098216a0c2d4ac4cad0cbc0c0817582",
+      "alternate": {
+        "s3": {
+          "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet",
+          "title": "Anonymous S3 access"
+        }
+      },
+      "table:primary_geometry": "geometry",
+      "table:row_count": 112,
+      "table:columns": [
+        {
+          "name": "level",
+          "type": "uint8",
+          "description": "1 for a first-order region, 2 for a second-order region. RGI ships the two levels as two shapefiles. This file holds both, one row per polygon."
+        },
+        {
+          "name": "o1region",
+          "type": "string",
+          "description": "The code of the first-order region. \"The RGI_CODE column is now called o1region (first order files) and o2region (second-order files).\""
+        },
+        {
+          "name": "o2region",
+          "type": "string",
+          "description": "The code of the second-order region. Null for a first-order region."
+        },
+        {
+          "name": "full_name",
+          "type": "string",
+          "description": "The region name. \"All abbreviations in the second-order regions file have been replaced by their full name.\""
+        },
+        {
+          "name": "long_code",
+          "type": "string",
+          "description": "The code and the name in one text. \"This field is used to name the corresponding RGI shapefiles.\""
+        },
+        {
+          "name": "geometry",
+          "type": "binary",
+          "description": "The region outline, a polygon in EPSG:4326. Regions 10 and 19-15 are split at the antimeridian into an eastern and a western row."
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>",
+          "description": "The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter."
+        }
+      ]
+    },
+    "style-regions": {
+      "href": "./styles/regions.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Glacier regions",
+      "description": "First-order (orange) and second-order (purple) glacier regions, with their names.",
+      "roles": [
+        "style",
+        "default"
+      ],
+      "file:size": 3077,
+      "file:checksum": "1220ff1b5322b40769def7974c0c3f90277a78cd585e712868d914c560996fe6bce7"
+    },
+    "style-full-map": {
+      "href": "./styles/full-map.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Glaciers with names",
+      "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.",
+      "roles": [
+        "style"
+      ],
+      "file:size": 5049,
+      "file:checksum": "122056ecdf6a37ee704581ba32808497802f84891206c47650efa54093b6769f44ea"
+    },
+    "pmtiles": {
+      "href": "../rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "roles": [
+        "visual"
+      ],
+      "file:size": 1242784970,
+      "file:checksum": "1220162f270b658ca5478b3350376c2e9b4a8902c1f5d0d80f1269673335a05ddf1e"
+    }
+  },
+  "links": [
+    {
+      "rel": "root",
+      "href": "../../catalog.json",
+      "type": "application/json",
+      "title": "Randolph Glacier Inventory Mirror"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json",
+      "title": "RGI 7.0"
+    },
+    {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "RGI 7.0 glacier regions documentation"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "RGI 7.0 glacier regions agent guide"
+    },
+    {
+      "rel": "via",
+      "href": "https://nsidc.org/data/nsidc-0770/versions/7",
+      "type": "text/html",
+      "title": "RGI 7.0 at NSIDC (authoritative source)"
+    },
+    {
+      "rel": "cite-as",
+      "href": "https://doi.org/10.5904/GTNG-GLACREG-2023-07",
+      "type": "text/html",
+      "title": "DOI 10.5904/gtng-glacreg-2023-07"
+    },
+    {
+      "rel": "license",
+      "href": "https://www.gtn-g.ch/glacreg/",
+      "type": "text/html",
+      "title": "GTN-G Glacier Regions: \"Open access for scientific and educational purposes under requirement of correct citation\""
+    },
+    {
+      "rel": "alternate",
+      "href": "https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json",
+      "type": "text/html",
+      "title": "Open in the data browser"
+    },
+    {
+      "rel": "vcs",
+      "href": "https://github.com/lqgentner/rgi-catalog",
+      "type": "text/html",
+      "title": "Source repository"
+    },
+    {
+      "rel": "issues",
+      "href": "https://github.com/lqgentner/rgi-catalog/issues",
+      "type": "text/html",
+      "title": "Issue tracker"
+    },
+    {
+      "rel": "about",
+      "href": "https://source.coop/lqgentner/rgi",
+      "type": "text/html",
+      "title": "Hosting page on Source Cooperative"
+    },
+    {
+      "rel": "related",
+      "href": "https://cluster.klima.uni-bremen.de/~fmaussion/misc/rgi7_data/rgi7_final/RGI2000-v7.0-regions.zip",
+      "type": "text/csv",
+      "title": "Source: RGI2000-v7.0-regions.zip, the corrected file (GLIMS-RGI/rgi_issue_tracker#41) on the University of Bremen server"
+    },
+    {
+      "rel": "pmtiles",
+      "href": "../rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "pmtiles:layers": [
+        "regions",
+        "region-labels"
+      ],
+      "file:size": 1242784970,
+      "file:checksum": "1220162f270b658ca5478b3350376c2e9b4a8902c1f5d0d80f1269673335a05ddf1e"
+    }
+  ]
+}

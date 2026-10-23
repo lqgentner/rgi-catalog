@@ -1,6 +1,14 @@
 ## Citation
 
+{% if spec is defined and spec.citation is defined %}
+Cite the source of this collection:
+
+> {{ spec.citation.split() | join(" ") }}
+
+It is part of the RGI 7.0 release. Cite the RGI Consortium as well:
+{% else %}
 Cite the RGI Consortium:
+{% endif %}
 
 > {{ citation }}
 
@@ -9,12 +17,31 @@ The user guide describes every file and attribute:
 {% for p in meta.publications %}
 > {{ p.citation.split() | join(" ") }}
 {% endfor %}
+{% if spec is defined and spec.publications is defined %}
+
+The user guide asks to cite these for this collection as well:
+
+{% for p in spec.publications %}
+> {{ p.citation.split() | join(" ") }}
+{% if not loop.last %}
+
+{% endif %}
+{% endfor %}
+{% endif %}
 
 This mirror asks for no citation of its own. You may add "accessed via
 {{ meta.about }}".
 
 ## License
 
+{% if spec is defined and spec.license is defined %}
+The regions are those of the Global Terrestrial Network for Glaciers. Their
+DataCite record states the terms as: "Open access for scientific and
+educational purposes under requirement of correct citation". See
+[GTN-G Glacier Regions]({{ spec.license_url }}).
+
+The rest of the RGI 7.0 release is under
+{% endif %}
 [{{ meta.license }}]({{ meta.license_url }}). The RGI user guide states: "The
 RGI may be used freely under the Creative Commons Attribution 4.0
 International License with due acknowledgement (by proper referencing, see

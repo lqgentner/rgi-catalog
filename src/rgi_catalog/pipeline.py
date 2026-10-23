@@ -8,7 +8,14 @@ from typing import TYPE_CHECKING, cast
 
 import yaml
 
-from rgi_catalog.assemble import glaciers, load_glacier_sources
+from rgi_catalog.assemble import (
+    centerlines,
+    complexes,
+    glaciers,
+    intersects,
+    load_glacier_sources,
+    regions,
+)
 from rgi_catalog.geoparquet import write_geoparquet
 from rgi_catalog.paths import METADATA, STAGING, version_dir
 from rgi_catalog.sources import fetch, load_pins
@@ -25,6 +32,10 @@ if TYPE_CHECKING:
 # The pinned inputs each product reads.
 PRODUCT_SOURCES: dict[str, tuple[str, ...]] = {
     "glaciers": ("G", "C", "rgi6_links"),
+    "complexes": ("C",),
+    "centerlines": ("L",),
+    "intersects": ("I",),
+    "regions": ("regions",),
 }
 
 
@@ -74,6 +85,10 @@ BUILDERS: dict[
     str, Callable[[dict[str, tuple[Path, str]]], tuple[gpd.GeoDataFrame, FixReport]]
 ] = {
     "glaciers": _build_glaciers,
+    "complexes": lambda files: complexes(files["C"][0]),
+    "centerlines": lambda files: centerlines(files["L"][0]),
+    "intersects": lambda files: intersects(files["I"][0]),
+    "regions": lambda files: regions(files["regions"][0]),
 }
 
 

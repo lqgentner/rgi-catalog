@@ -12,11 +12,21 @@ SOURCE_ID = "data"
 # Cyrillic and Greek.
 GLYPHS = "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf"
 LABEL_FONT = ["Open Sans Italic"]
+REGION_FONTS = {1: ["Open Sans Bold"], 2: ["Open Sans Regular"]}
 
 GLACIER_FILL = "#9ecae1"
 GLACIER_LINE = "#2171b5"
 LABEL_COLOR = "#08306b"
 NO_DATA = "#bdbdbd"
+COMPLEX_FILL = "#bcbddc"
+COMPLEX_LINE = "#6a51a3"
+CENTERLINE_COLOR = "#cb181d"
+INTERSECT_COLOR = "#252525"
+REGION_LINE = "#636363"
+REGION_LABEL = "#525252"
+# The glaciers under the centerlines and the intersects.
+CONTEXT_FILL = "#deebf7"
+CONTEXT_LINE = "#9ecae1"
 # At world scale a glacier is smaller than a pixel, so a fill alone draws
 # nothing. An outline of about one pixel keeps every tiled glacier visible.
 OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
@@ -26,14 +36,56 @@ POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
 DOT_RADIUS = ["interpolate", ["linear"], ["zoom"], 0, 1.5, 6, 2.5]
 
 
-def _dots(color: Any) -> dict[str, Any]:
-    """Return the circle layer that draws the glacier points."""
+def _dots(color: Any, layer: str = "glaciers") -> dict[str, Any]:
+    """Return the circle layer that draws a polygon layer's points."""
     return {
-        "id": "glaciers-dots",
+        "id": f"{layer}-dots",
         "type": "circle",
-        "source-layer": "glaciers",
+        "source-layer": layer,
         "filter": POINTS,
         "paint": {"circle-color": color, "circle-radius": DOT_RADIUS, "circle-opacity": 0.85},
+    }
+
+
+def _polygons(layer: str, fill: Any, line: Any, opacity: float) -> list[dict[str, Any]]:
+    """Return the fill, outline and dot layers of a polygon layer."""
+    return [
+        {
+            "id": f"{layer}-fill",
+            "type": "fill",
+            "source-layer": layer,
+            "paint": {"fill-color": fill, "fill-opacity": opacity},
+        },
+        {
+            "id": f"{layer}-outline",
+            "type": "line",
+            "source-layer": layer,
+            "paint": {"line-color": line, "line-width": OUTLINE_WIDTH},
+        },
+        _dots(line, layer),
+    ]
+
+
+def _region_labels(level: int, minzoom: int, maxzoom: int, size: int) -> dict[str, Any]:
+    return {
+        "id": f"region-labels-{level}",
+        "type": "symbol",
+        "source-layer": "region-labels",
+        "filter": ["==", ["get", "level"], level],
+        "minzoom": minzoom,
+        "maxzoom": maxzoom,
+        "layout": {
+            "text-field": ["get", "full_name"],
+            "text-font": REGION_FONTS[level],
+            "text-size": size,
+            "text-transform": "uppercase" if level == 1 else "none",
+            "text-letter-spacing": 0.08 if level == 1 else 0,
+        },
+        "paint": {
+            "text-color": REGION_LABEL,
+            "text-halo-color": "#ffffff",
+            "text-halo-width": 1.2,
+        },
     }
 
 
@@ -56,22 +108,57 @@ LABELS: dict[str, Any] = {
 
 # The style layers that draw each archive layer, bottom to top.
 LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
-    "glaciers": [
+    # Boundaries only: a region fill would give the full map a legend.
+    "regions": [
         {
-            "id": "glaciers-fill",
-            "type": "fill",
-            "paint": {"fill-color": GLACIER_FILL, "fill-opacity": 0.5},
-        },
-        {
-            "id": "glaciers-outline",
+            "id": "regions-outline-1",
             "type": "line",
-            "paint": {"line-color": GLACIER_LINE, "line-width": OUTLINE_WIDTH},
+            "filter": ["==", ["get", "level"], 1],
+            "paint": {"line-color": REGION_LINE, "line-width": 1.2, "line-dasharray": [4, 2]},
         },
-        _dots(GLACIER_LINE),
+        {
+            "id": "regions-outline-2",
+            "type": "line",
+            "filter": ["==", ["get", "level"], 2],
+            "minzoom": 3,
+            "paint": {"line-color": REGION_LINE, "line-width": 0.6, "line-dasharray": [2, 2]},
+        },
+    ],
+    "region-labels": [_region_labels(1, 1, 6, 12), _region_labels(2, 4, 9, 11)],
+    "complexes": _polygons("complexes", COMPLEX_FILL, COMPLEX_LINE, 0.5),
+    "glaciers": _polygons("glaciers", GLACIER_FILL, GLACIER_LINE, 0.5),
+    "centerlines": [
+        {
+            "id": "centerlines",
+            "type": "line",
+            "paint": {
+                "line-color": CENTERLINE_COLOR,
+                # The main centerline of each glacier is drawn wider.
+                "line-width": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    8,
+                    ["case", ["get", "is_main"], 1.0, 0.5],
+                    12,
+                    ["case", ["get", "is_main"], 2.0, 1.0],
+                ],
+            },
+        },
+    ],
+    "intersects": [
+        {
+            "id": "intersects",
+            "type": "line",
+            "paint": {"line-color": INTERSECT_COLOR, "line-width": 1.2},
+        },
     ],
     "glacier-labels": [LABELS],
 }
-FULL_MAP_LAYERS = ("glaciers", "glacier-labels")
+ARCHIVE_LAYERS = tuple(LAYER_STYLES)
+FULL_MAP_LAYERS = ("regions", "glaciers", "centerlines", "region-labels", "glacier-labels")
+# The glaciers drawn pale, under the centerlines or the intersects.
+GLACIER_CONTEXT = _polygons("glaciers", CONTEXT_FILL, CONTEXT_LINE, 0.6)
 
 
 @dataclass(frozen=True)
@@ -163,6 +250,21 @@ THEMES: dict[str, Theme] = {
     ),
 }
 DEFAULT_STYLE = "full-map"
+# The default style of each collection.
+DEFAULT_STYLES = {
+    "glaciers": DEFAULT_STYLE,
+    "complexes": "complexes",
+    "centerlines": "centerlines",
+    "intersects": "intersects",
+    "regions": "regions",
+}
+REGION_LEVELS = Theme(
+    title="Glacier regions",
+    description="",
+    column="level",
+    codes={1: "First-order region", 2: "Second-order region"},
+    colors=("#fdae6b", "#9e9ac8"),
+)
 
 
 def archive_href(version: str = "7.0") -> str:
@@ -193,7 +295,7 @@ def _style(name: str, description: str, href: str, layers: list[dict[str, Any]])
 
 
 def _layers_of(names: list[str]) -> list[dict[str, Any]]:
-    return [{**spec, "source-layer": name} for name in names for spec in LAYER_STYLES[name]]
+    return [{"source-layer": name, **spec} for name in names for spec in LAYER_STYLES[name]]
 
 
 def collection_style(collection: str, archive_href: str, layers: list[str]) -> dict[str, Any]:
@@ -236,7 +338,11 @@ def full_map_style(archive_href: str) -> dict[str, Any]:
     """
     return _style(
         "Glaciers with names",
-        "Glacier outlines (blue) with glacier names. Larger glaciers are named at lower zooms.",
+        (
+            "Glacier outlines (blue) and centerlines (red), with glacier names and the "
+            "boundaries and names of the glacier regions. Larger glaciers are named at "
+            "lower zooms."
+        ),
         archive_href,
         _layers_of(list(FULL_MAP_LAYERS)),
     )
@@ -294,3 +400,60 @@ def glacier_styles(archive_href: str) -> dict[str, dict[str, Any]]:
         DEFAULT_STYLE: full_map_style(archive_href),
         **{theme: thematic_style(theme, archive_href) for theme in THEMES},
     }
+
+
+def _own_style(name: str, archive_href: str) -> dict[str, Any]:
+    """Return the default style of a collection other than the glaciers."""
+    labels = {"source-layer": "glacier-labels", **LABELS}
+    if name == "complexes":
+        return _style(
+            "Glacier complexes",
+            "Glacier complexes (purple): connected glaciers merged into one outline.",
+            archive_href,
+            _layers_of(["complexes"]),
+        )
+    if name in {"centerlines", "intersects"}:
+        what = {
+            "centerlines": "Glacier centerlines (red), the main centerline wider",
+            "intersects": "Intersects (black): the divides between adjacent glaciers",
+        }[name]
+        zoom = {"centerlines": "z8", "intersects": "z10"}[name]
+        return _style(
+            name.capitalize(),
+            f"{what}, from {zoom}, over the glacier outlines (pale blue).",
+            archive_href,
+            [*GLACIER_CONTEXT, *_layers_of([name]), labels],
+        )
+    fill = {
+        "id": "regions-fill",
+        "type": "fill",
+        "source-layer": "regions",
+        "paint": {"fill-color": REGION_LEVELS.fill_color(), "fill-opacity": 0.15},
+    }
+    return _style(
+        "Glacier regions",
+        "First-order (orange) and second-order (purple) glacier regions, with their names.",
+        archive_href,
+        [fill, *_layers_of(["regions", "region-labels"])],
+    )
+
+
+def collection_styles(name: str, archive_href: str) -> dict[str, dict[str, Any]]:
+    """Return every style of a collection, the default first.
+
+    Parameters
+    ----------
+    name
+        The collection name, a key of :data:`DEFAULT_STYLES`.
+    archive_href
+        The archive's href relative to the style files.
+
+    Returns
+    -------
+    dict[str, dict[str, Any]]
+        Styles by file stem. The glaciers have the full map and the thematic
+        styles. Every other collection has its own style and the full map.
+    """
+    if name == "glaciers":
+        return glacier_styles(archive_href)
+    return {name: _own_style(name, archive_href), DEFAULT_STYLE: full_map_style(archive_href)}

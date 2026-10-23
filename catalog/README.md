@@ -12,7 +12,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 | Version | Mirror revision | Collections | Documentation |
 | --- | --- | --- | --- |
-| [RGI 7.0](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) | 7.0-r1 | glaciers | [README](v7.0/README.md) · [AGENTS](v7.0/AGENTS.md) |
+| [RGI 7.0](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) | 7.0-r1 | glaciers, complexes, centerlines, intersects, regions | [README](v7.0/README.md) · [AGENTS](v7.0/AGENTS.md) |
 
 ## Access
 

@@ -9,8 +9,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-# Integer, boolean and date columns of the G, C, I and L attribute tables.
-# Text columns stay text, and float columns stay float64.
+# Integer, boolean and date columns of the G and C attribute tables. Text
+# columns stay text, and float columns stay float64. The I table has no such
+# column: its length_m is a float, unlike the L table's.
 UPSTREAM_DTYPES: dict[str, str] = {
     "anlys_id": "uint32",
     "subm_id": "uint16",
@@ -23,7 +24,9 @@ UPSTREAM_DTYPES: dict[str, str] = {
     "term_type": "uint8",
     "aspect_sec": "uint8",
     "lmax_m": "uint32",
-    # Centerlines
+}
+# Integer and boolean columns of the L attribute table.
+CENTERLINE_DTYPES: dict[str, str] = {
     "segment_id": "uint8",
     "is_main": "bool",
     "outflow_id": "int8",
@@ -127,13 +130,16 @@ def to_timestamp(s: pd.Series) -> pd.Series:
     return out
 
 
-def type_upstream(df: pd.DataFrame) -> pd.DataFrame:
-    """Apply :data:`UPSTREAM_DTYPES` to the columns that ``df`` has.
+def type_upstream(df: pd.DataFrame, dtypes: dict[str, str] = UPSTREAM_DTYPES) -> pd.DataFrame:
+    """Apply a dtype table to the columns that ``df`` has.
 
     Parameters
     ----------
     df
         An upstream attribute table.
+    dtypes
+        The target dtype by column: :data:`UPSTREAM_DTYPES` or
+        :data:`CENTERLINE_DTYPES`.
 
     Returns
     -------
@@ -141,7 +147,7 @@ def type_upstream(df: pd.DataFrame) -> pd.DataFrame:
         A typed copy.
     """
     out = df.copy()
-    for column, dtype in UPSTREAM_DTYPES.items():
+    for column, dtype in dtypes.items():
         if column not in out.columns:
             continue
         if dtype == "bool":

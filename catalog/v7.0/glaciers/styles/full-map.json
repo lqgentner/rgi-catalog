@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Glaciers with names",
   "metadata": {
-    "description": "Glacier outlines (blue) with glacier names. Larger glaciers are named at lower zooms."
+    "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {
@@ -13,16 +13,62 @@
   },
   "layers": [
     {
+      "source-layer": "regions",
+      "id": "regions-outline-1",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "paint": {
+        "line-color": "#636363",
+        "line-width": 1.2,
+        "line-dasharray": [
+          4,
+          2
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "regions",
+      "id": "regions-outline-2",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        2
+      ],
+      "minzoom": 3,
+      "paint": {
+        "line-color": "#636363",
+        "line-width": 0.6,
+        "line-dasharray": [
+          2,
+          2
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "glaciers",
       "id": "glaciers-fill",
       "type": "fill",
       "paint": {
         "fill-color": "#9ecae1",
         "fill-opacity": 0.5
       },
-      "source-layer": "glaciers",
       "source": "data"
     },
     {
+      "source-layer": "glaciers",
       "id": "glaciers-outline",
       "type": "line",
       "paint": {
@@ -43,13 +89,12 @@
           1.0
         ]
       },
-      "source-layer": "glaciers",
       "source": "data"
     },
     {
+      "source-layer": "glaciers",
       "id": "glaciers-dots",
       "type": "circle",
-      "source-layer": "glaciers",
       "filter": [
         "in",
         [
@@ -83,6 +128,111 @@
       "source": "data"
     },
     {
+      "source-layer": "centerlines",
+      "id": "centerlines",
+      "type": "line",
+      "paint": {
+        "line-color": "#cb181d",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          8,
+          [
+            "case",
+            [
+              "get",
+              "is_main"
+            ],
+            1.0,
+            0.5
+          ],
+          12,
+          [
+            "case",
+            [
+              "get",
+              "is_main"
+            ],
+            2.0,
+            1.0
+          ]
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-labels",
+      "id": "region-labels-1",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "minzoom": 1,
+      "maxzoom": 6,
+      "layout": {
+        "text-field": [
+          "get",
+          "full_name"
+        ],
+        "text-font": [
+          "Open Sans Bold"
+        ],
+        "text-size": 12,
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.08
+      },
+      "paint": {
+        "text-color": "#525252",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-labels",
+      "id": "region-labels-2",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        2
+      ],
+      "minzoom": 4,
+      "maxzoom": 9,
+      "layout": {
+        "text-field": [
+          "get",
+          "full_name"
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 11,
+        "text-transform": "none",
+        "text-letter-spacing": 0
+      },
+      "paint": {
+        "text-color": "#525252",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "glacier-labels",
       "id": "glacier-labels",
       "type": "symbol",
       "layout": {
@@ -107,7 +257,6 @@
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.2
       },
-      "source-layer": "glacier-labels",
       "source": "data"
     }
   ]

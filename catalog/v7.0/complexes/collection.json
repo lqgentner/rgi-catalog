@@ -1,0 +1,270 @@
+{
+  "type": "Collection",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json",
+    "https://stac-extensions.github.io/table/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    "https://stac-extensions.github.io/web-map-links/v1.3.0/schema.json",
+    "https://stac-extensions.github.io/alternate-assets/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/classification/v2.0.0/schema.json"
+  ],
+  "id": "rgi-v7-0-complexes",
+  "title": "RGI 7.0 glacier complexes",
+  "description": "One row per glacier complex: the glaciers that touch, merged into one outline, with RGI's attributes and the IDs of the member glaciers, in one GeoParquet file. The web map archive holds the outlines.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "license": "CC-BY-4.0",
+  "keywords": [
+    "glaciers",
+    "glacier outlines",
+    "glacier inventory",
+    "cryosphere",
+    "RGI",
+    "GLIMS",
+    "glacier complexes"
+  ],
+  "version": "7.0-r1",
+  "updated": "2026-10-23T09:36:57Z",
+  "sci:doi": "10.5067/f6jmovy5navz",
+  "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "sci:publications": [
+    {
+      "doi": "10.5281/zenodo.8362857",
+      "citation": "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 user guide. Zenodo. https://doi.org/10.5281/zenodo.8362857"
+    }
+  ],
+  "providers": [
+    {
+      "name": "RGI Consortium",
+      "description": "Produces the Randolph Glacier Inventory, a globally complete inventory of glacier outlines.",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://rgidata.org"
+    },
+    {
+      "name": "Luis Q. Gentner",
+      "description": "Hosts this unofficial mirror. Converts the RGI files to cloud-native formats and maintains this catalog.",
+      "roles": [
+        "host"
+      ],
+      "url": "https://orcid.org/0009-0006-4453-0881"
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -179.934832,
+          -78.308328,
+          179.751191,
+          83.651107
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "1943-09-09T00:00:00Z",
+          "2021-02-26T00:00:00Z"
+        ]
+      ]
+    }
+  },
+  "assets": {
+    "data": {
+      "href": "./rgi7.0-complexes.parquet",
+      "type": "application/vnd.apache.parquet",
+      "title": "RGI 7.0 glacier complexes, GeoParquet",
+      "roles": [
+        "data"
+      ],
+      "file:size": 213284871,
+      "file:checksum": "12208fc1a02490e07fbdf2ae2936c5cbec1526489a7a0793f55a49670e7e7958309f",
+      "alternate": {
+        "s3": {
+          "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet",
+          "title": "Anonymous S3 access"
+        }
+      },
+      "table:primary_geometry": "geometry",
+      "table:row_count": 192869,
+      "table:columns": [
+        {
+          "name": "rgi_id",
+          "type": "string",
+          "description": "Unique identifier assigned to a single glacier complex by the RGI"
+        },
+        {
+          "name": "o1region",
+          "type": "string",
+          "description": "The code of the first-order region to which the glacier belongs."
+        },
+        {
+          "name": "o2region",
+          "type": "string",
+          "description": "The code of the second-order region to which the glacier belongs."
+        },
+        {
+          "name": "cenlon",
+          "type": "double",
+          "description": "Longitude of the representative point of the glacier complex, guaranteed to be located within the glacier outlines and approximatively central (not the centroid).",
+          "unit": "degrees"
+        },
+        {
+          "name": "cenlat",
+          "type": "double",
+          "description": "Latitude of the representative point of the glacier complex, guaranteed to be located within the glacier outlines and approximatively central (not the centroid).",
+          "unit": "degrees"
+        },
+        {
+          "name": "utm_zone",
+          "type": "uint8",
+          "description": "Number of the UTM zone for this glacier complex, based on its representative point. Note that this attribute is for information only, the geometries are all in WGS84."
+        },
+        {
+          "name": "area_km2",
+          "type": "double",
+          "description": "Area of the glacier complex.",
+          "unit": "km2"
+        },
+        {
+          "name": "glacier_ids",
+          "type": "list<element: string>",
+          "description": "The rgi_id of every glacier in this complex, sorted, from the CtoG_links.json file. Its keys are \"the glacier complex identifiers\" and its values \"the corresponding glacier product identifiers (one or more depending on the size of the cluster)\"."
+        },
+        {
+          "name": "geometry",
+          "type": "binary",
+          "description": "Glacier complex geometry (Polygon)",
+          "unit": "deg"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>",
+          "description": "The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter."
+        }
+      ]
+    },
+    "style-complexes": {
+      "href": "./styles/complexes.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Glacier complexes",
+      "description": "Glacier complexes (purple): connected glaciers merged into one outline.",
+      "roles": [
+        "style",
+        "default"
+      ],
+      "file:size": 1625,
+      "file:checksum": "12201e1eea81fd3745676068a266af4ba6ab46d568207d4a9ad2dbc205e67c776a16"
+    },
+    "style-full-map": {
+      "href": "./styles/full-map.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Glaciers with names",
+      "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.",
+      "roles": [
+        "style"
+      ],
+      "file:size": 5049,
+      "file:checksum": "122056ecdf6a37ee704581ba32808497802f84891206c47650efa54093b6769f44ea"
+    },
+    "pmtiles": {
+      "href": "../rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "roles": [
+        "visual"
+      ],
+      "file:size": 1242784970,
+      "file:checksum": "1220162f270b658ca5478b3350376c2e9b4a8902c1f5d0d80f1269673335a05ddf1e"
+    }
+  },
+  "links": [
+    {
+      "rel": "root",
+      "href": "../../catalog.json",
+      "type": "application/json",
+      "title": "Randolph Glacier Inventory Mirror"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json",
+      "title": "RGI 7.0"
+    },
+    {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "RGI 7.0 glacier complexes documentation"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "RGI 7.0 glacier complexes agent guide"
+    },
+    {
+      "rel": "via",
+      "href": "https://nsidc.org/data/nsidc-0770/versions/7",
+      "type": "text/html",
+      "title": "RGI 7.0 at NSIDC (authoritative source)"
+    },
+    {
+      "rel": "cite-as",
+      "href": "https://doi.org/10.5067/F6JMOVY5NAVZ",
+      "type": "text/html",
+      "title": "DOI of RGI 7.0 at NSIDC"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "alternate",
+      "href": "https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/complexes/collection.json",
+      "type": "text/html",
+      "title": "Open in the data browser"
+    },
+    {
+      "rel": "vcs",
+      "href": "https://github.com/lqgentner/rgi-catalog",
+      "type": "text/html",
+      "title": "Source repository"
+    },
+    {
+      "rel": "issues",
+      "href": "https://github.com/lqgentner/rgi-catalog/issues",
+      "type": "text/html",
+      "title": "Issue tracker"
+    },
+    {
+      "rel": "about",
+      "href": "https://source.coop/lqgentner/rgi",
+      "type": "text/html",
+      "title": "Hosting page on Source Cooperative"
+    },
+    {
+      "rel": "related",
+      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-C-global.zip",
+      "type": "application/zip",
+      "title": "Source: RGI 7.0 glacier complex product, global zip at NSIDC (Earthdata login required)"
+    },
+    {
+      "rel": "pmtiles",
+      "href": "../rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "pmtiles:layers": [
+        "complexes"
+      ],
+      "file:size": 1242784970,
+      "file:checksum": "1220162f270b658ca5478b3350376c2e9b4a8902c1f5d0d80f1269673335a05ddf1e"
+    }
+  ]
+}

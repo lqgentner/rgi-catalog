@@ -1,0 +1,86 @@
+{
+  "version": 8,
+  "name": "Glacier complexes",
+  "metadata": {
+    "description": "Glacier complexes (purple): connected glaciers merged into one outline."
+  },
+  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "data": {
+      "type": "vector",
+      "url": "pmtiles://../../rgi7.0.pmtiles"
+    }
+  },
+  "layers": [
+    {
+      "source-layer": "complexes",
+      "id": "complexes-fill",
+      "type": "fill",
+      "paint": {
+        "fill-color": "#bcbddc",
+        "fill-opacity": 0.5
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "complexes",
+      "id": "complexes-outline",
+      "type": "line",
+      "paint": {
+        "line-color": "#6a51a3",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.2,
+          8,
+          0.6,
+          12,
+          1.0
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "complexes",
+      "id": "complexes-dots",
+      "type": "circle",
+      "filter": [
+        "in",
+        [
+          "geometry-type"
+        ],
+        [
+          "literal",
+          [
+            "Point",
+            "MultiPoint"
+          ]
+        ]
+      ],
+      "paint": {
+        "circle-color": "#6a51a3",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.5,
+          6,
+          2.5
+        ],
+        "circle-opacity": 0.85
+      },
+      "source": "data"
+    }
+  ]
+}

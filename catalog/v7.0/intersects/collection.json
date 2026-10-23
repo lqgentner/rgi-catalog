@@ -1,0 +1,248 @@
+{
+  "type": "Collection",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json",
+    "https://stac-extensions.github.io/table/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    "https://stac-extensions.github.io/web-map-links/v1.3.0/schema.json",
+    "https://stac-extensions.github.io/alternate-assets/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/classification/v2.0.0/schema.json"
+  ],
+  "id": "rgi-v7-0-intersects",
+  "title": "RGI 7.0 glacier intersects",
+  "description": "One row per intersect: a line that divides two adjacent glaciers, with the IDs of both glaciers, in one GeoParquet file. The web map archive holds the lines from z10.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "license": "CC-BY-4.0",
+  "keywords": [
+    "glaciers",
+    "glacier outlines",
+    "glacier inventory",
+    "cryosphere",
+    "RGI",
+    "GLIMS",
+    "glacier divides"
+  ],
+  "version": "7.0-r1",
+  "updated": "2026-10-23T09:36:57Z",
+  "sci:doi": "10.5067/f6jmovy5navz",
+  "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "sci:publications": [
+    {
+      "doi": "10.5281/zenodo.8362857",
+      "citation": "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 user guide. Zenodo. https://doi.org/10.5281/zenodo.8362857"
+    }
+  ],
+  "providers": [
+    {
+      "name": "RGI Consortium",
+      "description": "Produces the Randolph Glacier Inventory, a globally complete inventory of glacier outlines.",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://rgidata.org"
+    },
+    {
+      "name": "Luis Q. Gentner",
+      "description": "Hosts this unofficial mirror. Converts the RGI files to cloud-native formats and maintains this catalog.",
+      "roles": [
+        "host"
+      ],
+      "url": "https://orcid.org/0009-0006-4453-0881"
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -176.13439300000002,
+          -77.762788,
+          171.501396,
+          83.598757
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "1943-09-09T00:00:00Z",
+          "2021-02-26T00:00:00Z"
+        ]
+      ]
+    }
+  },
+  "assets": {
+    "data": {
+      "href": "./rgi7.0-intersects.parquet",
+      "type": "application/vnd.apache.parquet",
+      "title": "RGI 7.0 glacier intersects, GeoParquet",
+      "roles": [
+        "data"
+      ],
+      "file:size": 16953216,
+      "file:checksum": "1220308105564f10d4b88a76edd4cce591e1b2c3c62da244ab08010c0e6ca0e97aa7",
+      "alternate": {
+        "s3": {
+          "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet",
+          "title": "Anonymous S3 access"
+        }
+      },
+      "table:primary_geometry": "geometry",
+      "table:row_count": 130429,
+      "table:columns": [
+        {
+          "name": "rgi_id",
+          "type": "string",
+          "description": "Unique identifier assigned to a single intersect line by the RGI"
+        },
+        {
+          "name": "rgi_g_id_1",
+          "type": "string",
+          "description": "Glacier ID of one side of the intersect (arbitrary)"
+        },
+        {
+          "name": "rgi_g_id_2",
+          "type": "string",
+          "description": "Glacier ID of the other side of the intersect (arbitrary)"
+        },
+        {
+          "name": "length_m",
+          "type": "double",
+          "description": "Length of the intersect in meters",
+          "unit": "m"
+        },
+        {
+          "name": "geometry",
+          "type": "binary",
+          "description": "Intersect geometry (LineString)",
+          "unit": "deg"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>",
+          "description": "The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter."
+        }
+      ]
+    },
+    "style-intersects": {
+      "href": "./styles/intersects.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Intersects",
+      "description": "Intersects (black): the divides between adjacent glaciers, from z10, over the glacier outlines (pale blue).",
+      "roles": [
+        "style",
+        "default"
+      ],
+      "file:size": 2423,
+      "file:checksum": "1220aa732eb151fcd30b5e67d27127091ff6a6f5b8c8c5b07fe0d08a96f4a5efab49"
+    },
+    "style-full-map": {
+      "href": "./styles/full-map.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Glaciers with names",
+      "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.",
+      "roles": [
+        "style"
+      ],
+      "file:size": 5049,
+      "file:checksum": "122056ecdf6a37ee704581ba32808497802f84891206c47650efa54093b6769f44ea"
+    },
+    "pmtiles": {
+      "href": "../rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "roles": [
+        "visual"
+      ],
+      "file:size": 1242784970,
+      "file:checksum": "1220162f270b658ca5478b3350376c2e9b4a8902c1f5d0d80f1269673335a05ddf1e"
+    }
+  },
+  "links": [
+    {
+      "rel": "root",
+      "href": "../../catalog.json",
+      "type": "application/json",
+      "title": "Randolph Glacier Inventory Mirror"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json",
+      "title": "RGI 7.0"
+    },
+    {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "RGI 7.0 glacier intersects documentation"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "RGI 7.0 glacier intersects agent guide"
+    },
+    {
+      "rel": "via",
+      "href": "https://nsidc.org/data/nsidc-0770/versions/7",
+      "type": "text/html",
+      "title": "RGI 7.0 at NSIDC (authoritative source)"
+    },
+    {
+      "rel": "cite-as",
+      "href": "https://doi.org/10.5067/F6JMOVY5NAVZ",
+      "type": "text/html",
+      "title": "DOI of RGI 7.0 at NSIDC"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "alternate",
+      "href": "https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/intersects/collection.json",
+      "type": "text/html",
+      "title": "Open in the data browser"
+    },
+    {
+      "rel": "vcs",
+      "href": "https://github.com/lqgentner/rgi-catalog",
+      "type": "text/html",
+      "title": "Source repository"
+    },
+    {
+      "rel": "issues",
+      "href": "https://github.com/lqgentner/rgi-catalog/issues",
+      "type": "text/html",
+      "title": "Issue tracker"
+    },
+    {
+      "rel": "about",
+      "href": "https://source.coop/lqgentner/rgi",
+      "type": "text/html",
+      "title": "Hosting page on Source Cooperative"
+    },
+    {
+      "rel": "related",
+      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-I-global.zip",
+      "type": "application/zip",
+      "title": "Source: RGI 7.0 glacier intersects product, global zip at NSIDC (Earthdata login required)"
+    },
+    {
+      "rel": "pmtiles",
+      "href": "../rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "pmtiles:layers": [
+        "intersects"
+      ],
+      "file:size": 1242784970,
+      "file:checksum": "1220162f270b658ca5478b3350376c2e9b4a8902c1f5d0d80f1269673335a05ddf1e"
+    }
+  ]
+}

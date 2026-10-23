@@ -85,11 +85,13 @@ def version_id(meta: dict[str, Any], version: str) -> str:
     return f"{meta['id']}-v{version.replace('.', '-')}"
 
 
-def collection_styles(version: str) -> dict[str, str]:
-    """Return the style documents of the glaciers collection, as rendered JSON text.
+def collection_styles(name: str, version: str) -> dict[str, str]:
+    """Return the style documents of a collection, as rendered JSON text.
 
     Parameters
     ----------
+    name
+        The collection name.
     version
         The RGI version.
 
@@ -100,7 +102,7 @@ def collection_styles(version: str) -> dict[str, str]:
     """
     return {
         key: _dump(style)
-        for key, style in styles.glacier_styles(styles.archive_href(version)).items()
+        for key, style in styles.collection_styles(name, styles.archive_href(version)).items()
     }
 
 
@@ -148,9 +150,21 @@ class Context:
         """Return a STAC description: the text, then the disclaimer."""
         return f"{' '.join(text.split())}\n\n{self.disclaimer}"
 
-    def nav_links(self, path: str) -> list[dict[str, Any]]:
-        """Return the mirror and navigation links every document carries."""
+    def nav_links(self, path: str, spec: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        """Return the mirror and navigation links every document carries.
+
+        A collection's ``doi`` and ``license`` in ``catalog.yaml`` replace the
+        catalog's in the ``cite-as`` and ``license`` links.
+        """
         meta = self.meta
+        spec = spec or {}
+        doi = spec.get("doi", meta["doi"])
+        license_link = {
+            "rel": "license",
+            "href": spec.get("license_url", meta["license_url"]),
+            "type": HTML,
+            "title": " ".join(spec.get("license_title", meta["license"]).split()),
+        }
         return [
             {
                 "rel": "via",
@@ -160,16 +174,11 @@ class Context:
             },
             {
                 "rel": "cite-as",
-                "href": f"https://doi.org/{meta['doi'].upper()}",
+                "href": f"https://doi.org/{doi.upper()}",
                 "type": HTML,
-                "title": "DOI of RGI 7.0 at NSIDC",
+                "title": "DOI of RGI 7.0 at NSIDC" if doi == meta["doi"] else f"DOI {doi}",
             },
-            {
-                "rel": "license",
-                "href": meta["license_url"],
-                "type": HTML,
-                "title": meta["license"],
-            },
+            license_link,
             {
                 "rel": "alternate",
                 "href": self.browser(path),
@@ -216,7 +225,7 @@ class Context:
 
 def _table_columns(ctx: Context, name: str, record: dict[str, Any]) -> list[dict[str, Any]]:
     collection = ctx.meta["versions"][record["version"]]["collections"][name]
-    upstream = record["attributes_metadata"][collection["product"]]
+    upstream = record["attributes_metadata"].get(collection["product"], {})
     derived = ctx.columns.get(name, {})
     out = []
     for column in record["collections"][name]["columns"]:
@@ -251,8 +260,12 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
     files = record["files"]
     publications = [
         {"doi": p["doi"], "citation": _plain(" ".join(p["citation"].split()))}
-        for p in meta["publications"]
+        for p in [*meta["publications"], *spec.get("publications", [])]
     ]
+    citation = " ".join(spec["citation"].split()) if "citation" in spec else ctx.citation
+    # Only the glaciers have a date column. Every other product of the version
+    # derives from the same outlines, so it takes their time span.
+    temporal = stats.get("temporal", record["collections"]["glaciers"]["temporal"])
     assets: dict[str, Any] = {
         "data": {
             "href": f"./{stats['href']}",
@@ -301,9 +314,9 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
                     ),
                 }
             )
-    for key, text in collection_styles(version).items():
+    for key, text in collection_styles(name, version).items():
         style = json.loads(text)
-        roles = ["style", "default"] if key == styles.DEFAULT_STYLE else ["style"]
+        roles = ["style", "default"] if key == styles.DEFAULT_STYLES[name] else ["style"]
         assets[f"style-{key}"] = {
             "href": f"./styles/{key}.json",
             "type": STYLE,
@@ -336,7 +349,7 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
             "title": meta["versions"][version]["title"],
         },
         *ctx.docs_links(spec["title"]),
-        *ctx.nav_links(path),
+        *ctx.nav_links(path, spec),
         *source_links,
         {
             "rel": "pmtiles",
@@ -354,17 +367,17 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
         "id": f"{version_id(meta, version)}-{name}",
         "title": spec["title"],
         "description": ctx.describe(spec["description"]),
-        "license": meta["license"],
+        "license": spec.get("license", meta["license"]),
         "keywords": [*meta["keywords"], *spec.get("keywords", [])],
         "version": record["mirror_revision"],
         "updated": record["updated"],
-        "sci:doi": meta["doi"],
-        "sci:citation": _plain(ctx.citation),
+        "sci:doi": spec.get("doi", meta["doi"]),
+        "sci:citation": _plain(citation),
         "sci:publications": publications,
         "providers": meta["providers"],
         "extent": {
             "spatial": {"bbox": [stats["bbox"]]},
-            "temporal": {"interval": [stats["temporal"]]},
+            "temporal": {"interval": [temporal]},
         },
         "assets": assets,
         "links": links,
@@ -453,7 +466,7 @@ def render(out: Path = CATALOG) -> list[Path]:
             collections.append((name, cspec, doc))
             base = f"{vdir}/{name}"
             _write(out, f"{base}/collection.json", _dump(doc), written)
-            for key, text in collection_styles(version).items():
+            for key, text in collection_styles(name, version).items():
                 _write(out, f"{base}/styles/{key}.json", text, written)
             scope = {
                 **common,
