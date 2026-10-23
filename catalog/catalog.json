@@ -5,15 +5,15 @@
     "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json"
   ],
   "id": "rgi",
-  "title": "Randolph Glacier Inventory (unofficial mirror)",
-  "description": "This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is RGI at NSIDC (https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium: RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.\n\nThe Randolph Glacier Inventory (RGI) is a globally complete inventory of glacier outlines. This catalog republishes it as GeoParquet files and a web map archive. The values are those of the RGI release. Fixes of documented upstream errors are listed in the provenance record.",
-  "updated": "2026-10-22T22:30:23Z",
+  "title": "Randolph Glacier Inventory Mirror",
+  "description": "The Randolph Glacier Inventory (RGI) is a globally complete inventory of glacier outlines. This catalog republishes it as GeoParquet files and a web map archive. The values are those of the RGI release. Fixes of documented upstream errors are listed in the provenance record.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "updated": "2026-10-23T08:33:55Z",
   "links": [
     {
       "rel": "root",
       "href": "./catalog.json",
       "type": "application/json",
-      "title": "Randolph Glacier Inventory (unofficial mirror)"
+      "title": "Randolph Glacier Inventory Mirror"
     },
     {
       "rel": "self",
@@ -24,19 +24,19 @@
       "rel": "describedby",
       "href": "./README.md",
       "type": "text/markdown",
-      "title": "Randolph Glacier Inventory (unofficial mirror) documentation"
+      "title": "Randolph Glacier Inventory Mirror documentation"
     },
     {
       "rel": "agents",
       "href": "./AGENTS.md",
       "type": "text/markdown",
-      "title": "Randolph Glacier Inventory (unofficial mirror) agent guide"
+      "title": "Randolph Glacier Inventory Mirror agent guide"
     },
     {
       "rel": "child",
       "href": "./v7.0/catalog.json",
       "type": "application/json",
-      "title": "RGI 7.0 (unofficial mirror)"
+      "title": "RGI 7.0"
     },
     {
       "rel": "via",

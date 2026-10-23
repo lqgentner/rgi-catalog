@@ -509,7 +509,7 @@
       "size": 258040260
     },
     "glaciers/rgi7.0.pmtiles": {
-      "file:checksum": "1220415ccea2f7a2236f56cf7ea4bb583242d76b31c07fdd492dd9dacbcc096b9d83",
+      "file:checksum": "12203740123a399e40c86ba32fa3e95582dcef65fa26dcc09dcef902c4e298ed7ec1",
       "size": 758950494
     }
   },
@@ -540,6 +540,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-10-22T22:30:23Z",
+  "updated": "2026-10-23T08:33:55Z",
   "version": "7.0"
 }

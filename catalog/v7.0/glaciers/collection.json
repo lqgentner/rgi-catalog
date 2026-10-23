@@ -12,8 +12,8 @@
     "https://stac-extensions.github.io/classification/v2.0.0/schema.json"
   ],
   "id": "rgi-v7-0-glaciers",
-  "title": "RGI 7.0 glaciers (unofficial mirror)",
-  "description": "This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is RGI at NSIDC (https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium: RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.\n\nOne row per glacier: the outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and the GLIMS submission, in one GeoParquet file. A web map archive holds the outlines and the glacier names.",
+  "title": "RGI 7.0 glaciers",
+  "description": "One row per glacier: the outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and the GLIMS submission, in one GeoParquet file. A web map archive holds the outlines and the glacier names.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "license": "CC-BY-4.0",
   "keywords": [
     "glaciers",
@@ -26,13 +26,13 @@
     "hypsometry"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-22T22:30:23Z",
+  "updated": "2026-10-23T08:33:55Z",
   "sci:doi": "10.5067/f6jmovy5navz",
-  "sci:citation": "RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.",
+  "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
     {
       "doi": "10.5281/zenodo.8362857",
-      "citation": "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., and Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 User guide. Zenodo. https://doi.org/10.5281/zenodo.8362857"
+      "citation": "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 user guide. Zenodo. https://doi.org/10.5281/zenodo.8362857"
     }
   ],
   "providers": [
@@ -46,12 +46,12 @@
       "url": "https://rgidata.org"
     },
     {
-      "name": "Luis Gentner",
+      "name": "Luis Q. Gentner",
       "description": "Hosts this unofficial mirror. Converts the RGI files to cloud-native formats and maintains this catalog.",
       "roles": [
         "host"
       ],
-      "url": "https://github.com/lqgentner/rgi-catalog"
+      "url": "https://orcid.org/0009-0006-4453-0881"
     }
   ],
   "extent": {
@@ -78,7 +78,7 @@
     "data": {
       "href": "./rgi7.0-glaciers.parquet",
       "type": "application/vnd.apache.parquet",
-      "title": "RGI 7.0 glaciers (unofficial mirror), GeoParquet",
+      "title": "RGI 7.0 glaciers, GeoParquet",
       "roles": [
         "data"
       ],
@@ -527,32 +527,6 @@
         }
       ]
     },
-    "source": {
-      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-G-global.zip",
-      "type": "application/zip",
-      "title": "RGI 7.0 glacier product, global zip at NSIDC (Earthdata login required)",
-      "roles": [
-        "source"
-      ]
-    },
-    "source-c": {
-      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-C-global.zip",
-      "type": "application/zip",
-      "title": "RGI 7.0 glacier complex product, global zip at NSIDC (Earthdata login required)",
-      "roles": [
-        "source"
-      ]
-    },
-    "source-rgi6-links": {
-      "href": "https://cluster.klima.uni-bremen.de/~fmaussion/misc/rgi7_data/rgi7_rgi6_links/RGI2000-v7.0-G-global-rgi6_links.csv",
-      "type": "text/csv",
-      "title": "RGI2000-v7.0-G-global-rgi6_links.csv, the corrected file (GLIMS-RGI/rgi_issue_tracker#41) on the University of Bremen server",
-      "roles": [
-        "source"
-      ],
-      "file:size": 36466420,
-      "file:checksum": "1220755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
-    },
     "style-full-map": {
       "href": "./styles/full-map.json",
       "type": "application/vnd.mapbox.style+json",
@@ -608,6 +582,16 @@
       ],
       "file:size": 2290,
       "file:checksum": "12208a9f797272be0b109f3bbbf19aa1ee734a3c3314b87a0c7d440fb70bd072e4ca"
+    },
+    "pmtiles": {
+      "href": "./rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "roles": [
+        "visual"
+      ],
+      "file:size": 758950494,
+      "file:checksum": "12203740123a399e40c86ba32fa3e95582dcef65fa26dcc09dcef902c4e298ed7ec1"
     }
   },
   "links": [
@@ -615,25 +599,25 @@
       "rel": "root",
       "href": "../../catalog.json",
       "type": "application/json",
-      "title": "Randolph Glacier Inventory (unofficial mirror)"
+      "title": "Randolph Glacier Inventory Mirror"
     },
     {
       "rel": "parent",
       "href": "../catalog.json",
       "type": "application/json",
-      "title": "RGI 7.0 (unofficial mirror)"
+      "title": "RGI 7.0"
     },
     {
       "rel": "describedby",
       "href": "./README.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 glaciers (unofficial mirror) documentation"
+      "title": "RGI 7.0 glaciers documentation"
     },
     {
       "rel": "agents",
       "href": "./AGENTS.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 glaciers (unofficial mirror) agent guide"
+      "title": "RGI 7.0 glaciers agent guide"
     },
     {
       "rel": "via",
@@ -678,6 +662,24 @@
       "title": "Hosting page on Source Cooperative"
     },
     {
+      "rel": "related",
+      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-G-global.zip",
+      "type": "application/zip",
+      "title": "Source: RGI 7.0 glacier product, global zip at NSIDC (Earthdata login required)"
+    },
+    {
+      "rel": "related",
+      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-C-global.zip",
+      "type": "application/zip",
+      "title": "Source: RGI 7.0 glacier complex product, global zip at NSIDC (Earthdata login required)"
+    },
+    {
+      "rel": "related",
+      "href": "https://cluster.klima.uni-bremen.de/~fmaussion/misc/rgi7_data/rgi7_rgi6_links/RGI2000-v7.0-G-global-rgi6_links.csv",
+      "type": "text/csv",
+      "title": "Source: RGI2000-v7.0-G-global-rgi6_links.csv, the corrected file (GLIMS-RGI/rgi_issue_tracker#41) on the University of Bremen server"
+    },
+    {
       "rel": "pmtiles",
       "href": "./rgi7.0.pmtiles",
       "type": "application/vnd.pmtiles",
@@ -687,7 +689,7 @@
         "glacier-labels"
       ],
       "file:size": 758950494,
-      "file:checksum": "1220415ccea2f7a2236f56cf7ea4bb583242d76b31c07fdd492dd9dacbcc096b9d83"
+      "file:checksum": "12203740123a399e40c86ba32fa3e95582dcef65fa26dcc09dcef902c4e298ed7ec1"
     }
   ]
 }

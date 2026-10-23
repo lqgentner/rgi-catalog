@@ -38,7 +38,7 @@ TYLERTOO = SourcePin(
 )
 TYLERTOO_MEMBER = "tylertoo-0.8.0-x86_64-unknown-linux-musl/tylertoo"
 
-ARCHIVE_NAME = "RGI 7.0 (unofficial mirror)"
+ARCHIVE_NAME = "Randolph Glacier Inventory 7.0 Mirror"
 ARCHIVE_ATTRIBUTION = "RGI 7.0 Consortium (2023), doi:10.5067/f6jmovy5navz — unofficial mirror"
 ARCHIVE_DESCRIPTION = (
     "Glacier outlines and names from the Randolph Glacier Inventory 7.0. "

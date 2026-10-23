@@ -22,9 +22,16 @@ therefore sets `CI_LIGHT=1` as CI does, and `tests/test_links.py` exempts
 data hrefs of links as well as of assets, because the `rel: pmtiles` link
 points at data. The preview tree checks every href with the data present.
 
-The `source` assets at NSIDC carry no `file:size` or `file:checksum`.
-Without an Earthdata login NSIDC serves its login page, so rashid would
-measure that page and report a mismatch. rashid warns (PTL-AST-003) instead.
+The upstream files are `related` links, not `source` assets. A `via` link
+must be an HTML page (PTL-PRO-001), so `via` names only the NSIDC landing page. The browser lists
+them under the additional resources and does not offer them as data of the
+collection. The NSIDC zips need an Earthdata login. The `rgi6_links` CSV
+does not, so PORTO-FMT-002 recommends a `source` asset for it. This is a
+SHOULD, and the catalog does not follow it for the CSV.
+
+The web map archive is a `visual` asset and a `rel: pmtiles` link. The
+spec requires the link. The browser draws a collection only from its
+assets. Without the asset it falls back to the GeoParquet file.
 
 ## GeoParquet writer
 

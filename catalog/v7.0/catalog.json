@@ -5,39 +5,39 @@
     "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json"
   ],
   "id": "rgi-v7-0",
-  "title": "RGI 7.0 (unofficial mirror)",
-  "description": "This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is RGI at NSIDC (https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium: RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.\n\nRGI 7.0, released in 2023. It holds 274,531 glacier outlines with their attributes.",
-  "updated": "2026-10-22T22:30:23Z",
+  "title": "RGI 7.0",
+  "description": "RGI 7.0, released in 2023. It holds 274,531 glacier outlines with their attributes.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "updated": "2026-10-23T08:33:55Z",
   "links": [
     {
       "rel": "root",
       "href": "../catalog.json",
       "type": "application/json",
-      "title": "Randolph Glacier Inventory (unofficial mirror)"
+      "title": "Randolph Glacier Inventory Mirror"
     },
     {
       "rel": "parent",
       "href": "../catalog.json",
       "type": "application/json",
-      "title": "Randolph Glacier Inventory (unofficial mirror)"
+      "title": "Randolph Glacier Inventory Mirror"
     },
     {
       "rel": "describedby",
       "href": "./README.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 (unofficial mirror) documentation"
+      "title": "RGI 7.0 documentation"
     },
     {
       "rel": "agents",
       "href": "./AGENTS.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 (unofficial mirror) agent guide"
+      "title": "RGI 7.0 agent guide"
     },
     {
       "rel": "child",
       "href": "./glaciers/collection.json",
       "type": "application/json",
-      "title": "RGI 7.0 glaciers (unofficial mirror)"
+      "title": "RGI 7.0 glaciers"
     },
     {
       "rel": "via",

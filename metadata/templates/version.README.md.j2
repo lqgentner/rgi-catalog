@@ -2,10 +2,10 @@
 
 {% include "_nav.md.j2" %}
 
-{{ disclaimer }}
-
 {{ vspec.description.split() | join(" ") }} This is mirror revision
 `{{ record.mirror_revision }}`, built {{ record.updated[:10] }}.
+
+{{ disclaimer }}
 
 ## Collections
 

@@ -2,7 +2,7 @@
 name = "rgi_catalog"
 description = "Build an unofficial cloud-native mirror of the Randolph Glacier Inventory"
 authors = [
-  { name="Luis Gentner", email="luis.gentner@geo.uzh.ch" },
+  { name="Luis Q. Gentner", email="luis.gentner@geo.uzh.ch" },
 ]
 readme = "README.md"
 requires-python = ">=3.13"

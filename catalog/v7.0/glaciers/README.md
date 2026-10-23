@@ -1,10 +1,12 @@
-# RGI 7.0 glaciers (unofficial mirror)
+# RGI 7.0 glaciers
 
 [Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/glaciers/collection.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
-This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is RGI at NSIDC (https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium: RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.
-
 One row per glacier: the outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and the GLIMS submission, in one GeoParquet file. A web map archive holds the outlines and the glacier names.
+
+This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
+
+> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
 ## Files
 
@@ -164,11 +166,11 @@ The codes and their meanings are from the
 
 Cite the RGI Consortium:
 
-> RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.
+> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
 The user guide describes every file and attribute:
 
-> Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., and Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 User guide. Zenodo. https://doi.org/10.5281/zenodo.8362857
+> Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). *The Randolph Glacier Inventory version 7.0 user guide*. Zenodo. https://doi.org/10.5281/zenodo.8362857
 
 This mirror asks for no citation of its own. You may add "accessed via
 https://source.coop/lqgentner/rgi".
@@ -184,7 +186,7 @@ invited to cite the analysts who provided the RGI outlines."
 ## Provenance
 
 - The authoritative distribution is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7),
-  doi:10.5067/f6jmovy5navz. It needs an Earthdata login.
+  https://doi.org/10.5067/F6JMOVY5NAVZ. It needs an Earthdata login.
 - The build downloads the same release without a login from the RGI
   server of Fabien Maussion at the University of Bremen. Its four global zips are
   byte-identical to NSIDC's.

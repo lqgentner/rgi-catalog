@@ -1,11 +1,13 @@
-# AGENTS.md: Randolph Glacier Inventory (unofficial mirror)
+# AGENTS.md: Randolph Glacier Inventory Mirror
 
 Guidance for AI agents and automated clients working with this catalog.
 
 **One rule survives every edit to this file.** Every claim here is either
 quoted from a source or measured from the data.
 
-This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is RGI at NSIDC (https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium: RGI 7.0 Consortium, 2023. Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7.0. Boulder, Colorado USA. NSIDC: National Snow and Ice Data Center. doi:10.5067/f6jmovy5navz.
+This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
+
+> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
 ## What this catalog holds
 
@@ -13,7 +15,7 @@ The public root is `https://data.source.coop/lqgentner/rgi/catalog.json`. Each R
 sub-catalog. Each RGI product is a collection with one GeoParquet file and no
 items.
 
-- `v7.0/`: RGI 7.0 (unofficial mirror), mirror revision `7.0-r1`. Collections: `glaciers`. Read `v7.0/AGENTS.md` next.
+- `v7.0/`: RGI 7.0, mirror revision `7.0-r1`. Collections: `glaciers`. Read `v7.0/AGENTS.md` next.
 
 ## How to read it
 

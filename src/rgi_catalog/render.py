@@ -106,6 +106,11 @@ def collection_styles(name: str, version: str) -> dict[str, str]:
     }
 
 
+def _plain(citation: str) -> str:
+    """Return a Markdown citation as plain text, without the italics."""
+    return citation.replace("*", "")
+
+
 def _slug(label: str) -> str:
     return "".join(c if c.isalnum() else "-" for c in label.lower()).strip("-")
 
@@ -129,9 +134,9 @@ class Context:
         self.env = env
         citation = " ".join(self.meta["citation"].split())
         self.citation = citation
-        self.disclaimer = " ".join(
-            env.from_string(self.meta["disclaimer"]).render(citation=citation).split()
-        )
+        # The notice that follows the text of every page: the disclaimer, then
+        # the citation as a Markdown block quote.
+        self.disclaimer = f"{' '.join(self.meta['disclaimer'].split())}\n\n> {citation}"
 
     def public(self, path: str) -> str:
         """Return the public URL of a path under the catalog root."""
@@ -142,8 +147,8 @@ class Context:
         return self.meta["browser"] + self.public(path).split("://", 1)[1]
 
     def describe(self, text: str) -> str:
-        """Return a STAC description: the disclaimer, then the text."""
-        return f"{self.disclaimer}\n\n{' '.join(text.split())}"
+        """Return a STAC description: the text, then the disclaimer."""
+        return f"{' '.join(text.split())}\n\n{self.disclaimer}"
 
     def nav_links(self, path: str) -> list[dict[str, Any]]:
         """Return the mirror and navigation links every document carries."""
@@ -246,9 +251,8 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
     data_rel = f"{name}/{stats['href']}"
     archive = record["archive"]["href"]
     files = record["files"]
-    product = spec["product"]
     publications = [
-        {"doi": p["doi"], "citation": " ".join(p["citation"].split())}
+        {"doi": p["doi"], "citation": _plain(" ".join(p["citation"].split()))}
         for p in meta["publications"]
     ]
     assets: dict[str, Any] = {
@@ -271,32 +275,34 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
         },
     }
     pins = load_pins(version)
+    # The upstream files are links, so a client lists them with the other
+    # resources and does not offer them as data of this collection.
+    source_links = []
     for key in PRODUCT_SOURCES[name]:
-        asset_key = "source" if key == product else f"source-{key.lower().replace('_', '-')}"
         if key in NSIDC_PRODUCTS:
-            assets[asset_key] = {
-                "href": f"{meta['nsidc_files']}/RGI2000-v{version}-{key}-global.zip",
-                "type": "application/zip",
-                "title": (
-                    f"RGI {version} {NSIDC_PRODUCTS[key]} product, global zip at NSIDC "
-                    "(Earthdata login required)"
-                ),
-                # No file:size or file:checksum: without a login NSIDC serves its
-                # login page, so a validator would measure that page.
-                "roles": ["source"],
-            }
+            source_links.append(
+                {
+                    "rel": "related",
+                    "href": f"{meta['nsidc_files']}/RGI2000-v{version}-{key}-global.zip",
+                    "type": "application/zip",
+                    "title": (
+                        f"Source: RGI {version} {NSIDC_PRODUCTS[key]} product, global zip "
+                        "at NSIDC (Earthdata login required)"
+                    ),
+                }
+            )
         else:
-            assets[asset_key] = {
-                "href": pins[key].url,
-                "type": "text/csv",
-                "title": (
-                    f"{pins[key].filename}, the corrected file "
-                    "(GLIMS-RGI/rgi_issue_tracker#41) on the University of Bremen server"
-                ),
-                "roles": ["source"],
-                "file:size": pins[key].size,
-                "file:checksum": "1220" + pins[key].sha256,
-            }
+            source_links.append(
+                {
+                    "rel": "related",
+                    "href": pins[key].url,
+                    "type": "text/csv",
+                    "title": (
+                        f"Source: {pins[key].filename}, the corrected file "
+                        "(GLIMS-RGI/rgi_issue_tracker#41) on the University of Bremen server"
+                    ),
+                }
+            )
     for key, text in collection_styles(name, version).items():
         style = json.loads(text)
         roles = ["style", "default"] if key == styles.DEFAULT_STYLE else ["style"]
@@ -311,6 +317,19 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
     archive_rel = (
         "./" + archive.split("/", 1)[1] if archive.startswith(f"{name}/") else f"../{archive}"
     )
+    archive_file = {
+        "file:size": files[archive]["size"],
+        "file:checksum": files[archive]["file:checksum"],
+    }
+    # The browser draws a collection from its assets, so the archive is an
+    # asset as well as the rel:pmtiles link that the Portolan spec requires.
+    assets["pmtiles"] = {
+        "href": archive_rel,
+        "type": PMTILES,
+        "title": "Web map archive (vector tiles)",
+        "roles": ["visual"],
+        **archive_file,
+    }
     links = [
         {"rel": "root", "href": "../../catalog.json", "type": JSON, "title": meta["title"]},
         {
@@ -321,14 +340,14 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
         },
         *ctx.docs_links(spec["title"]),
         *ctx.nav_links(path),
+        *source_links,
         {
             "rel": "pmtiles",
             "href": archive_rel,
             "type": PMTILES,
             "title": "Web map archive (vector tiles)",
             "pmtiles:layers": spec["pmtiles_layers"],
-            "file:size": files[archive]["size"],
-            "file:checksum": files[archive]["file:checksum"],
+            **archive_file,
         },
     ]
     return {
@@ -343,7 +362,7 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
         "version": record["mirror_revision"],
         "updated": record["updated"],
         "sci:doi": meta["doi"],
-        "sci:citation": ctx.citation,
+        "sci:citation": _plain(ctx.citation),
         "sci:publications": publications,
         "providers": meta["providers"],
         "extent": {

@@ -16,7 +16,19 @@ from rgi_catalog.pipeline import output_path
 DISCLAIMER = (
     "unofficial mirror",
     "not endorsed by the rgi consortium",
-    "doi:10.5067/f6jmovy5navz",
+    "https://doi.org/10.5067/f6jmovy5navz",
+)
+# The citations in APA 7 style.
+CITATION = (
+    "RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier"
+    " outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center."
+    " https://doi.org/10.5067/F6JMOVY5NAVZ"
+)
+USER_GUIDE = (
+    "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L.,"
+    " Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023)."
+    " *The Randolph Glacier Inventory version 7.0 user guide*. Zenodo."
+    " https://doi.org/10.5281/zenodo.8362857"
 )
 # Files in catalog/ that the render does not write.
 NOT_RENDERED = ("_assets/",)
@@ -68,6 +80,31 @@ def test_disclaimer_everywhere(rendered: Path) -> None:
     for text in texts:
         for phrase in DISCLAIMER:
             assert phrase in text.lower(), (phrase, text[:200])
+        assert f"\n> {CITATION}\n" in f"{text}\n", text[:600]
+
+
+def test_descriptions_open_with_the_data(rendered: Path) -> None:
+    for doc in _stac(rendered).values():
+        assert not doc["description"].lower().startswith("this is an unofficial mirror")
+        assert doc["description"].index("unofficial mirror") > 0
+
+
+def test_titles_name_the_data(rendered: Path) -> None:
+    docs = _stac(rendered)
+    assert docs["catalog.json"]["title"] == "Randolph Glacier Inventory Mirror"
+    assert docs["v7.0/catalog.json"]["title"] == "RGI 7.0"
+    assert docs["v7.0/glaciers/collection.json"]["title"] == "RGI 7.0 glaciers"
+    for doc in docs.values():
+        assert "(unofficial mirror)" not in json.dumps(doc)
+
+
+def test_citations_in_apa7(rendered: Path) -> None:
+    glaciers = json.loads((rendered / "v7.0" / "glaciers" / "collection.json").read_text())
+    # The sci fields are plain text, so they carry no Markdown italics.
+    assert glaciers["sci:citation"] == CITATION.replace("*", "")
+    assert [p["citation"] for p in glaciers["sci:publications"]] == [USER_GUIDE.replace("*", "")]
+    readme = (rendered / "v7.0" / "glaciers" / "README.md").read_text()
+    assert f"> {USER_GUIDE}\n" in readme
 
 
 def test_upstream_columns_described_from_rgi(rendered: Path) -> None:
@@ -123,7 +160,8 @@ def test_providers_and_mirror_links(rendered: Path) -> None:
         if doc["type"] == "Collection":
             assert "producer" in doc["providers"][0]["roles"]
             assert doc["providers"][-1]["roles"] == ["host"]
-            assert doc["providers"][-1]["url"]
+            assert doc["providers"][-1]["name"] == "Luis Q. Gentner"
+            assert doc["providers"][-1]["url"] == "https://orcid.org/0009-0006-4453-0881"
             assert "pmtiles" in rels
 
 
@@ -149,6 +187,11 @@ def test_assets_and_links_resolve_relatively(rendered: Path) -> None:
     pmtiles = next(link for link in glaciers["links"] if link["rel"] == "pmtiles")
     assert pmtiles["href"] == "./rgi7.0.pmtiles"
     assert pmtiles["pmtiles:layers"] == ["glaciers", "glacier-labels"]
+    asset = glaciers["assets"]["pmtiles"]
+    assert asset["href"] == pmtiles["href"]
+    assert asset["type"] == "application/vnd.pmtiles"
+    assert asset["roles"] == ["visual"]
+    assert asset["file:checksum"] == pmtiles["file:checksum"]
     browser = next(link for link in glaciers["links"] if link["rel"] == "alternate")
     assert browser["href"] == (
         "https://browser.portolan-sdi.org/#/external/"
@@ -166,3 +209,16 @@ def test_styles_written_with_one_default(rendered: Path) -> None:
         assert asset["type"] == "application/vnd.mapbox.style+json"
         style = json.loads((rendered / "v7.0" / "glaciers" / asset["href"]).read_text())
         assert style["version"] == 8
+
+
+def test_sources_are_links_not_assets(rendered: Path) -> None:
+    glaciers = json.loads((rendered / "v7.0" / "glaciers" / "collection.json").read_text())
+    assert not [k for k, a in glaciers["assets"].items() if "source" in a["roles"]]
+    # rel:via is for the HTML landing page (PTL-PRO-001), so files are related.
+    related = {link["href"]: link for link in glaciers["links"] if link["rel"] == "related"}
+    nsidc = "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files"
+    assert f"{nsidc}/RGI2000-v7.0-G-global.zip" in related
+    assert f"{nsidc}/RGI2000-v7.0-C-global.zip" in related
+    links_csv = [h for h in related if h.endswith("RGI2000-v7.0-G-global-rgi6_links.csv")]
+    assert len(links_csv) == 1
+    assert related[links_csv[0]]["type"] == "text/csv"
