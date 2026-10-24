@@ -317,3 +317,11 @@ def test_collections_in_product_order(rendered: Path) -> None:
         f"./{name}/collection.json"
         for name in ("glaciers", "complexes", "intersects", "centerlines", "regions")
     ]
+
+
+def test_root_keeps_the_link_order_in_the_browser(rendered: Path) -> None:
+    root = json.loads((rendered / "catalog.json").read_text())
+    assert root["stac_browser"] == {"defaultCollectionSort": None}
+    for path, doc in _stac(rendered).items():
+        if path != "catalog.json":
+            assert "stac_browser" not in doc, path

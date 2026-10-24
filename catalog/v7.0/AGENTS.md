@@ -21,7 +21,7 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 - `centerlines/`: 367,724 rows in
   `https://data.source.coop/lqgentner/rgi/v7.0/centerlines/rgi7.0-centerlines.parquet`.
   Read `centerlines/AGENTS.md` for its columns, join keys and recipes.
-- `regions/`: 112 rows in
+- `regions/`: 110 rows in
   `https://data.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet`.
   Read `regions/AGENTS.md` for its columns, join keys and recipes.
 

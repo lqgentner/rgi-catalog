@@ -17,9 +17,9 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 | [complexes](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/complexes/collection.json) | 192,869 | 213.3 MB | [README](complexes/README.md) · [Agents guide](complexes/AGENTS.md) |
 | [intersects](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/intersects/collection.json) | 130,429 | 17.0 MB | [README](intersects/README.md) · [Agents guide](intersects/AGENTS.md) |
 | [centerlines](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/centerlines/collection.json) | 367,724 | 211.0 MB | [README](centerlines/README.md) · [Agents guide](centerlines/AGENTS.md) |
-| [regions](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) | 112 | 1.0 MB | [README](regions/README.md) · [Agents guide](regions/AGENTS.md) |
+| [regions](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) | 110 | 1.0 MB | [README](regions/README.md) · [Agents guide](regions/AGENTS.md) |
 
-The web map archive `rgi7.0.pmtiles` (1044.4 MB) holds the layers `regions`, `region-labels`, `complexes`, `glaciers`, `glacier-labels`, `centerlines`, `intersects`, z0 to z12.
+The web map archive `rgi7.0.pmtiles` (1043.8 MB) holds the layers `regions`, `region-labels`, `complexes`, `glaciers`, `glacier-labels`, `centerlines`, `intersects`, z0 to z12.
 
 ## Citation
 

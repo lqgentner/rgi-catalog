@@ -47,6 +47,9 @@ The layout changes:
   information (`subm_*`), the complex links (`complex_id`) and the RGI 6.0
   links (`rgi6_links`). The complex links of the complex product become
   `glacier_ids`. A glacier with no entry in a side file keeps its row.
+- RGI splits regions 10 and 19-15 at the antimeridian into two polygons.
+  Each pair becomes one row with a MultiPolygon of both parts. The
+  coordinates do not change.
 - Integers are narrowed to a smaller type only when every value round-trips.
   Floats stay float64.
 - The build skips the `.ipynb_checkpoints/` folders

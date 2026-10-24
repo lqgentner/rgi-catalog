@@ -7,7 +7,7 @@
   "id": "rgi",
   "title": "Randolph Glacier Inventory Mirror",
   "description": "The Randolph Glacier Inventory (RGI) is a globally complete inventory of glacier outlines. This catalog republishes it as GeoParquet files and a web map archive. The values are those of the RGI release. Fixes of documented upstream errors are listed in the provenance record.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
-  "updated": "2026-10-24T10:04:46Z",
+  "updated": "2026-10-24T11:55:41Z",
   "links": [
     {
       "rel": "root",
@@ -44,8 +44,8 @@
       "type": "image/webp",
       "title": "Thumbnail",
       "description": "The default style of the data, drawn by chiitiler. The world views show the land of Natural Earth, which is in the public domain. The glacier products share one frame, the Garibaldi and Marinelli glaciers in the Cordillera Darwin, on white.",
-      "file:size": 53074,
-      "file:checksum": "12205b60be546b43b9b2bf366e142005a11f872f0fb7c3845ed0c8e466bbbf7e7463"
+      "file:size": 52992,
+      "file:checksum": "1220b2aff70a8e5365144058a8d759b5bc384ae99d55441889c80c648f5170c46679"
     },
     {
       "rel": "child",
@@ -83,5 +83,8 @@
       "type": "text/html",
       "title": "Hosting page on Source Cooperative"
     }
-  ]
+  ],
+  "stac_browser": {
+    "defaultCollectionSort": null
+  }
 }

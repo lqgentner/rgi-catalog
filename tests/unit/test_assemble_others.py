@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import geopandas as gpd
 import pandas as pd
 import pytest
 import shapely
@@ -74,8 +75,13 @@ def test_regions_levels_on_fixture(fake_rgi: FakeRGI) -> None:
     assert list(regions.columns) == assemble.REGION_COLUMNS
     assert str(regions["level"].dtype) == "uint8"
     level1 = regions[regions["level"] == 1]
-    assert len(level1) == 4
-    assert (level1["o1region"] == "10").sum() == 2
+    # Region 10 is two polygons upstream, split at the antimeridian. It is
+    # one row here, so a region code names one row.
+    assert len(level1) == 3
+    assert level1["o1region"].is_unique
+    region10 = level1.loc[level1["o1region"] == "10"].geometry.iloc[0]
+    assert region10.geom_type == "MultiPolygon"
+    assert len(region10.geoms) == 2
     assert level1["o2region"].isna().all()
     level2 = regions[regions["level"] == 2]
     assert len(level2) == 2
@@ -98,7 +104,28 @@ def test_regions_refuse_summary_that_differs(fake_rgi: FakeRGI) -> None:
 def test_regions_levels_in_release() -> None:
     regions, _ = assemble.regions(RELEASE_REGIONS)
     counts = regions["level"].value_counts().to_dict()
-    assert counts == {1: 21, 2: 91}
-    assert (regions.loc[regions["level"] == 1, "o1region"] == "10").sum() == 2
+    assert counts == {1: 20, 2: 90}
+    assert regions.loc[regions["level"] == 1, "o1region"].is_unique
+    assert regions.loc[regions["level"] == 2, "o2region"].is_unique
+    # RGI's two antimeridian splits: region 10 and region 19-15.
+    split = regions.loc[regions["long_code"].isin(["10_north_asia", "19-15_ross_ice_shelf_7e"])]
+    assert len(split) == 2
+    assert all(g.geom_type == "MultiPolygon" and len(g.geoms) == 2 for g in split.geometry)
     assert regions["full_name"].notna().all()
     assert pd.api.types.is_string_dtype(regions["long_code"])
+
+
+def test_join_split_regions_refuses_pieces_that_differ() -> None:
+    pieces = gpd.GeoDataFrame(
+        {
+            "level": pd.Series([1, 1], dtype="uint8"),
+            "o1region": ["10", "10"],
+            "o2region": [None, None],
+            "full_name": ["North Asia", "Northern Asia"],
+            "long_code": ["10_north_asia", "10_north_asia"],
+        },
+        geometry=[shapely.box(170, 60, 180, 70), shapely.box(-180, 60, -170, 70)],
+        crs="EPSG:4326",
+    )
+    with pytest.raises(assemble.UpstreamMismatchError, match="10_north_asia"):
+        assemble.join_split_regions(pieces)

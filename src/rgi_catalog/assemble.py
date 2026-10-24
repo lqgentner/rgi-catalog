@@ -14,6 +14,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+import shapely
 
 from rgi_catalog.dtypes import (
     CENTERLINE_DTYPES,
@@ -499,6 +500,45 @@ def region_table(
     return gpd.GeoDataFrame(table, geometry=geometry, crs=f"EPSG:{WGS84}")
 
 
+def join_split_regions(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Join the pieces of a region split at the antimeridian into one row.
+
+    RGI stores regions 10 and 19-15 as two polygons each, eastern and
+    western. Here each is one row with a MultiPolygon of both pieces, so a
+    region code names one row. The coordinates are unchanged.
+
+    Parameters
+    ----------
+    gdf
+        The region table, one row per polygon.
+
+    Returns
+    -------
+    gpd.GeoDataFrame
+        One row per region, in the order of the first piece.
+
+    Raises
+    ------
+    UpstreamMismatchError
+        If the pieces of a region differ in an attribute.
+    """
+    attrs = [c for c in REGION_COLUMNS if c != "geometry"]
+    rows = []
+    for _, pieces in gdf.groupby(["level", "long_code"], sort=False):
+        first = pieces.iloc[0]
+        if len(pieces) > 1:
+            if len(pieces[attrs].drop_duplicates()) > 1:
+                msg = f"the pieces of region {first['long_code']} differ in their attributes"
+                raise UpstreamMismatchError(msg)
+            parts = [p for g in pieces.geometry for p in shapely.get_parts(g)]
+            geometry = shapely.MultiPolygon(parts)
+        else:
+            geometry = first.geometry
+        rows.append({**first[attrs].to_dict(), "geometry": geometry})
+    out = gpd.GeoDataFrame(rows, columns=REGION_COLUMNS, crs=gdf.crs)
+    return out.astype(gdf[attrs].dtypes.to_dict())
+
+
 def regions(regions_zip: Path) -> tuple[gpd.GeoDataFrame, FixReport]:
     """Assemble the regions table, first and second order in one file.
 
@@ -510,7 +550,8 @@ def regions(regions_zip: Path) -> tuple[gpd.GeoDataFrame, FixReport]:
     Returns
     -------
     tuple[gpd.GeoDataFrame, FixReport]
-        Columns in :data:`REGION_COLUMNS` order, then the fixes applied.
+        Columns in :data:`REGION_COLUMNS` order, one row per region, then the
+        fixes applied.
     """
     gdf, report = _apply_fixes(region_table(*read_regions(regions_zip)), "regions", polygons=True)
-    return gpd.GeoDataFrame(gdf[REGION_COLUMNS], crs=gdf.crs), report
+    return join_split_regions(gpd.GeoDataFrame(gdf[REGION_COLUMNS], crs=gdf.crs)), report

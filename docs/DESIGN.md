@@ -161,7 +161,7 @@ from the same inputs gave identical bytes.
 | complexes | 192,869 | 213.3 MB |
 | centerlines | 367,724 | 211.0 MB |
 | intersects | 130,429 | 17.0 MB |
-| regions | 112 | 1.0 MB |
+| regions | 110 | 1.0 MB |
 
 - **Typing.** The I table's `length_m` is a float and the L table's is an
   integer, so the centerline dtypes are a table of their own
@@ -175,6 +175,9 @@ from the same inputs gave identical bytes.
 - **Regions.** The summary CSVs hold only the codes and names of the
   shapefiles, and no statistics. The build uses them as a witness and fails
   when they differ. The file stacks both levels with a `level` column.
+  RGI splits regions 10 and 19-15 at the antimeridian into two polygons.
+  The file joins each pair into one MultiPolygon row, so a region code names
+  one row: 20 rows of level 1 and 90 of level 2.
 - **Region labels.** The regions have no label point. The tiles use the
   `point_on_surface` of each region's largest polygon. The label points are
   not a column of the GeoParquet file.
@@ -302,7 +305,7 @@ as a square at z7–8. Large glaciers then appeared all at once at z7.
 ### Result (measured 2026-10-24)
 
 `tiles --version 7.0` takes 12 min 21 s and peaks at 6.1 GB of memory. The
-per-zoom overview inputs take most of the time. The archive is 1,044.4 MB
+per-zoom overview inputs take most of the time. The archive is 1,043.8 MB
 with every layer.
 
 The region polygons cover the oceans and the Antarctic, so z12 addresses

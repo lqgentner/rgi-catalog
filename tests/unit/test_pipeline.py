@@ -87,7 +87,7 @@ def test_convert_every_product_on_fixture(
         "complexes": 2,
         "centerlines": 3,
         "intersects": 1,
-        "regions": 6,
+        "regions": 5,  # region 10 is one row of two pieces
     }
     footer = pq.ParquetFile(result.paths["regions"]).metadata.metadata
     assert json.loads(footer[b"rgi:sources"]) == {fake_rgi.regions_zip.name: "sha-regions"}

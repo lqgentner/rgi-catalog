@@ -344,6 +344,9 @@ def test_write_region_labels_one_per_region(fake_rgi: FakeRGI, tmp_path: Path) -
         same = regions[(regions["level"] == label["level"])]
         same = same[same["full_name"] == label["full_name"]]
         assert same.geometry.contains(label.geometry).any()
+    # Region 10 is one row of two pieces. Its label sits in the larger one.
+    north_asia = labels.loc[labels["full_name"] == "North Asia"].geometry.iloc[0]
+    assert 170 < north_asia.x < 180
 
 
 def test_version_layers_cover_every_product(tmp_path: Path) -> None:

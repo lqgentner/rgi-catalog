@@ -257,7 +257,7 @@ I_ROWS: dict[str, list[dict[str, Any]]] = {
 O1_REGIONS = [
     ("08", "Scandinavia", "08_scandinavia", _square(5.0, 58.0, 10.0)),
     ("10", "North Asia", "10_north_asia", _square(170.0, 60.0, 10.0)),
-    ("10", "North Asia", "10_north_asia", _square(-180.0, 60.0, 10.0)),
+    ("10", "North Asia", "10_north_asia", _square(-180.0, 60.0, 5.0)),
     ("11", "Central Europe", "11_central_europe", _square(5.0, 43.0, 10.0)),
 ]
 O2_REGIONS = [

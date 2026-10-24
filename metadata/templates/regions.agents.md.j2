@@ -21,11 +21,12 @@ ORDER BY o1region;
 The glacier count and area of each second-order region:
 
 ```sql
-SELECT r.o2region, any_value(r.full_name) AS full_name,
+SELECT r.o2region, r.full_name,
        count(g.rgi_id) AS n_glaciers, sum(g.area_km2) AS area_km2
-FROM (SELECT DISTINCT o2region, full_name FROM '{{ url }}' WHERE level = 2) AS r
+FROM '{{ url }}' AS r
 LEFT JOIN '{{ glaciers }}' AS g ON g.o2region = r.o2region
-GROUP BY r.o2region
+WHERE r.level = 2
+GROUP BY r.o2region, r.full_name
 ORDER BY area_km2 DESC NULLS LAST;
 ```
 
@@ -40,7 +41,8 @@ WHERE ST_Contains(geometry, ST_Point(8.0, 46.5));
 ## Join keys
 
 - `level` is 1 or 2. `o1region` is set on every row. `o2region` is null
-  where `level = 1`.
+  where `level = 1`. One row is one region: `o1region` is unique where
+  `level = 1`, and `o2region` is unique where `level = 2`.
 - `glaciers.o1region` joins `o1region` where `level = 1`, and
   `glaciers.o2region` joins `o2region` where `level = 2`. Every glacier and
   every complex has an `o2region` that this file holds.
@@ -50,9 +52,9 @@ WHERE ST_Contains(geometry, ST_Point(8.0, 46.5));
 ## Quirks that produce silently wrong answers
 
 - "the region outlines of `10` and `19-15` appear in the accompanying
-  shapefiles as two polygons, eastern and western." Each is two rows here.
-  Use `DISTINCT` or `GROUP BY` before you count regions: the file has 21
-  rows of level 1 for 20 regions, and 91 rows of level 2 for 90.
+  shapefiles as two polygons, eastern and western." Here each is one row,
+  a MultiPolygon of both parts. Its bounding box spans almost every
+  longitude, so a bbox filter always reads it.
 - Region 20 (Antarctic Mainland) and the second-order regions 19-23 and
   20-01 have no glaciers.
 - The regions are GTN-G's, not the RGI Consortium's. Cite them as the

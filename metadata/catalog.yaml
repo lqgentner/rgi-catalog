@@ -253,13 +253,12 @@ versions:
             variables.
         product: regions
         title: RGI 7.0 glacier regions
-        row_noun: region polygon
+        row_noun: region
         key: long_code
         description: >-
           The 20 first-order and 90 second-order glacier regions of RGI 7.0, in
-          one GeoParquet file. Regions 10 and 19-15 cross the antimeridian and
-          are two rows each. The web map archive holds the boundaries and the
-          names.
+          one GeoParquet file, one row per region. The web map archive holds
+          the boundaries and the names.
         keywords: [glacier regions, GTN-G]
         pmtiles_layers: [regions, region-labels]
         # The regions are GTN-G's, with their own citation and terms.

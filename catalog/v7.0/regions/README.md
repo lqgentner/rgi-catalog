@@ -2,7 +2,7 @@
 
 [Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/02_regions_definition.html) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
-The 20 first-order and 90 second-order glacier regions of RGI 7.0, in one GeoParquet file. Regions 10 and 19-15 cross the antimeridian and are two rows each. The web map archive holds the boundaries and the names.
+The 20 first-order and 90 second-order glacier regions of RGI 7.0, in one GeoParquet file, one row per region. The web map archive holds the boundaries and the names.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -17,7 +17,7 @@ The RGI 7.0 user guide describes the
 
 ## Files
 
-- [`rgi7.0-regions.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet): 112 rows, 1.0 MB. GeoParquet 2.0.0 in 1 row groups of up to 112 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
+- [`rgi7.0-regions.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet): 110 rows, 1.0 MB. GeoParquet 2.0.0 in 1 row groups of up to 110 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
 - [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `regions`, `region-labels`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `long_code`.
 ## Map styles
 
@@ -47,7 +47,7 @@ anonymous S3 at `s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/regions/
 | `o2region` | `string` | The code of the second-order region. Null for a first-order region. |
 | `full_name` | `string` | The region name. "All abbreviations in the second-order regions file have been replaced by their full name." |
 | `long_code` | `string` | The code and the name in one text. "This field is used to name the corresponding RGI shapefiles." |
-| `geometry` | `binary` | The region outline, a polygon in EPSG:4326. Regions 10 and 19-15 are split at the antimeridian into an eastern and a western row. |
+| `geometry` | `binary` | The region outline in EPSG:4326. Regions 10 and 19-15 cross the antimeridian. Each is a MultiPolygon of an eastern and a western part. |
 | `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
 
 ## Processing notes

@@ -48,6 +48,9 @@ WEBP = "image/webp"
 TEMPLATES = METADATA / "templates"
 THUMBNAILS = METADATA / "thumbnails"
 THUMBNAIL = "thumbnail.webp"
+# STAC Browser reads its options from the root catalog. A null sort shows the
+# children in the order of the child links.
+BROWSER_OPTIONS: dict[str, str | None] = {"defaultCollectionSort": None}
 # The products NSIDC distributes as global zips, by pin key.
 NSIDC_PRODUCTS = {
     "G": "glacier",
@@ -440,7 +443,7 @@ def _catalog(
         {"rel": "child", "href": f"./{href}", "type": JSON, "title": t} for href, t in children
     ]
     links += ctx.nav_links()
-    return {
+    doc: dict[str, Any] = {
         "type": "Catalog",
         "stac_version": STAC_VERSION,
         "stac_extensions": [PORTOLAN],
@@ -450,6 +453,9 @@ def _catalog(
         "updated": updated,
         "links": links,
     }
+    if depth == 0:
+        doc["stac_browser"] = BROWSER_OPTIONS
+    return doc
 
 
 def _write(out: Path, rel: str, text: str | bytes, written: list[Path]) -> None:

@@ -799,8 +799,8 @@
       ],
       "geoparquet_version": "2.0.0",
       "href": "rgi7.0-regions.parquet",
-      "row_count": 112,
-      "row_group_size": 112,
+      "row_count": 110,
+      "row_group_size": 110,
       "row_groups": 1
     }
   },
@@ -822,12 +822,12 @@
       "size": 16953216
     },
     "regions/rgi7.0-regions.parquet": {
-      "file:checksum": "12205949100d20e060914ef93c5871211f5a1098216a0c2d4ac4cad0cbc0c0817582",
-      "size": 952683
+      "file:checksum": "1220cf0f42d89e502e4fd1550275e73f4a3f84cb37de44131703f222fe3cf41771db",
+      "size": 955336
     },
     "rgi7.0.pmtiles": {
-      "file:checksum": "122025d4ecf242ebc25745c74769c5b861da1625d79d4c51d8ea130d08e59280513e",
-      "size": 1044447108
+      "file:checksum": "1220197763fc304d1fdcf1ce0f7af606caea7ffe6437ee3c1d0edfe559af0574bf68",
+      "size": 1043796626
     }
   },
   "fixes": {
@@ -914,6 +914,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-10-24T10:04:46Z",
+  "updated": "2026-10-24T11:55:41Z",
   "version": "7.0"
 }

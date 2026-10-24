@@ -123,7 +123,7 @@ regions:
     source: https://rgidata.org/user_guide/02_regions_definition.html
   geometry:
     description: >-
-      The region outline, a polygon in EPSG:4326. Regions 10 and 19-15 are
-      split at the antimeridian into an eastern and a western row.
+      The region outline in EPSG:4326. Regions 10 and 19-15 cross the
+      antimeridian. Each is a MultiPolygon of an eastern and a western part.
     source: https://rgidata.org/user_guide/02_regions_definition.html
   bbox: *bbox

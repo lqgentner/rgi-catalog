@@ -427,7 +427,7 @@ def write_region_labels(regions_parquet: Path, out: Path) -> Path:
 
     The regions file has no label point, so the point is derived: the
     ``point_on_surface`` of the region's largest polygon. Region 10 and
-    region 19-15 are two polygons each, split at the antimeridian.
+    region 19-15 are MultiPolygons, split at the antimeridian.
 
     Parameters
     ----------
@@ -441,7 +441,8 @@ def write_region_labels(regions_parquet: Path, out: Path) -> Path:
     Path
         ``out``.
     """
-    regions = gpd.read_parquet(regions_parquet)
+    regions = gpd.read_parquet(regions_parquet).explode(index_parts=False)
+    regions = regions.reset_index(drop=True)
     # Square degrees, enough to choose between the parts of one region.
     areas = pd.Series(shapely.area(regions.geometry.to_numpy()), index=regions.index)
     largest = regions.loc[areas.groupby([regions["level"], regions["long_code"]]).idxmax()]
