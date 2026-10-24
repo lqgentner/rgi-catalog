@@ -21,7 +21,7 @@ The RGI 7.0 user guide describes the
 - [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `glaciers`, `glacier-labels`. Below z10 the layer is an overview. A feature that spans 3 pixels at a zoom is its simplified outline. A smaller feature is a point at RGI's `cenlon` and `cenlat`, one per grid cell of about a pixel, and the largest feature wins the cell. Overview features carry only `rgi_id`, `display_name`, `area_km2`, `zmed_m`, `surge_type`, `term_type`, `is_rgi6`. From z10 the tiles carry every column except the list and struct columns, which vector tiles cannot store: `hypso_permille`, `rgi6_links`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
 ## Map styles
 
-- [Reference map](./styles/reference.json) (default): Glacier outlines, centerlines and names, with the glacier regions.
+- [Glaciers](./styles/glaciers.json) (default): Glacier outlines and names.
 - [Median elevation](./styles/median-elevation.json): Glaciers by median elevation (zmed_m), in 1,000 m classes.
 - [Surge evidence](./styles/surge-evidence.json): Glaciers by evidence for surging (surge_type).
 - [Terminus type](./styles/terminus-type.json): Glaciers by terminus type (term_type). RGI 7.0 assigns only the marine-terminating class.

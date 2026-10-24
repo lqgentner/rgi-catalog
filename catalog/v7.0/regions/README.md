@@ -22,7 +22,7 @@ The RGI 7.0 user guide describes the
 ## Map styles
 
 - [Glacier regions](./styles/regions.json) (default): First-order and second-order glacier regions, with their names.
-- [Reference map](./styles/reference.json): Glacier outlines, centerlines and names, with the glacier regions.
+- [Glaciers](./styles/glaciers.json): Glacier outlines and names.
 
 ## Access
 

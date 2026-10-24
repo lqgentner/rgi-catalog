@@ -22,7 +22,7 @@ The RGI 7.0 user guide describes the
 ## Map styles
 
 - [Glacier complexes](./styles/complexes.json) (default): Glacier complexes: connected glaciers merged into one outline.
-- [Reference map](./styles/reference.json): Glacier outlines, centerlines and names, with the glacier regions.
+- [Glaciers](./styles/glaciers.json): Glacier outlines and names.
 
 ## Access
 

@@ -1,8 +1,8 @@
 {
   "version": 8,
-  "name": "Reference map",
+  "name": "Glaciers",
   "metadata": {
-    "description": "Glacier outlines, centerlines and names, with the glacier regions."
+    "description": "Glacier outlines and names."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {
@@ -12,24 +12,6 @@
     }
   },
   "layers": [
-    {
-      "source-layer": "regions",
-      "id": "regions-outline-1",
-      "type": "line",
-      "filter": [
-        "==",
-        [
-          "get",
-          "level"
-        ],
-        1
-      ],
-      "paint": {
-        "line-color": "#263238",
-        "line-width": 1.5
-      },
-      "source": "data"
-    },
     {
       "source-layer": "regions",
       "id": "regions-outline-2",
@@ -44,12 +26,26 @@
       ],
       "minzoom": 3,
       "paint": {
-        "line-color": "#546e7a",
-        "line-width": 0.8,
-        "line-dasharray": [
-          3,
-          2
-        ]
+        "line-color": "#bdbdbd",
+        "line-width": 0.5
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "regions",
+      "id": "regions-outline-1",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "paint": {
+        "line-color": "#9e9e9e",
+        "line-width": 0.8
       },
       "source": "data"
     },
@@ -124,44 +120,6 @@
       "source": "data"
     },
     {
-      "source-layer": "centerlines",
-      "id": "centerlines",
-      "type": "line",
-      "paint": {
-        "line-color": "#d55e00",
-        "line-width": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          8,
-          [
-            "case",
-            [
-              "get",
-              "is_main"
-            ],
-            1.0,
-            0.5
-          ],
-          12,
-          [
-            "case",
-            [
-              "get",
-              "is_main"
-            ],
-            2.0,
-            1.0
-          ]
-        ]
-      },
-      "source": "data"
-    },
-    {
       "source-layer": "region-labels",
       "id": "region-labels-1",
       "type": "symbol",
@@ -210,8 +168,16 @@
       "maxzoom": 9,
       "layout": {
         "text-field": [
-          "get",
-          "full_name"
+          "concat",
+          [
+            "get",
+            "o2region"
+          ],
+          "\n",
+          [
+            "get",
+            "full_name"
+          ]
         ],
         "text-font": [
           "Open Sans Regular"

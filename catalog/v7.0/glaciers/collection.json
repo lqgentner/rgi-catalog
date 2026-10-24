@@ -527,17 +527,17 @@
         }
       ]
     },
-    "style-reference": {
-      "href": "./styles/reference.json",
+    "style-glaciers": {
+      "href": "./styles/glaciers.json",
       "type": "application/vnd.mapbox.style+json",
-      "title": "Reference map",
-      "description": "Glacier outlines, centerlines and names, with the glacier regions.",
+      "title": "Glaciers",
+      "description": "Glacier outlines and names.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 4885,
-      "file:checksum": "1220809a1b15c70cce50857c6f8e6ced427cdee0d4b1ff4919c5f3a00088f60c762a"
+      "file:size": 4248,
+      "file:checksum": "1220f067610ddbf44a681db9b4906e14f78182fc4600b58eca3347500c6537887da1"
     },
     "style-median-elevation": {
       "href": "./styles/median-elevation.json",
@@ -547,8 +547,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 3057,
-      "file:checksum": "1220a8b0106c57690590574a4348a455e1f70e2cbac4237b3c81bf432ab8e5efcaf1"
+      "file:size": 5169,
+      "file:checksum": "12206d7e1d2b86a2ffa41d644117522eb57eb3e18fc9bbb3e6648af9c9d793fd78e8"
     },
     "style-surge-evidence": {
       "href": "./styles/surge-evidence.json",
@@ -558,8 +558,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 3710,
-      "file:checksum": "12201dc0679af2e777a9c935aee0d5c065f805a5f03e9b043bad641509adf80a989e"
+      "file:size": 5822,
+      "file:checksum": "1220813646def07ceaa70dd7aed1c9f6ffb6ac8696f69df7eb43a1f769f4661f69d5"
     },
     "style-terminus-type": {
       "href": "./styles/terminus-type.json",
@@ -569,8 +569,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 3322,
-      "file:checksum": "122026b38c2d27da4bc658e78497831b6e6d8d87f34718ed316ec98b61a5338e77ed"
+      "file:size": 5434,
+      "file:checksum": "12203a9929eecd5e12e1b76398caf0f36c2a0621597141c3ee232eac8360cb7c681b"
     },
     "style-same-as-rgi6": {
       "href": "./styles/same-as-rgi6.json",
@@ -580,8 +580,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 3190,
-      "file:checksum": "122033f2d7d839d01950e8e67311b0d9b769ebe3a547d587d09a0549d0e2a63dd74b"
+      "file:size": 5302,
+      "file:checksum": "1220d7bae7368f9a51a0a5fb9aceacfef2a5c730fdf16c6c65d1d08fe92bbf495ea6"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",

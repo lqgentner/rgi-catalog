@@ -346,7 +346,12 @@ builds the styles of the glaciers collection.
 
 | Style | Column | Expression | Legend |
 | --- | --- | --- | --- |
-| `reference` (default) | none | outlines, centerlines, region boundaries, names | no |
+| `glaciers` (default) | none | outlines and names | no |
+
+Every style draws the region boundaries under its data and the region names
+over it. First-order boundaries show from z0, second-order ones from z3, each
+second-order name under its number (`11-01`). The lines are solid, because
+neighbouring regions share edges and a dash pattern drawn twice breaks up.
 | `median-elevation` | `zmed_m` | `step` at 1,000 m to 5,000 m | 6 classes |
 | `surge-evidence` | `surge_type` | `match` on 0 to 3 | 4 classes |
 | `terminus-type` | `term_type` | `match` on 1 and 9 | 2 classes |
@@ -434,12 +439,11 @@ archive and drops its symbol layers. No thumbnail needs a credit:
   Natural Earth (`scripts/naturalearth_land.py`, 1:50m, public domain).
 - The glaciers, complexes, intersects and centerlines share one frame on
   white: the Garibaldi and Marinelli glaciers, Cordillera Darwin, just above
-  map zoom 10. The glaciers thumbnail leaves out the centerlines and the
-  region boundaries of the reference map.
+  map zoom 10.
 
 | Image | Style | bbox |
 | --- | --- | --- |
-| root, `v7.0` | glaciers, Reference map | -170,-60.3,170,82 |
+| root, `v7.0` | Glaciers | -170,-60.3,170,82 |
 | regions | Glacier regions | -170,-60.3,170,82 |
 | glaciers, complexes, intersects, centerlines | each default | -70.078019,-54.786293,-69.421981,-54.533313 |
 

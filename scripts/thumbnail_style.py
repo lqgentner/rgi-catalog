@@ -3,7 +3,6 @@
 Usage::
 
     pixi run python scripts/thumbnail_style.py STYLE ARCHIVE OUT_DIR [--land LAND]
-        [--leave-out LAYER ...]
 
 Reads a published style and writes three styles to ``OUT_DIR``:
 
@@ -13,10 +12,9 @@ Reads a published style and writes three styles to ``OUT_DIR``:
 - ``probe-style.json``: the style's layers over white, for the blank probe.
 - ``blank-style.json``: the white background alone.
 
-``--leave-out`` drops the style layers that draw an archive layer, such as the
-centerlines of the reference map. Every source points at the local archive
-and declares its zoom range, so MapLibre overzooms the deepest stored tile.
-Symbol layers are left out, because chiitiler fetches no glyphs.
+Every source points at the local archive and declares its zoom range, so
+MapLibre overzooms the deepest stored tile. Symbol layers are left out,
+because chiitiler fetches no glyphs.
 """
 
 from __future__ import annotations
@@ -47,15 +45,10 @@ def main() -> None:
     parser.add_argument("archive", type=Path)
     parser.add_argument("out_dir", type=Path)
     parser.add_argument("--land", type=Path)
-    parser.add_argument("--leave-out", action="append", default=[], metavar="LAYER")
     args = parser.parse_args()
 
     style = json.loads(args.style.read_text())
-    layers = [
-        layer
-        for layer in style["layers"]
-        if layer["type"] != "symbol" and layer.get("source-layer") not in args.leave_out
-    ]
+    layers = [layer for layer in style["layers"] if layer["type"] != "symbol"]
     sources = {key: _source(args.archive) for key in style["sources"]}
     base = [WHITE]
     render_sources = dict(sources)

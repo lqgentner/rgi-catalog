@@ -22,7 +22,7 @@ The RGI 7.0 user guide describes the
 ## Map styles
 
 - [Centerlines](./styles/centerlines.json) (default): Glacier centerlines, the main centerline wider, from z8, over the glacier outlines.
-- [Reference map](./styles/reference.json): Glacier outlines, centerlines and names, with the glacier regions.
+- [Glaciers](./styles/glaciers.json): Glacier outlines and names.
 
 ## Access
 

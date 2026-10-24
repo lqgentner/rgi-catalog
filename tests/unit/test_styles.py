@@ -22,7 +22,7 @@ def test_styles_reference_the_shared_archive() -> None:
     style = styles.collection_style("glaciers", styles.archive_href(), ["glaciers"])
     assert style["version"] == 8
     assert style["sources"]["data"]["url"] == "pmtiles://../../rgi7.0.pmtiles"
-    full = styles.reference_style(styles.archive_href())
+    full = styles.glaciers_style(styles.archive_href())
     assert full["sources"]["data"]["url"] == "pmtiles://../../rgi7.0.pmtiles"
 
 
@@ -45,17 +45,17 @@ def test_style_layers_draw_from_the_archive(style: dict[str, Any]) -> None:
     json.dumps(style)
 
 
-def test_glacier_styles_default_is_the_reference_map() -> None:
+def test_glacier_styles_default_is_the_glaciers_style() -> None:
     assert list(ALL_STYLES) == [
-        "reference",
+        "glaciers",
         "median-elevation",
         "surge-evidence",
         "terminus-type",
         "same-as-rgi6",
     ]
-    assert styles.DEFAULT_STYLE == "reference"
-    assert ALL_STYLES["reference"]["name"] == "Reference map"
-    assert ALL_STYLES["reference"] == styles.reference_style("../../rgi7.0.pmtiles")
+    assert styles.DEFAULT_STYLE == "glaciers"
+    assert ALL_STYLES["glaciers"]["name"] == "Glaciers"
+    assert ALL_STYLES["glaciers"] == styles.glaciers_style("../../rgi7.0.pmtiles")
 
 
 @pytest.mark.parametrize("style", ALL_STYLES.values())
@@ -99,7 +99,7 @@ def test_thematic_styles_have_readable_legends() -> None:
         "4000",
         "5000",
     ]
-    assert _legend(ALL_STYLES["reference"]) == []
+    assert _legend(ALL_STYLES["glaciers"]) == []
 
 
 @pytest.mark.skipif(not GLACIERS_FILE.exists(), reason="needs the staged glaciers file")
@@ -169,11 +169,11 @@ COLLECTIONS = ("glaciers", "complexes", "centerlines", "intersects", "regions")
 
 
 @pytest.mark.parametrize("name", COLLECTIONS)
-def test_every_collection_has_a_default_and_the_reference_map(name: str) -> None:
+def test_every_collection_has_a_default_and_the_glaciers_style(name: str) -> None:
     found = styles.collection_styles(name, HREF)
     assert next(iter(found)) == styles.DEFAULT_STYLES[name]
-    assert "reference" in found
-    assert found["reference"] == styles.reference_style(HREF)
+    assert "glaciers" in found
+    assert found["glaciers"] == styles.glaciers_style(HREF)
     default = found[styles.DEFAULT_STYLES[name]]
     if name != "glaciers":
         assert name in {layer["source-layer"] for layer in default["layers"]}
@@ -181,21 +181,18 @@ def test_every_collection_has_a_default_and_the_reference_map(name: str) -> None
         assert style["sources"]["data"]["url"] == f"pmtiles://{HREF}"
 
 
-def test_reference_map_draws_regions_glaciers_and_centerlines() -> None:
-    full = styles.reference_style(HREF)
+def test_glaciers_style_draws_the_glaciers_and_the_regions() -> None:
+    full = styles.glaciers_style(HREF)
     assert {layer["source-layer"] for layer in full["layers"]} == {
         "regions",
         "region-labels",
         "glaciers",
-        "centerlines",
         "glacier-labels",
     }
-    # Only the glacier fill is a fill, so the reference map has no legend.
+    # Only the glacier fill is a fill, so the style has no legend.
     assert [layer["id"] for layer in full["layers"] if layer["type"] == "fill"] == [
         "glaciers-fill",
     ]
-    lines = next(layer for layer in full["layers"] if layer["source-layer"] == "centerlines")
-    assert lines["paint"]["line-color"] == styles.CENTERLINE_COLOR
 
 
 def test_regions_style_legend_names_the_levels() -> None:
@@ -222,7 +219,7 @@ def test_glaciers_under_lines_recede_in_the_glacier_colours(name: str) -> None:
         )
 
     own = styles.collection_styles(name, HREF)[name]
-    ref = styles.reference_style(HREF)
+    ref = styles.glaciers_style(HREF)
     assert paint(own, "fill")["fill-color"] == paint(ref, "fill")["fill-color"]
     assert paint(own, "line")["line-color"] == paint(ref, "line")["line-color"]
     assert paint(own, "fill")["fill-opacity"] < paint(ref, "fill")["fill-opacity"]
@@ -242,3 +239,32 @@ def test_style_descriptions_name_no_colour(name: str) -> None:
     # drifts when the palette changes.
     for key, style in styles.collection_styles(name, HREF).items():
         assert not COLOR_WORDS.search(style["metadata"]["description"]), (name, key)
+
+
+@pytest.mark.parametrize("name", COLLECTIONS)
+def test_every_style_draws_region_boundaries_and_names(name: str) -> None:
+    # Neighbouring regions share edges, so a dash pattern drawn twice breaks
+    # up. Solid lines stay clean.
+    for key, style in styles.collection_styles(name, HREF).items():
+        layers = style["layers"]
+        ids = [layer["id"] for layer in layers]
+        bounds = [i for i, x in enumerate(ids) if x.startswith("regions-outline-")]
+        assert [ids[i] for i in bounds] == ["regions-outline-2", "regions-outline-1"], key
+        assert not any("line-dasharray" in layers[i]["paint"] for i in bounds), key
+        data = [
+            i
+            for i, layer in enumerate(layers)
+            if layer["source-layer"] not in {"regions", "region-labels"}
+        ]
+        assert max(bounds) < min(data, default=len(layers)), (name, key)
+        assert {"region-labels-1", "region-labels-2"} <= set(ids), (name, key)
+
+
+def test_second_order_region_labels_show_the_number() -> None:
+    label = next(
+        layer
+        for layer in styles.glaciers_style(HREF)["layers"]
+        if layer["id"] == "region-labels-2"
+    )
+    assert ["get", "o2region"] in label["layout"]["text-field"]
+    assert ["get", "full_name"] in label["layout"]["text-field"]

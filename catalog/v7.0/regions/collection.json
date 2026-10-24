@@ -139,19 +139,19 @@
         "style",
         "default"
       ],
-      "file:size": 2995,
-      "file:checksum": "1220f97272c2a459b2bd52182d8d907cead77486e06c09721695034fdd30fd814660"
+      "file:size": 3062,
+      "file:checksum": "12200377182e966a01891bae51c954eb6771d0af6c22391f2dca7ca9d19a87304899"
     },
-    "style-reference": {
-      "href": "./styles/reference.json",
+    "style-glaciers": {
+      "href": "./styles/glaciers.json",
       "type": "application/vnd.mapbox.style+json",
-      "title": "Reference map",
-      "description": "Glacier outlines, centerlines and names, with the glacier regions.",
+      "title": "Glaciers",
+      "description": "Glacier outlines and names.",
       "roles": [
         "style"
       ],
-      "file:size": 4885,
-      "file:checksum": "1220809a1b15c70cce50857c6f8e6ced427cdee0d4b1ff4919c5f3a00088f60c762a"
+      "file:size": 4248,
+      "file:checksum": "1220f067610ddbf44a681db9b4906e14f78182fc4600b58eca3347500c6537887da1"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
@@ -171,8 +171,8 @@
       "roles": [
         "thumbnail"
       ],
-      "file:size": 32744,
-      "file:checksum": "1220d0e5c5935ceef1525314086a21430c79f213a209ba8729dd0b5de2efc5246d24"
+      "file:size": 30114,
+      "file:checksum": "1220275c4bcd5bfa7625ea56424ea56acd3d4ca083c6dce9a5fa282f5554431a3f4c"
     }
   },
   "links": [

@@ -61,13 +61,10 @@ thumb() {  # target style bbox [--land LAND]
     echo "ok   $target $(stat -c%s "$target") bytes"
 }
 
-thumb . "$STYLES/glaciers/styles/reference.json" "$WORLD" --land "$LAND"
-thumb v7.0 "$STYLES/glaciers/styles/reference.json" "$WORLD" --land "$LAND"
+thumb . "$STYLES/glaciers/styles/glaciers.json" "$WORLD" --land "$LAND"
+thumb v7.0 "$STYLES/glaciers/styles/glaciers.json" "$WORLD" --land "$LAND"
 thumb v7.0/regions "$STYLES/regions/styles/regions.json" "$WORLD" --land "$LAND"
-# The glaciers thumbnail shows the outlines alone, without the centerlines and
-# the region boundaries of the reference map.
-thumb v7.0/glaciers "$STYLES/glaciers/styles/reference.json" "$FRAME" \
-    --leave-out centerlines --leave-out regions
+thumb v7.0/glaciers "$STYLES/glaciers/styles/glaciers.json" "$FRAME"
 thumb v7.0/complexes "$STYLES/complexes/styles/complexes.json" "$FRAME"
 thumb v7.0/centerlines "$STYLES/centerlines/styles/centerlines.json" "$FRAME"
 thumb v7.0/intersects "$STYLES/intersects/styles/intersects.json" "$FRAME"
