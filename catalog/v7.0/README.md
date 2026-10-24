@@ -1,9 +1,9 @@
 # RGI 7.0
 
-[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
+[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
 RGI 7.0, released in 2023. It holds 274,531 glacier outlines with their attributes. This is mirror revision
-`7.0-r1`, built 2026-10-23.
+`7.0-r1`, built 2026-10-24.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -11,15 +11,15 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 ## Collections
 
-| Collection | Rows | GeoParquet | Documentation |
+| Collection | Rows | GeoParquet | Guides |
 | --- | ---: | ---: | --- |
-| [glaciers](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/glaciers/collection.json) | 274,531 | 258.0 MB | [README](glaciers/README.md) · [AGENTS](glaciers/AGENTS.md) |
-| [complexes](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/complexes/collection.json) | 192,869 | 213.3 MB | [README](complexes/README.md) · [AGENTS](complexes/AGENTS.md) |
-| [centerlines](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/centerlines/collection.json) | 367,724 | 211.0 MB | [README](centerlines/README.md) · [AGENTS](centerlines/AGENTS.md) |
-| [intersects](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/intersects/collection.json) | 130,429 | 17.0 MB | [README](intersects/README.md) · [AGENTS](intersects/AGENTS.md) |
-| [regions](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) | 112 | 1.0 MB | [README](regions/README.md) · [AGENTS](regions/AGENTS.md) |
+| [glaciers](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/glaciers/collection.json) | 274,531 | 258.0 MB | [README](glaciers/README.md) · [Agents guide](glaciers/AGENTS.md) |
+| [complexes](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/complexes/collection.json) | 192,869 | 213.3 MB | [README](complexes/README.md) · [Agents guide](complexes/AGENTS.md) |
+| [intersects](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/intersects/collection.json) | 130,429 | 17.0 MB | [README](intersects/README.md) · [Agents guide](intersects/AGENTS.md) |
+| [centerlines](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/centerlines/collection.json) | 367,724 | 211.0 MB | [README](centerlines/README.md) · [Agents guide](centerlines/AGENTS.md) |
+| [regions](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) | 112 | 1.0 MB | [README](regions/README.md) · [Agents guide](regions/AGENTS.md) |
 
-The web map archive `rgi7.0.pmtiles` (1081.9 MB) holds the layers `regions`, `region-labels`, `complexes`, `glaciers`, `glacier-labels`, `centerlines`, `intersects`, z0 to z12.
+The web map archive `rgi7.0.pmtiles` (1044.4 MB) holds the layers `regions`, `region-labels`, `complexes`, `glaciers`, `glacier-labels`, `centerlines`, `intersects`, z0 to z12.
 
 ## Citation
 

@@ -7,6 +7,13 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[glacier complex product](https://rgidata.org/user_guide/products/glacier_complex_product.html):
+
+> The glacier complex product is the result of a spatial merge operation of the glacier product (dissolve in the GIS jargon). The operation is realized on geometries only, which means that any cluster of connected glaciers (however small the connection) will be merged into one entity in the glacier complex product. The resulting inventory has the same area but a smaller or equal number of entities as the glacier product. Only a few attributes from the original glacier product remain after the merge.
+
 ## The file
 
 `https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet`: 192,869

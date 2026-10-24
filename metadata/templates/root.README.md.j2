@@ -8,10 +8,10 @@
 
 ## What is here
 
-| Version | Mirror revision | Collections | Documentation |
+| Version | Mirror revision | Collections | Guides |
 | --- | --- | --- | --- |
 {% for version, vspec in versions.items() %}
-| [RGI {{ version }}]({{ browser("v" ~ version ~ "/catalog.json") }}) | {{ records[version].mirror_revision }} | {{ vspec.collections | join(", ") }} | [README](v{{ version }}/README.md) · [AGENTS](v{{ version }}/AGENTS.md) |
+| [RGI {{ version }}]({{ browser("v" ~ version ~ "/catalog.json") }}) | {{ records[version].mirror_revision }} | {{ vspec.collections | join(", ") }} | [README](v{{ version }}/README.md) · [Agents guide](v{{ version }}/AGENTS.md) |
 {% endfor %}
 
 ## Access

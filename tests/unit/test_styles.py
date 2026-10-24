@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 import pyarrow.parquet as pq
@@ -153,12 +154,14 @@ def test_glaciers_drawn_as_dots_at_low_zoom(style: dict[str, Any]) -> None:
         ["geometry-type"],
         ["literal", ["Point", "MultiPoint"]],
     ]
-    line = next(
+    # A dot has the colour of the fill, so it reads as a glacier too small to
+    # draw rather than as a different feature.
+    fill = next(
         layer
         for layer in style["layers"]
-        if layer["type"] == "line" and layer["source-layer"] == "glaciers"
+        if layer["type"] == "fill" and layer["source-layer"] == "glaciers"
     )
-    assert dots[0]["paint"]["circle-color"] == line["paint"]["line-color"]
+    assert dots[0]["paint"]["circle-color"] == fill["paint"]["fill-color"]
 
 
 HREF = "../../rgi7.0.pmtiles"
@@ -205,3 +208,37 @@ def test_line_styles_draw_the_glaciers_as_context(name: str) -> None:
     default = styles.collection_styles(name, HREF)[name]
     layers = [layer["source-layer"] for layer in default["layers"]]
     assert layers.index("glaciers") < layers.index(name)
+
+
+@pytest.mark.parametrize("name", ["centerlines", "intersects"])
+def test_glaciers_under_lines_recede_in_the_glacier_colours(name: str) -> None:
+    # The same glacier colours in every style, but fainter under the lines,
+    # so the lines are the subject.
+    def paint(style: dict[str, Any], kind: str) -> dict[str, Any]:
+        return next(
+            layer["paint"]
+            for layer in style["layers"]
+            if layer.get("source-layer") == "glaciers" and layer["type"] == kind
+        )
+
+    own = styles.collection_styles(name, HREF)[name]
+    ref = styles.reference_style(HREF)
+    assert paint(own, "fill")["fill-color"] == paint(ref, "fill")["fill-color"]
+    assert paint(own, "line")["line-color"] == paint(ref, "line")["line-color"]
+    assert paint(own, "fill")["fill-opacity"] < paint(ref, "fill")["fill-opacity"]
+    assert paint(own, "line").get("line-opacity", 1) < paint(ref, "line").get("line-opacity", 1)
+
+
+COLOR_WORDS = re.compile(
+    r"\b(red|orange|yellow|green|teal|blue|purple|violet|pink|grey|gray|black|white|"
+    r"light|dark|pale)\b",
+    re.IGNORECASE,
+)
+
+
+@pytest.mark.parametrize("name", COLLECTIONS)
+def test_style_descriptions_name_no_colour(name: str) -> None:
+    # The style and its legend show the colours. A description that names them
+    # drifts when the palette changes.
+    for key, style in styles.collection_styles(name, HREF).items():
+        assert not COLOR_WORDS.search(style["metadata"]["description"]), (name, key)

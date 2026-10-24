@@ -1,6 +1,6 @@
 # RGI 7.0 glacier centerlines
 
-[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/centerlines/collection.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
+[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/centerlines/collection.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/products/centerlines_product.html) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
 One row per centerline: the main centerline and the tributary centerlines of every glacier, with RGI's attributes, in one GeoParquet file. The web map archive holds the lines from z8.
 
@@ -8,14 +8,21 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[glacier centerlines product](https://rgidata.org/user_guide/products/centerlines_product.html):
+
+> The glacier centerlines product contains geometrical centerlines for the main branches and major tributaries of all glaciers in the RGI 7.0 glacier product. The centerlines are computed using a geometrical flow routing algorithm first described by Kienholz et al. [2014] and implemented and executed by the Open Global Glacier Model (OGGM) [Maussion et al., 2019].
+
 ## Files
 
 - [`rgi7.0-centerlines.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/centerlines/rgi7.0-centerlines.parquet): 367,724 rows, 211.0 MB. GeoParquet 2.0.0 in 36 row groups of up to 10,784 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
 - [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `centerlines`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 
-- [Centerlines](./styles/centerlines.json) (default): Glacier centerlines (red), the main centerline wider, from z8, over the glacier outlines (pale blue).
-- [Reference map](./styles/reference.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
+- [Centerlines](./styles/centerlines.json) (default): Glacier centerlines, the main centerline wider, from z8, over the glacier outlines.
+- [Reference map](./styles/reference.json): Glacier outlines, centerlines and names, with the glacier regions.
 
 ## Access
 

@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Same as RGI 6.0",
   "metadata": {
-    "description": "Glaciers coloured by whether the outline is the same as in RGI 6.0 (is_rgi6) or new in RGI 7.0, as in the map of the RGI 7.0 user guide."
+    "description": "Glaciers by whether the outline is the same as in RGI 6.0 (is_rgi6), as in the map of the RGI 7.0 user guide."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {
@@ -29,10 +29,10 @@
             "New in RGI 7.0"
           ],
           "Same as RGI 6.0",
-          "#1f77b4",
+          "#0072b2",
           "New in RGI 7.0",
-          "#d62728",
-          "#bdbdbd"
+          "#d55e00",
+          "#9e9e9e"
         ],
         "fill-opacity": 0.8
       },
@@ -55,10 +55,10 @@
             "New in RGI 7.0"
           ],
           "Same as RGI 6.0",
-          "#1f77b4",
+          "#0072b2",
           "New in RGI 7.0",
-          "#d62728",
-          "#bdbdbd"
+          "#d55e00",
+          "#9e9e9e"
         ],
         "line-width": [
           "interpolate",
@@ -108,10 +108,10 @@
             "New in RGI 7.0"
           ],
           "Same as RGI 6.0",
-          "#1f77b4",
+          "#0072b2",
           "New in RGI 7.0",
-          "#d62728",
-          "#bdbdbd"
+          "#d55e00",
+          "#9e9e9e"
         ],
         "circle-radius": [
           "interpolate",
@@ -151,7 +151,7 @@
         ]
       },
       "paint": {
-        "text-color": "#08306b",
+        "text-color": "#0d2a5c",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.2
       },

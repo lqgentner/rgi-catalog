@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Median elevation",
   "metadata": {
-    "description": "Glaciers coloured by median elevation (zmed_m) in 1,000 m classes, from below 1,000 m (dark purple) to 5,000 m and above (yellow)."
+    "description": "Glaciers by median elevation (zmed_m), in 1,000 m classes."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {
@@ -23,17 +23,17 @@
             "get",
             "zmed_m"
           ],
-          "#440154",
+          "#a88bd9",
           1000,
-          "#414487",
+          "#8c69c8",
           2000,
-          "#2a788e",
+          "#7050b2",
           3000,
-          "#22a884",
+          "#573a96",
           4000,
-          "#7ad151",
+          "#3f2875",
           5000,
-          "#fde725"
+          "#291852"
         ],
         "fill-opacity": 0.8
       },
@@ -50,17 +50,17 @@
             "get",
             "zmed_m"
           ],
-          "#440154",
+          "#a88bd9",
           1000,
-          "#414487",
+          "#8c69c8",
           2000,
-          "#2a788e",
+          "#7050b2",
           3000,
-          "#22a884",
+          "#573a96",
           4000,
-          "#7ad151",
+          "#3f2875",
           5000,
-          "#fde725"
+          "#291852"
         ],
         "line-width": [
           "interpolate",
@@ -104,17 +104,17 @@
             "get",
             "zmed_m"
           ],
-          "#440154",
+          "#a88bd9",
           1000,
-          "#414487",
+          "#8c69c8",
           2000,
-          "#2a788e",
+          "#7050b2",
           3000,
-          "#22a884",
+          "#573a96",
           4000,
-          "#7ad151",
+          "#3f2875",
           5000,
-          "#fde725"
+          "#291852"
         ],
         "circle-radius": [
           "interpolate",
@@ -154,7 +154,7 @@
         ]
       },
       "paint": {
-        "text-color": "#08306b",
+        "text-color": "#0d2a5c",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.2
       },

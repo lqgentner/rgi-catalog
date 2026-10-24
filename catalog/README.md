@@ -1,6 +1,6 @@
 # Randolph Glacier Inventory Mirror
 
-[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/catalog.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
+[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/catalog.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
 The Randolph Glacier Inventory (RGI) is a globally complete inventory of glacier outlines. This catalog republishes it as GeoParquet files and a web map archive. The values are those of the RGI release. Fixes of documented upstream errors are listed in the provenance record.
 
@@ -10,9 +10,9 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 ## What is here
 
-| Version | Mirror revision | Collections | Documentation |
+| Version | Mirror revision | Collections | Guides |
 | --- | --- | --- | --- |
-| [RGI 7.0](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) | 7.0-r1 | glaciers, complexes, centerlines, intersects, regions | [README](v7.0/README.md) · [AGENTS](v7.0/AGENTS.md) |
+| [RGI 7.0](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) | 7.0-r1 | glaciers, complexes, intersects, centerlines, regions | [README](v7.0/README.md) · [Agents guide](v7.0/AGENTS.md) |
 
 ## Access
 

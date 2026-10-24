@@ -7,6 +7,13 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[glacier product](https://rgidata.org/user_guide/products/glacier_product.html):
+
+> This product includes the glacier outlines as extracted from GLIMS together with additional data for each individual glacier.
+
 ## The file
 
 `https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet`: 274,531

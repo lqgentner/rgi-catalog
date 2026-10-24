@@ -7,6 +7,13 @@ quoted from a source or measured from the data.
 
 {{ disclaimer }}
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[{{ spec.user_guide.title | lower }}]({{ spec.user_guide.url }}):
+
+> {{ spec.user_guide.quote.split() | join(" ") }}
+
 ## The file
 
 `{{ public("v" ~ version ~ "/" ~ data_rel) }}`: {{ "{:,}".format(stats.row_count) }}

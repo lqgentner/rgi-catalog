@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Glacier complexes",
   "metadata": {
-    "description": "Glacier complexes (purple): connected glaciers merged into one outline."
+    "description": "Glacier complexes: connected glaciers merged into one outline."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {
@@ -17,7 +17,7 @@
       "id": "complexes-fill",
       "type": "fill",
       "paint": {
-        "fill-color": "#bcbddc",
+        "fill-color": "#8e24aa",
         "fill-opacity": 0.5
       },
       "source": "data"
@@ -27,7 +27,7 @@
       "id": "complexes-outline",
       "type": "line",
       "paint": {
-        "line-color": "#6a51a3",
+        "line-color": "#4a148c",
         "line-width": [
           "interpolate",
           [
@@ -64,7 +64,7 @@
         ]
       ],
       "paint": {
-        "circle-color": "#6a51a3",
+        "circle-color": "#8e24aa",
         "circle-radius": [
           "interpolate",
           [

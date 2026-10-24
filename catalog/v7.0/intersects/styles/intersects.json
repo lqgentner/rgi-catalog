@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Intersects",
   "metadata": {
-    "description": "Intersects (black): the divides between adjacent glaciers, from z10, over the glacier outlines (pale blue)."
+    "description": "Intersects, the divides between adjacent glaciers, from z10, over the glacier outlines."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {
@@ -17,8 +17,8 @@
       "type": "fill",
       "source-layer": "glaciers",
       "paint": {
-        "fill-color": "#deebf7",
-        "fill-opacity": 0.6
+        "fill-color": "#1e88e5",
+        "fill-opacity": 0.2
       },
       "source": "data"
     },
@@ -27,7 +27,7 @@
       "type": "line",
       "source-layer": "glaciers",
       "paint": {
-        "line-color": "#9ecae1",
+        "line-color": "#0d47a1",
         "line-width": [
           "interpolate",
           [
@@ -42,7 +42,8 @@
           0.6,
           12,
           1.0
-        ]
+        ],
+        "line-opacity": 0.35
       },
       "source": "data"
     },
@@ -64,7 +65,7 @@
         ]
       ],
       "paint": {
-        "circle-color": "#9ecae1",
+        "circle-color": "#1e88e5",
         "circle-radius": [
           "interpolate",
           [
@@ -78,7 +79,7 @@
           6,
           2.5
         ],
-        "circle-opacity": 0.85
+        "circle-opacity": 0.35
       },
       "source": "data"
     },
@@ -87,8 +88,8 @@
       "id": "intersects",
       "type": "line",
       "paint": {
-        "line-color": "#252525",
-        "line-width": 1.2
+        "line-color": "#00897b",
+        "line-width": 2.0
       },
       "source": "data"
     },
@@ -114,7 +115,7 @@
         ]
       },
       "paint": {
-        "text-color": "#08306b",
+        "text-color": "#0d2a5c",
         "text-halo-color": "#ffffff",
         "text-halo-width": 1.2
       },

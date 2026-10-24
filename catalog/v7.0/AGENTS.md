@@ -15,12 +15,12 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 - `complexes/`: 192,869 rows in
   `https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet`.
   Read `complexes/AGENTS.md` for its columns, join keys and recipes.
-- `centerlines/`: 367,724 rows in
-  `https://data.source.coop/lqgentner/rgi/v7.0/centerlines/rgi7.0-centerlines.parquet`.
-  Read `centerlines/AGENTS.md` for its columns, join keys and recipes.
 - `intersects/`: 130,429 rows in
   `https://data.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet`.
   Read `intersects/AGENTS.md` for its columns, join keys and recipes.
+- `centerlines/`: 367,724 rows in
+  `https://data.source.coop/lqgentner/rgi/v7.0/centerlines/rgi7.0-centerlines.parquet`.
+  Read `centerlines/AGENTS.md` for its columns, join keys and recipes.
 - `regions/`: 112 rows in
   `https://data.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet`.
   Read `regions/AGENTS.md` for its columns, join keys and recipes.

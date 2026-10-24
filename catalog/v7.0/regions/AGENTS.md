@@ -7,6 +7,13 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[rgi glacier regions](https://rgidata.org/user_guide/02_regions_definition.html):
+
+> RGI outlines are organized into 20 first-order glacier regions. This is one more than in RGI 6.0 and earlier versions, since former region 19 was split into two regions (global map; Table 1a). These are further subdivided into second-order regions, of which there are 90 in total in RGI 7.0 (Table 1b). Glacier regions are useful for regional assessments of glacier change and other variables.
+
 ## The file
 
 `https://data.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet`: 112

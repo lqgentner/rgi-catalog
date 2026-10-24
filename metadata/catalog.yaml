@@ -84,12 +84,12 @@ fixes:
     issue: 48
 
 # The description of every thumbnail. The images live in metadata/thumbnails/
-# at the path of the document they belong to. The basemap credit is the
-# copyrightText of the Esri World Light Gray Base service.
+# at the path of the document they belong to. scripts/thumbnails.sh draws them.
 thumbnail: >-
-  The default style of the data, drawn by chiitiler over the Esri World Light
-  Gray Base map. Basemap: Esri, HERE, Garmin, (c) OpenStreetMap contributors,
-  and the GIS user community.
+  The default style of the data, drawn by chiitiler. The world views show the
+  land of Natural Earth, which is in the public domain. The glacier products
+  share one frame, the Garibaldi and Marinelli glaciers in the Cordillera
+  Darwin, on white.
 
 description: >-
   The Randolph Glacier Inventory (RGI) is a globally complete inventory of
@@ -106,12 +106,19 @@ versions:
       their attributes.
     collections:
       glaciers:
+        # The product page of the RGI 7.0 user guide, and its first paragraph.
+        user_guide:
+          title: Glacier product
+          url: https://rgidata.org/user_guide/products/glacier_product.html
+          quote: >-
+            This product includes the glacier outlines as extracted from GLIMS
+            together with additional data for each individual glacier.
         product: G
         title: RGI 7.0 glaciers
         description: >-
           One row per glacier: the outline, RGI's attributes, the hypsometry,
           the links to RGI 6.0 and the GLIMS submission, in one GeoParquet
-          file. A web map archive holds the outlines and the glacier names.
+          file. The web map archive holds the outlines and the glacier names.
         keywords: [glacier outlines, hypsometry]
         pmtiles_layers: [glaciers, glacier-labels]
         # Processing notes besides the fix counts. Known issues quote the
@@ -134,6 +141,19 @@ versions:
           columns: rgi_id, display_name, area_km2, zmed_m
           where: rgi_id = 'RGI2000-v7.0-G-11-01706'
       complexes:
+        # The product page of the RGI 7.0 user guide, and its first paragraph.
+        user_guide:
+          title: Glacier complex product
+          url: https://rgidata.org/user_guide/products/glacier_complex_product.html
+          quote: >-
+            The glacier complex product is the result of a spatial merge
+            operation of the glacier product (dissolve in the GIS jargon). The
+            operation is realized on geometries only, which means that any
+            cluster of connected glaciers (however small the connection) will
+            be merged into one entity in the glacier complex product. The
+            resulting inventory has the same area but a smaller or equal
+            number of entities as the glacier product. Only a few attributes
+            from the original glacier product remain after the merge.
         product: C
         title: RGI 7.0 glacier complexes
         row_noun: glacier complex
@@ -150,7 +170,45 @@ versions:
           what: the glacier complex of the Rhone glacier
           columns: rgi_id, area_km2, len(glacier_ids) AS n_glaciers
           where: rgi_id = 'RGI2000-v7.0-C-11-01208'
+      intersects:
+        # The product page of the RGI 7.0 user guide, and its first paragraph.
+        user_guide:
+          title: Glacier intersects product
+          url: https://rgidata.org/user_guide/products/intersects_product.html
+          quote: >-
+            The glacier intersects products includes only the “divides” or
+            “borders” between adjacent glaciers rather than the complete
+            outlines. The resulting geometries are single lines (each with
+            their own id), with attributes rgi_g_id_1 and rgi_g_id_2
+            indicating which glacier entities are adjacent. This product is
+            useful for describing the connection between two glaciers (for
+            example by the length of a common boundary) or for glacier models
+            able to use this kind of information.
+        product: I
+        title: RGI 7.0 glacier intersects
+        row_noun: intersect
+        description: >-
+          One row per intersect: a line that divides two adjacent glaciers,
+          with the IDs of both glaciers, in one GeoParquet file. The web map
+          archive holds the lines from z10.
+        keywords: [glacier divides]
+        pmtiles_layers: [intersects]
+        example:
+          what: the intersects of the Rhone glacier
+          columns: rgi_id, rgi_g_id_1, rgi_g_id_2, length_m
+          where: "'RGI2000-v7.0-G-11-01706' IN (rgi_g_id_1, rgi_g_id_2)"
       centerlines:
+        # The product page of the RGI 7.0 user guide, and its first paragraph.
+        user_guide:
+          title: Glacier centerlines product
+          url: https://rgidata.org/user_guide/products/centerlines_product.html
+          quote: >-
+            The glacier centerlines product contains geometrical centerlines
+            for the main branches and major tributaries of all glaciers in the
+            RGI 7.0 glacier product. The centerlines are computed using a
+            geometrical flow routing algorithm first described by Kienholz et
+            al. [2014] and implemented and executed by the Open Global Glacier
+            Model (OGGM) [Maussion et al., 2019].
         product: L
         title: RGI 7.0 glacier centerlines
         row_noun: centerline
@@ -180,21 +238,19 @@ versions:
           what: the main centerline of the Rhone glacier
           columns: rgi_id, rgi_g_id, segment_id, length_m
           where: rgi_g_id = 'RGI2000-v7.0-G-11-01706' AND is_main
-      intersects:
-        product: I
-        title: RGI 7.0 glacier intersects
-        row_noun: intersect
-        description: >-
-          One row per intersect: a line that divides two adjacent glaciers,
-          with the IDs of both glaciers, in one GeoParquet file. The web map
-          archive holds the lines from z10.
-        keywords: [glacier divides]
-        pmtiles_layers: [intersects]
-        example:
-          what: the intersects of the Rhone glacier
-          columns: rgi_id, rgi_g_id_1, rgi_g_id_2, length_m
-          where: "'RGI2000-v7.0-G-11-01706' IN (rgi_g_id_1, rgi_g_id_2)"
       regions:
+        # The product page of the RGI 7.0 user guide, and its first paragraph.
+        user_guide:
+          title: RGI glacier regions
+          url: https://rgidata.org/user_guide/02_regions_definition.html
+          quote: >-
+            RGI outlines are organized into 20 first-order glacier regions.
+            This is one more than in RGI 6.0 and earlier versions, since
+            former region 19 was split into two regions (global map; Table
+            1a). These are further subdivided into second-order regions, of
+            which there are 90 in total in RGI 7.0 (Table 1b). Glacier regions
+            are useful for regional assessments of glacier change and other
+            variables.
         product: regions
         title: RGI 7.0 glacier regions
         row_noun: region polygon

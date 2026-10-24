@@ -1,6 +1,6 @@
 # RGI 7.0 glacier intersects
 
-[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/intersects/collection.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
+[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/intersects/collection.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/products/intersects_product.html) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
 One row per intersect: a line that divides two adjacent glaciers, with the IDs of both glaciers, in one GeoParquet file. The web map archive holds the lines from z10.
 
@@ -8,14 +8,21 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[glacier intersects product](https://rgidata.org/user_guide/products/intersects_product.html):
+
+> The glacier intersects products includes only the “divides” or “borders” between adjacent glaciers rather than the complete outlines. The resulting geometries are single lines (each with their own id), with attributes rgi_g_id_1 and rgi_g_id_2 indicating which glacier entities are adjacent. This product is useful for describing the connection between two glaciers (for example by the length of a common boundary) or for glacier models able to use this kind of information.
+
 ## Files
 
 - [`rgi7.0-intersects.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet): 130,429 rows, 17.0 MB. GeoParquet 2.0.0 in 13 row groups of up to 10,240 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
 - [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `intersects`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 
-- [Intersects](./styles/intersects.json) (default): Intersects (black): the divides between adjacent glaciers, from z10, over the glacier outlines (pale blue).
-- [Reference map](./styles/reference.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
+- [Intersects](./styles/intersects.json) (default): Intersects, the divides between adjacent glaciers, from z10, over the glacier outlines.
+- [Reference map](./styles/reference.json): Glacier outlines, centerlines and names, with the glacier regions.
 
 ## Access
 

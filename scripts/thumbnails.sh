@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
 # Render the thumbnails into metadata/thumbnails/ and run the blank probe.
 #
-# Usage: SKILL=<portolan-thumbnails skill dir> scripts/thumbnails.sh
+# Usage: scripts/thumbnails.sh
 #
 # Needs a chiitiler server on port 13579 that can read this repository at its
-# own path (docs/DESIGN.md, "Local preview"), and the staged archive. Look at
-# every image before you commit it. The probe finds only an empty frame.
+# own path (docs/DESIGN.md, "Local preview"), the staged archive, and the land
+# archive of scripts/naturalearth_land.py. Look at every image before you
+# commit it. The probe finds only an empty frame.
 set -euo pipefail
 
-: "${SKILL:?set SKILL to the portolan-thumbnails skill directory}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
-PM="$REPO/staging/v7.0/rgi7.0.pmtiles"
+ARCHIVE="$REPO/staging/v7.0/rgi7.0.pmtiles"
+LAND="$REPO/.cache/basemap/ne_50m_land.pmtiles"
 STYLES="$REPO/catalog/v7.0"
 OUT="$REPO/metadata/thumbnails"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-BASEMAP='https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+# The world views, on Natural Earth land. A bbox that spans the full ±180°
+# renders only part of the data, so the frame stops at ±170°.
 WORLD="-170,-60.3,170,82"
-
-frame() {  # lon,lat zoom
-    python3 "$SKILL/scripts/frame.py" --center "$1" --zoom "$2" --size 1024 |
-        python3 -c "import json, sys; print(json.load(sys.stdin)['bbox'])"
-}
+# The Garibaldi and Marinelli glaciers, Cordillera Darwin, just above map
+# zoom 10, where the intersects start. At exactly z10 chiitiler draws the z9
+# tiles, which have no intersects. The four glacier products share this frame,
+# so they compare at a glance.
+FRAME="-70.078019,-54.786293,-69.421981,-54.533313"
 
 clip() {  # style bbox size out format
     curl -s -X POST "http://localhost:13579/clip.$5?bbox=$2&size=$3&quality=85" \
@@ -44,10 +46,11 @@ render() {
     return 1
 }
 
-thumb() {  # target style bbox
+thumb() {  # target style bbox [--land LAND]
     local target="$OUT/$1/thumbnail.webp" dir="$WORK/$1"
     mkdir -p "$dir" "$(dirname "$target")"
-    python3 "$SKILL/scripts/buildstyle.py" "$2" "$PM" true "$BASEMAP" 0.55 "$dir" > /dev/null
+    pixi run --manifest-path "$REPO/pyproject.toml" python "$REPO/scripts/thumbnail_style.py" \
+        "$2" "$ARCHIVE" "$dir" "${@:4}"
     render "$dir/render-style.json" "$3" 1024 "$target" webp
     render "$dir/probe-style.json" "$3" 256 "$dir/probe.png" png
     render "$dir/blank-style.json" "$3" 256 "$dir/blank.png" png
@@ -58,10 +61,13 @@ thumb() {  # target style bbox
     echo "ok   $target $(stat -c%s "$target") bytes"
 }
 
-thumb . "$STYLES/glaciers/styles/reference.json" "$WORLD"
-thumb v7.0 "$STYLES/glaciers/styles/reference.json" "$WORLD"
-thumb v7.0/regions "$STYLES/regions/styles/regions.json" "$WORLD"
-thumb v7.0/glaciers "$STYLES/glaciers/styles/reference.json" "$(frame 7.85,46.2 9.5)"
-thumb v7.0/complexes "$STYLES/complexes/styles/complexes.json" "$(frame 76.45,35.75 9.5)"
-thumb v7.0/centerlines "$STYLES/centerlines/styles/centerlines.json" "$(frame -73.4,-49.6 9.5)"
-thumb v7.0/intersects "$STYLES/intersects/styles/intersects.json" "$(frame 86.85,27.95 11.5)"
+thumb . "$STYLES/glaciers/styles/reference.json" "$WORLD" --land "$LAND"
+thumb v7.0 "$STYLES/glaciers/styles/reference.json" "$WORLD" --land "$LAND"
+thumb v7.0/regions "$STYLES/regions/styles/regions.json" "$WORLD" --land "$LAND"
+# The glaciers thumbnail shows the outlines alone, without the centerlines and
+# the region boundaries of the reference map.
+thumb v7.0/glaciers "$STYLES/glaciers/styles/reference.json" "$FRAME" \
+    --leave-out centerlines --leave-out regions
+thumb v7.0/complexes "$STYLES/complexes/styles/complexes.json" "$FRAME"
+thumb v7.0/centerlines "$STYLES/centerlines/styles/centerlines.json" "$FRAME"
+thumb v7.0/intersects "$STYLES/intersects/styles/intersects.json" "$FRAME"

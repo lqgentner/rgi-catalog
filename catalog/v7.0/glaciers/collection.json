@@ -13,7 +13,7 @@
   ],
   "id": "rgi-v7-0-glaciers",
   "title": "RGI 7.0 glaciers",
-  "description": "One row per glacier: the outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and the GLIMS submission, in one GeoParquet file. A web map archive holds the outlines and the glacier names.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "description": "One row per glacier: the outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and the GLIMS submission, in one GeoParquet file. The web map archive holds the outlines and the glacier names.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "license": "CC-BY-4.0",
   "keywords": [
     "glaciers",
@@ -26,7 +26,7 @@
     "hypsometry"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-23T10:20:22Z",
+  "updated": "2026-10-24T10:04:46Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -531,57 +531,57 @@
       "href": "./styles/reference.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Reference map",
-      "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.",
+      "description": "Glacier outlines, centerlines and names, with the glacier regions.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 5043,
-      "file:checksum": "1220a855f87beb9f20e504533d9fab279b538b572be5c7d81f2753b3d02714ffaba7"
+      "file:size": 4885,
+      "file:checksum": "1220809a1b15c70cce50857c6f8e6ced427cdee0d4b1ff4919c5f3a00088f60c762a"
     },
     "style-median-elevation": {
       "href": "./styles/median-elevation.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Median elevation",
-      "description": "Glaciers coloured by median elevation (zmed_m) in 1,000 m classes, from below 1,000 m (dark purple) to 5,000 m and above (yellow).",
+      "description": "Glaciers by median elevation (zmed_m), in 1,000 m classes.",
       "roles": [
         "style"
       ],
-      "file:size": 3129,
-      "file:checksum": "1220260a37cb7caf39fbc07bc7f9b26ffd9d94b4881df897a5852e5b633a33abaa3b"
+      "file:size": 3057,
+      "file:checksum": "1220a8b0106c57690590574a4348a455e1f70e2cbac4237b3c81bf432ab8e5efcaf1"
     },
     "style-surge-evidence": {
       "href": "./styles/surge-evidence.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Surge evidence",
-      "description": "Glaciers coloured by the evidence for surging (surge_type): no evidence, possible, probable or observed.",
+      "description": "Glaciers by evidence for surging (surge_type).",
       "roles": [
         "style"
       ],
-      "file:size": 3768,
-      "file:checksum": "122000d80848011b78529b3e32dd9af6280b356e18680f1f30732dcc10a38e2b9e1e"
+      "file:size": 3710,
+      "file:checksum": "12201dc0679af2e777a9c935aee0d5c065f805a5f03e9b043bad641509adf80a989e"
     },
     "style-terminus-type": {
       "href": "./styles/terminus-type.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Terminus type",
-      "description": "Glaciers coloured by terminus type (term_type). RGI 7.0 assigns only the marine-terminating class. Every other glacier is not assigned.",
+      "description": "Glaciers by terminus type (term_type). RGI 7.0 assigns only the marine-terminating class.",
       "roles": [
         "style"
       ],
-      "file:size": 3368,
-      "file:checksum": "12200520b9af227b52a624656c1fad058aeef7f0e18641b3ffa130ffac7a03ce7b7a"
+      "file:size": 3322,
+      "file:checksum": "122026b38c2d27da4bc658e78497831b6e6d8d87f34718ed316ec98b61a5338e77ed"
     },
     "style-same-as-rgi6": {
       "href": "./styles/same-as-rgi6.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Same as RGI 6.0",
-      "description": "Glaciers coloured by whether the outline is the same as in RGI 6.0 (is_rgi6) or new in RGI 7.0, as in the map of the RGI 7.0 user guide.",
+      "description": "Glaciers by whether the outline is the same as in RGI 6.0 (is_rgi6), as in the map of the RGI 7.0 user guide.",
       "roles": [
         "style"
       ],
-      "file:size": 3217,
-      "file:checksum": "122086a36318f07f88f2445a9c3736ecacfe4213cf3a0de88d3563f0698a77853a73"
+      "file:size": 3190,
+      "file:checksum": "122033f2d7d839d01950e8e67311b0d9b769ebe3a547d587d09a0549d0e2a63dd74b"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
@@ -590,19 +590,19 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1081883870,
-      "file:checksum": "1220388d926151987265479a5df9c1af7ffe335043f60eb12b19e5bad9e888f54681"
+      "file:size": 1044447108,
+      "file:checksum": "122025d4ecf242ebc25745c74769c5b861da1625d79d4c51d8ea130d08e59280513e"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
       "type": "image/webp",
       "title": "Thumbnail",
-      "description": "The default style of the data, drawn by chiitiler over the Esri World Light Gray Base map. Basemap: Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community.",
+      "description": "The default style of the data, drawn by chiitiler. The world views show the land of Natural Earth, which is in the public domain. The glacier products share one frame, the Garibaldi and Marinelli glaciers in the Cordillera Darwin, on white.",
       "roles": [
         "thumbnail"
       ],
-      "file:size": 71808,
-      "file:checksum": "1220c7779cb3e1c1fa71e28754b0b263baee52da304d33fe7b895c7837eba7eb395e"
+      "file:size": 94174,
+      "file:checksum": "122064d4c17908cf9e60318f5e4029a86e6614cef25e2618261079d8878d2ace0736"
     }
   },
   "links": [
@@ -622,13 +622,19 @@
       "rel": "describedby",
       "href": "./README.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 glaciers documentation"
+      "title": "Collection README"
     },
     {
       "rel": "agents",
       "href": "./AGENTS.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 glaciers agent guide"
+      "title": "Collection agents guide"
+    },
+    {
+      "rel": "describedby",
+      "href": "https://rgidata.org/user_guide/products/glacier_product.html",
+      "type": "text/html",
+      "title": "RGI 7.0 user guide, Glacier product (official documentation)"
     },
     {
       "rel": "via",
@@ -637,22 +643,10 @@
       "title": "RGI 7.0 at NSIDC (authoritative source)"
     },
     {
-      "rel": "cite-as",
-      "href": "https://doi.org/10.5067/F6JMOVY5NAVZ",
-      "type": "text/html",
-      "title": "DOI of RGI 7.0 at NSIDC"
-    },
-    {
       "rel": "license",
       "href": "https://creativecommons.org/licenses/by/4.0/",
       "type": "text/html",
       "title": "CC-BY-4.0"
-    },
-    {
-      "rel": "alternate",
-      "href": "https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/glaciers/collection.json",
-      "type": "text/html",
-      "title": "Open in the data browser"
     },
     {
       "rel": "vcs",
@@ -699,8 +693,8 @@
         "glaciers",
         "glacier-labels"
       ],
-      "file:size": 1081883870,
-      "file:checksum": "1220388d926151987265479a5df9c1af7ffe335043f60eb12b19e5bad9e888f54681"
+      "file:size": 1044447108,
+      "file:checksum": "122025d4ecf242ebc25745c74769c5b861da1625d79d4c51d8ea130d08e59280513e"
     }
   ]
 }

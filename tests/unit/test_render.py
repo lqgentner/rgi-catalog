@@ -149,8 +149,6 @@ def test_providers_and_mirror_links(rendered: Path) -> None:
         rels = [link["rel"] for link in doc["links"]]
         for rel in (
             "via",
-            "cite-as",
-            "alternate",
             "vcs",
             "issues",
             "about",
@@ -158,6 +156,10 @@ def test_providers_and_mirror_links(rendered: Path) -> None:
             "agents",
         ):
             assert rel in rels, (path, rel)
+        # The DOI is in sci:doi and the citation, and a reader is already in
+        # the browser. The user guide link takes their place.
+        assert "cite-as" not in rels, path
+        assert "alternate" not in rels, path
         if doc["type"] == "Collection":
             assert "producer" in doc["providers"][0]["roles"]
             assert doc["providers"][-1]["roles"] == ["host"]
@@ -193,11 +195,6 @@ def test_assets_and_links_resolve_relatively(rendered: Path) -> None:
     assert asset["type"] == "application/vnd.pmtiles"
     assert asset["roles"] == ["visual"]
     assert asset["file:checksum"] == pmtiles["file:checksum"]
-    browser = next(link for link in glaciers["links"] if link["rel"] == "alternate")
-    assert browser["href"] == (
-        "https://browser.portolan-sdi.org/#/external/"
-        "data.source.coop/lqgentner/rgi/v7.0/glaciers/collection.json"
-    )
 
 
 def test_styles_written_with_one_default(rendered: Path) -> None:
@@ -245,8 +242,10 @@ def test_thumbnails_registered_and_copied(rendered: Path) -> None:
         assert data == (METADATA / "thumbnails" / rel).read_bytes()
         assert thumb["file:size"] == len(data)
         assert thumb["file:checksum"] == "1220" + hashlib.sha256(data).hexdigest()
-        # The basemap's credit, as the Esri service states it.
-        assert "Esri, HERE, Garmin, (c) OpenStreetMap contributors" in thumb["description"]
+        # The world views draw Natural Earth land, which needs no credit, and no
+        # thumbnail draws a basemap that does.
+        assert "Natural Earth" in thumb["description"]
+        assert "Esri" not in thumb["description"]
 
 
 def _section(text: str, heading: str) -> str:
@@ -268,3 +267,53 @@ def test_processing_notes_state_the_computed_fix_counts(rendered: Path) -> None:
                 assert f"`{fix['column']}`" in stated[0]
             else:
                 assert not stated, (name, fix)
+
+
+def _link(doc: dict[str, Any], rel: str, href_end: str) -> dict[str, Any]:
+    return next(x for x in doc["links"] if x["rel"] == rel and x["href"].endswith(href_end))
+
+
+def test_readmes_are_named_for_the_mirror(rendered: Path) -> None:
+    # "Documentation" is the RGI user guide. The README and the AGENTS file
+    # describe this mirror.
+    for path, doc in _stac(rendered).items():
+        kind = "Collection" if doc["type"] == "Collection" else "Catalog"
+        assert _link(doc, "describedby", "README.md")["title"] == f"{kind} README", path
+        assert _link(doc, "agents", "AGENTS.md")["title"] == f"{kind} agents guide", path
+        for link in doc["links"]:
+            if link["href"].endswith(".md"):
+                assert "documentation" not in link["title"].lower(), path
+
+
+def test_user_guide_linked_as_official_documentation(rendered: Path) -> None:
+    meta = render.Context().meta
+    specs = meta["versions"]["7.0"]["collections"]
+    for path, doc in _stac(rendered).items():
+        guide = [x for x in doc["links"] if x["rel"] == "describedby" and x["type"] == "text/html"]
+        assert len(guide) == 1, path
+        assert "official documentation" in guide[0]["title"]
+        if doc["type"] == "Collection":
+            name = path.split("/")[1]
+            assert guide[0]["href"] == specs[name]["user_guide"]["url"]
+        else:
+            assert guide[0]["href"] == meta["user_guide"]
+
+
+def test_product_description_quoted_from_the_user_guide(rendered: Path) -> None:
+    specs = render.Context().meta["versions"]["7.0"]["collections"]
+    for name, spec in specs.items():
+        quote = " ".join(spec["user_guide"]["quote"].split())
+        for doc_name in ("README.md", "AGENTS.md"):
+            text = (rendered / "v7.0" / name / doc_name).read_text()
+            flat = " ".join(text.replace("\n>", "\n").split())
+            assert quote in flat, (name, doc_name)
+            assert spec["user_guide"]["url"] in text, (name, doc_name)
+
+
+def test_collections_in_product_order(rendered: Path) -> None:
+    version = json.loads((rendered / "v7.0" / "catalog.json").read_text())
+    children = [x["href"] for x in version["links"] if x["rel"] == "child"]
+    assert children == [
+        f"./{name}/collection.json"
+        for name in ("glaciers", "complexes", "intersects", "centerlines", "regions")
+    ]

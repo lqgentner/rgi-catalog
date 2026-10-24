@@ -215,12 +215,12 @@ for byte and replaces only the metadata block.
 
 | Layer | Band | Settings |
 | --- | --- | --- |
-| `glaciers` | z0–9 | `--representation 0-6:point,7-8:square --no-density-drop --sort-key area_km2` |
+| `glaciers` | z0, …, z9, one band each | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0 --sort-key area_km2`, tiled to z+1 |
 | `glaciers` | z10–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0 --simplify-factor 0.5` |
 | `glacier-labels` | z7–12 | `--entry-zoom label_minzoom:7=7,…,12=12 --no-density-drop` |
 | `regions` | z0–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0` |
 | `region-labels` | z0–12 | `--no-density-drop --point-thinning 0` |
-| `complexes` | z0–9, z10–12 | as `glaciers` |
+| `complexes` | z0, …, z9, z10–12 | as `glaciers` |
 | `centerlines` | z8–9, z10–12 | `--no-density-drop --line-thinning 0 --line-visibility 0 --no-coalesce-lines --simplify-factor 0.5` |
 | `intersects` | z10–12 | as `centerlines`, with `--simplify-factor 0` |
 
@@ -276,50 +276,56 @@ With tylertoo defaults z0 held 117 of 274,531 glaciers. The visibility gate
 drops polygons smaller than 2 GSD, and the density budget thins the rest. The
 Alps and High Mountain Asia were almost empty at world scale.
 
-Up to z6 each glacier is now a point. Points skip the visibility gate and
-keep one per point-grid cell of 4 GSD, about one screen pixel. The largest
-glacier (`--sort-key area_km2`) wins each cell and gives the cell its
-attributes. Without the density budget every occupied cell keeps a point:
-z0 holds 1,310 points and z4 39,989. At z7–8 a polygon too small for the
-zoom is a placeholder square. The finest zoom of a band keeps the source
-geometry, so the squares stop at z8. A glacier at the antimeridian is a
-MultiPoint at z0, where the tile buffer wraps.
+Below z10 the glaciers and the complexes are an overview built per zoom
+(`tiles.write_overview`). At each zoom a feature that spans 3 pixels of a
+512-pixel tile is its outline. A smaller feature is RGI's point (`cenlon`,
+`cenlat`). Large glaciers therefore keep their shape at low zooms, as in
+Google Earth Engine, and a small one is a dot. The points keep one per grid
+cell of 4 GSD, about a pixel, and the largest feature wins the cell
+(`--sort-key area_km2`). Every outline is kept.
 
-`--collapse-square` alone kept polygons and gave z0 1,017 squares of about
-a quarter pixel. Only their outlines showed. tippecanoe's tiny-polygon
-reduction gives a similar result. The newer tylertoo documentation describes
-area-accumulated squares as the default, but 0.8.0 does not have them.
+Each zoom is its own band. The finest zoom of a tiling keeps every source
+feature, so each band is tiled one zoom further (`pad_zoom`) and `pyramid`
+keeps only its own zoom. A glacier at the antimeridian is a MultiPoint where
+the tile buffer wraps.
 
-### Result (measured 2026-10-23)
+Features drawn as outlines, of 274,531 glaciers and 192,869 complexes:
 
-`tiles --version 7.0` takes 5 min 52 s and peaks at 4.4 GB of memory. The
-archive is 1,081.9 MB with every layer. The glaciers-only archive was
-805.4 MB, and 759.0 MB before the points and squares.
+| z | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| glaciers | 82 | 435 | 1,455 | 3,652 | 8,210 | 17,622 | 38,217 | 82,272 | 151,747 | 220,684 |
+| complexes | 76 | 201 | 516 | 1,105 | 2,707 | 7,235 | 18,837 | 45,432 | 90,798 | 143,633 |
+
+The earlier overview drew every glacier as a point up to z6 and a small one
+as a square at z7–8. Large glaciers then appeared all at once at z7.
+
+### Result (measured 2026-10-24)
+
+`tiles --version 7.0` takes 12 min 21 s and peaks at 6.1 GB of memory. The
+per-zoom overview inputs take most of the time. The archive is 1,044.4 MB
+with every layer.
 
 The region polygons cover the oceans and the Antarctic, so z12 addresses
-11.9 million tiles. Most are the same small tile inside a region. The
-archive stores 425,392 distinct tiles, and its directories are 4.2 MB. "MB
+11.9 million tiles. Most are the same small tile inside a region. "MB
 addressed" counts each addressed tile, so it repeats the shared ones.
 
 The overview bands (z0–9) of the glaciers and the complexes carry only the
 key and the columns the styles read (`tiles.GLACIER_OVERVIEW_COLUMNS`,
-`tiles.COMPLEX_OVERVIEW_COLUMNS`). With every scalar column the z0 tile was
-314 KB. It is now 92 KB. Every column is in the tiles from z10. The largest
-tiles cover High Mountain Asia: the z5 tile 22/12 holds 6,252 glacier points
-and 8,464 complex points (394 KB).
+`tiles.COMPLEX_OVERVIEW_COLUMNS`). Every column is in the tiles from z10.
+The largest tiles cover High Mountain Asia.
 
 | z | Tiles | MB addressed | p50 bytes | Max bytes |
 | ---: | ---: | ---: | ---: | ---: |
-| 0 | 1 | 0.1 | 92,369 | 92,369 |
-| 1 | 4 | 0.2 | 51,103 | 92,350 |
-| 2 | 16 | 0.5 | 15,640 | 138,268 |
-| 3 | 64 | 1.3 | 3,423 | 159,760 |
-| 4 | 225 | 2.7 | 806 | 357,332 |
-| 5 | 832 | 5.2 | 233 | 393,999 |
-| 6 | 3,100 | 9.3 | 197 | 391,145 |
-| 7 | 12,106 | 22.5 | 193 | 451,992 |
-| 8 | 47,447 | 54.3 | 192 | 420,447 |
-| 9 | 187,891 | 150.9 | 192 | 351,583 |
+| 0 | 1 | 0.1 | 101,396 | 101,396 |
+| 1 | 4 | 0.2 | 31,907 | 121,118 |
+| 2 | 16 | 0.7 | 18,011 | 222,867 |
+| 3 | 64 | 1.8 | 3,482 | 223,225 |
+| 4 | 225 | 3.8 | 806 | 399,597 |
+| 5 | 832 | 7.4 | 233 | 445,550 |
+| 6 | 3,100 | 13.5 | 197 | 496,761 |
+| 7 | 12,106 | 23.0 | 193 | 479,630 |
+| 8 | 47,447 | 52.6 | 192 | 402,905 |
+| 9 | 187,891 | 106.4 | 192 | 206,014 |
 | 10 | 748,229 | 298.1 | 192 | 156,538 |
 | 11 | 2,983,757 | 782.0 | 192 | 87,217 |
 | 12 | 11,916,787 | 2667.4 | 192 | 61,220 |
@@ -340,7 +346,7 @@ builds the styles of the glaciers collection.
 
 | Style | Column | Expression | Legend |
 | --- | --- | --- | --- |
-| `reference` (default) | none | blue fill and outline, names | no |
+| `reference` (default) | none | outlines, centerlines, region boundaries, names | no |
 | `median-elevation` | `zmed_m` | `step` at 1,000 m to 5,000 m | 6 classes |
 | `surge-evidence` | `surge_type` | `match` on 0 to 3 | 4 classes |
 | `terminus-type` | `term_type` | `match` on 1 and 9 | 2 classes |
@@ -369,17 +375,20 @@ therefore has two classes.
 | `is_rgi6` | true: 73,797, false: 200,734 |
 | `zmed_m` | <1,000: 38,275, 1–2k: 66,180, 2–3k: 20,622, 3–4k: 22,258, 4–5k: 45,150, ≥5k: 82,046 |
 
-The author asked for centerlines in red over the blue outlines in the full
-map. The centerlines layer comes with the centerlines product.
+The colours changed on 2026-10-24, because the pastel fills were hard to see
+on grey basemaps. Each product has one colour in every style. The
+centerlines and intersects styles draw the glaciers in the glacier colours,
+but faint, so the lines are the subject. The colours are in `styles.py`. Each product colour clears 3:1 against
+a light grey basemap, and the products stay apart for colour-blind readers.
 
 The outline of every style is a `line` layer from z0, about one pixel wide
 at low zooms. At world scale a glacier is smaller than a pixel, so a fill
 alone draws nothing there. A `circle` layer filtered to points draws the
-z0–6 points, 1.5 to 2.5 px wide. Themed styles colour the outline and the
-dots with the theme's expression, and the legend still comes from the fill.
+overview points, 1.5 to 2.5 px wide, in the fill colour. Themed styles colour
+the outline and the dots with the theme's expression, and the legend still
+comes from the fill.
 
-The `same-as-rgi6` style follows the map in the RGI 7.0 user guide: "Same as
-RGI 6.0" in blue and "New in RGI 7.0" in red.
+The `same-as-rgi6` style follows the map in the RGI 7.0 user guide.
 
 ## Local preview
 
@@ -408,7 +417,7 @@ docker run -d --rm --name rgi-chiitiler -p 13579:3000 -e CHIITILER_PROCESSES=0 \
 A `/clip` bbox that spans the full ±180° renders only part of the data. Frame
 world views at ±170° or less.
 
-## Thumbnails (rendered 2026-10-23)
+## Thumbnails (rendered 2026-10-24)
 
 Each collection, the root catalog and the version catalog have a 1024 px
 WebP thumbnail (quality 85). The images live in `metadata/thumbnails/` at the
@@ -417,27 +426,28 @@ registers it. A collection lists it as an asset with the `thumbnail` role. A
 catalog carries no assets (PTL-AST-005), so a catalog lists it as a
 `rel: preview` link, which the browser reads when a document has no assets.
 
-`scripts/thumbnails.sh` renders them with the scripts of the
-`portolan-thumbnails` skill. Its `buildstyle.py` points the
-default style at the local archive and puts it over the Esri World Light Gray
-Base map at opacity 0.55. The Esri service names its credit as "Esri, HERE,
-Garmin, (c) OpenStreetMap contributors, and the GIS user community". Every
-thumbnail description repeats it.
+`scripts/thumbnails.sh` renders them with chiitiler.
+`scripts/thumbnail_style.py` points the published default style at the local
+archive and drops its symbol layers. No thumbnail needs a credit:
 
-| Image | Style | bbox | Zoom |
-| --- | --- | --- | --- |
-| root and `v7.0` | glaciers, Reference map | -170,-60.3,170,82 | full extent |
-| regions | Glacier regions | -170,-60.3,170,82 | full extent |
-| glaciers | Reference map | 6.855631,45.739253,8.844369,46.656915 | 9.5 |
-| complexes | Glacier complexes | 75.455631,35.210183,77.444369,36.286180 | 9.5 |
-| centerlines | Centerlines | -74.394369,-50.027756,-72.405631,-49.168459 | 9.5 |
-| intersects | Intersects | 86.601408,27.803504,87.098592,28.096298 | 11.5 |
+- The root, the version and the regions are world views over the land of
+  Natural Earth (`scripts/naturalearth_land.py`, 1:50m, public domain).
+- The glaciers, complexes, intersects and centerlines share one frame on
+  white: the Garibaldi and Marinelli glaciers, Cordillera Darwin, just above
+  map zoom 10. The glaciers thumbnail leaves out the centerlines and the
+  region boundaries of the reference map.
 
-The zoom is that of `frame.py`, at 256 px tiles. At 10.5 the intersects
-window showed no intersect lines, because the layer starts at z10 and
-MapLibre counts zoom in 512 px tiles.
+| Image | Style | bbox |
+| --- | --- | --- |
+| root, `v7.0` | glaciers, Reference map | -170,-60.3,170,82 |
+| regions | Glacier regions | -170,-60.3,170,82 |
+| glaciers, complexes, intersects, centerlines | each default | -70.078019,-54.786293,-69.421981,-54.533313 |
+
+The frame holds 232 intersects, ten times the divide length of a frame of the
+Baltoro glacier at map zoom 11. At exactly map zoom 10 chiitiler drew the z9
+tiles, which hold no intersects, so the frame sits at zoom 10.1.
 
 chiitiler can answer `/clip` before every tile has loaded. A long-running
-server also dropped a whole layer from a render. The render script therefore
+server also dropped a whole layer from a render. The script therefore
 repeats each request until two images are byte-identical, on a freshly
-started server. Two full runs and the script gave identical images.
+started server.

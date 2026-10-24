@@ -25,7 +25,7 @@
     "glacier divides"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-23T10:20:22Z",
+  "updated": "2026-10-24T10:04:46Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -130,24 +130,24 @@
       "href": "./styles/intersects.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Intersects",
-      "description": "Intersects (black): the divides between adjacent glaciers, from z10, over the glacier outlines (pale blue).",
+      "description": "Intersects, the divides between adjacent glaciers, from z10, over the glacier outlines.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 2423,
-      "file:checksum": "1220aa732eb151fcd30b5e67d27127091ff6a6f5b8c8c5b07fe0d08a96f4a5efab49"
+      "file:size": 2433,
+      "file:checksum": "12204830a3e5b5a4083c8ec17674a1961810b075a45db22555ad97d3c3607ee2bc74"
     },
     "style-reference": {
       "href": "./styles/reference.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Reference map",
-      "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.",
+      "description": "Glacier outlines, centerlines and names, with the glacier regions.",
       "roles": [
         "style"
       ],
-      "file:size": 5043,
-      "file:checksum": "1220a855f87beb9f20e504533d9fab279b538b572be5c7d81f2753b3d02714ffaba7"
+      "file:size": 4885,
+      "file:checksum": "1220809a1b15c70cce50857c6f8e6ced427cdee0d4b1ff4919c5f3a00088f60c762a"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
@@ -156,19 +156,19 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1081883870,
-      "file:checksum": "1220388d926151987265479a5df9c1af7ffe335043f60eb12b19e5bad9e888f54681"
+      "file:size": 1044447108,
+      "file:checksum": "122025d4ecf242ebc25745c74769c5b861da1625d79d4c51d8ea130d08e59280513e"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
       "type": "image/webp",
       "title": "Thumbnail",
-      "description": "The default style of the data, drawn by chiitiler over the Esri World Light Gray Base map. Basemap: Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community.",
+      "description": "The default style of the data, drawn by chiitiler. The world views show the land of Natural Earth, which is in the public domain. The glacier products share one frame, the Garibaldi and Marinelli glaciers in the Cordillera Darwin, on white.",
       "roles": [
         "thumbnail"
       ],
-      "file:size": 95598,
-      "file:checksum": "12202fdbe91e7bacc7f59fb9c2cf9c843c19240336543b145c86acc92047d0b1fb35"
+      "file:size": 83750,
+      "file:checksum": "1220f809495e7e099fa27b1db68e8a314cfd4c4b2b6c529463ddb4cefc5716d35fea"
     }
   },
   "links": [
@@ -188,13 +188,19 @@
       "rel": "describedby",
       "href": "./README.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 glacier intersects documentation"
+      "title": "Collection README"
     },
     {
       "rel": "agents",
       "href": "./AGENTS.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 glacier intersects agent guide"
+      "title": "Collection agents guide"
+    },
+    {
+      "rel": "describedby",
+      "href": "https://rgidata.org/user_guide/products/intersects_product.html",
+      "type": "text/html",
+      "title": "RGI 7.0 user guide, Glacier intersects product (official documentation)"
     },
     {
       "rel": "via",
@@ -203,22 +209,10 @@
       "title": "RGI 7.0 at NSIDC (authoritative source)"
     },
     {
-      "rel": "cite-as",
-      "href": "https://doi.org/10.5067/F6JMOVY5NAVZ",
-      "type": "text/html",
-      "title": "DOI of RGI 7.0 at NSIDC"
-    },
-    {
       "rel": "license",
       "href": "https://creativecommons.org/licenses/by/4.0/",
       "type": "text/html",
       "title": "CC-BY-4.0"
-    },
-    {
-      "rel": "alternate",
-      "href": "https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/intersects/collection.json",
-      "type": "text/html",
-      "title": "Open in the data browser"
     },
     {
       "rel": "vcs",
@@ -252,8 +246,8 @@
       "pmtiles:layers": [
         "intersects"
       ],
-      "file:size": 1081883870,
-      "file:checksum": "1220388d926151987265479a5df9c1af7ffe335043f60eb12b19e5bad9e888f54681"
+      "file:size": 1044447108,
+      "file:checksum": "122025d4ecf242ebc25745c74769c5b861da1625d79d4c51d8ea130d08e59280513e"
     }
   ]
 }

@@ -14,6 +14,7 @@ import tempfile
 from typing import TYPE_CHECKING, Any
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 from pmtiles.tile import Compression, deserialize_header, serialize_header
 import pyarrow as pa
@@ -52,12 +53,15 @@ ARCHIVE_DESCRIPTION = (
 # imagery the outlines were drawn from.
 MAXZOOM = 12
 GLACIERS_MINZOOM = 0
-# Up to this zoom each glacier is a point, one per grid cell, because a
-# glacier is smaller than a pixel there. Up to the zoom before the complete
-# band, a polygon too small for the zoom is a placeholder square.
-GLACIERS_POINT_MAXZOOM = 6
 # From this zoom on, the glaciers layer holds every glacier.
 GLACIERS_COMPLETE_ZOOM = 10
+# Below GLACIERS_COMPLETE_ZOOM a glacier is a simplified outline from the zoom
+# at which it spans this many pixels. Before that it is a point.
+SHAPE_MIN_PX = 3
+# The circumference of the Web Mercator world, in metres.
+WORLD_M = 2 * math.pi * 6378137
+# MapLibre draws a vector tile 512 pixels wide.
+TILE_PX = 512
 LABEL_MINZOOM = 7
 # A glacier of this area gets its label at GLACIERS_COMPLETE_ZOOM + 1.
 LABEL_REFERENCE_KM2 = 1.0
@@ -91,6 +95,10 @@ class LayerSpec:
     # The properties the band carries, of those the source has. None carries
     # every scalar column (:func:`tile_properties`).
     properties: tuple[str, ...] | None = None
+    # Tile this many zooms past ``maxzoom`` and keep only ``minzoom`` to
+    # ``maxzoom``. The finest zoom of a tiling keeps every source feature, so
+    # a padded band thins its own last zoom like the others.
+    pad_zoom: int = 0
 
 
 def tylertoo_binary(cache_dir: Path = CACHE) -> Path:
@@ -185,6 +193,80 @@ def tile_properties(parquet: Path) -> list[str]:
     ]
 
 
+def pixel_m(zoom: int) -> float:
+    """Return the size of a screen pixel at the equator, in Web Mercator metres.
+
+    Parameters
+    ----------
+    zoom
+        The zoom.
+
+    Returns
+    -------
+    float
+        The pixel size of a :data:`TILE_PX` tile.
+    """
+    return WORLD_M / (TILE_PX * 2**zoom)
+
+
+def shape_minzoom(extent_m: np.ndarray) -> np.ndarray:
+    """Return the zoom from which each feature is drawn as an outline.
+
+    Parameters
+    ----------
+    extent_m
+        The longer side of each feature's Web Mercator bounding box, in metres.
+
+    Returns
+    -------
+    np.ndarray
+        The first zoom at which the feature spans :data:`SHAPE_MIN_PX`
+        pixels, at most :data:`GLACIERS_COMPLETE_ZOOM`.
+    """
+    zooms = np.full(len(extent_m), GLACIERS_COMPLETE_ZOOM, dtype=np.int64)
+    for zoom in range(GLACIERS_COMPLETE_ZOOM - 1, -1, -1):
+        zooms[extent_m >= SHAPE_MIN_PX * pixel_m(zoom)] = zoom
+    return zooms
+
+
+def write_overview(source: Path, out_dir: Path, columns: Sequence[str]) -> dict[int, Path]:
+    """Write the input of each overview zoom of a polygon layer.
+
+    Below :data:`GLACIERS_COMPLETE_ZOOM` a feature that spans
+    :data:`SHAPE_MIN_PX` pixels is its outline, and a smaller one is RGI's
+    point (``cenlon``, ``cenlat``). Large glaciers then keep their shape at
+    low zooms, and a small one is a dot.
+
+    Parameters
+    ----------
+    source
+        The GeoParquet file of the layer.
+    out_dir
+        The directory to write into.
+    columns
+        The columns the overview carries, of those the source can tile.
+
+    Returns
+    -------
+    dict[int, Path]
+        The GeoParquet file of each zoom from :data:`GLACIERS_MINZOOM`.
+    """
+    keep = [c for c in columns if c in tile_properties(source)]
+    frame = gpd.read_parquet(source, columns=[*keep, "cenlon", "cenlat", "geometry"])
+    bounds = frame.geometry.to_crs(3857).bounds
+    extent = np.maximum(bounds["maxx"] - bounds["minx"], bounds["maxy"] - bounds["miny"])
+    shape_zoom = shape_minzoom(extent.to_numpy())
+    points = gpd.points_from_xy(frame["cenlon"], frame["cenlat"], crs=frame.crs)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = {}
+    for zoom in range(GLACIERS_MINZOOM, GLACIERS_COMPLETE_ZOOM):
+        geometry = np.where(shape_zoom <= zoom, frame.geometry.to_numpy(), points)
+        layer = gpd.GeoDataFrame(frame[keep], geometry=list(geometry), crs=frame.crs)
+        out[zoom] = out_dir / f"z{zoom}.parquet"
+        layer.to_parquet(out[zoom], index=False)
+    return out
+
+
 def write_labels(glaciers_parquet: Path, out: Path) -> Path:
     """Write the label points: one per named glacier, at RGI's own point.
 
@@ -220,16 +302,16 @@ def write_labels(glaciers_parquet: Path, out: Path) -> Path:
     return out
 
 
-# Polygons below GLACIERS_COMPLETE_ZOOM. The finest zoom of a band keeps the
-# source geometry, so the squares stop one zoom before it. The largest feature
-# wins each grid cell. Without the density budget every cell keeps one.
+# The overview zooms below GLACIERS_COMPLETE_ZOOM (write_overview). Every
+# outline is kept. The points are thinned to one per grid cell of 4 GSD, about
+# a pixel, and the largest feature wins each cell. Without the density budget
+# every cell keeps one.
 POLYGON_OVERVIEW = (
-    "--representation",
-    (
-        f"{GLACIERS_MINZOOM}-{GLACIERS_POINT_MAXZOOM}:point,"
-        f"{GLACIERS_POINT_MAXZOOM + 1}-{GLACIERS_COMPLETE_ZOOM - 2}:square"
-    ),
     "--no-density-drop",
+    "--polygon-thinning",
+    "0",
+    "--polygon-visibility",
+    "0",
     "--sort-key",
     "area_km2",
 )
@@ -276,7 +358,28 @@ INTERSECTS_MINZOOM = 10
 ARCHIVE_PRODUCTS = ("regions", "complexes", "glaciers", "centerlines", "intersects")
 
 
-def glacier_layers(glaciers: Path, labels: Path) -> list[LayerSpec]:
+def overview_layers(name: str, overview: dict[int, Path]) -> list[LayerSpec]:
+    """Return one band per overview zoom of a polygon layer.
+
+    Parameters
+    ----------
+    name
+        The layer name.
+    overview
+        The input of each zoom, from :func:`write_overview`.
+
+    Returns
+    -------
+    list[LayerSpec]
+        One band per zoom, padded by a zoom so that its points are thinned.
+    """
+    return [
+        LayerSpec(name, path, zoom, zoom, POLYGON_OVERVIEW, pad_zoom=1)
+        for zoom, path in sorted(overview.items())
+    ]
+
+
+def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> list[LayerSpec]:
     """Return the bands of the ``glaciers`` and ``glacier-labels`` layers.
 
     Parameters
@@ -285,25 +388,20 @@ def glacier_layers(glaciers: Path, labels: Path) -> list[LayerSpec]:
         The glaciers GeoParquet file.
     labels
         The label file from :func:`write_labels`.
+    overview
+        The overview input of each zoom, from :func:`write_overview`.
 
     Returns
     -------
     list[LayerSpec]
-        Up to :data:`GLACIERS_POINT_MAXZOOM` glaciers are points, one per
-        grid cell. Below :data:`GLACIERS_COMPLETE_ZOOM` small glaciers are
-        squares, one per grid cell. From it on every glacier is kept. Each
-        label enters at its ``label_minzoom`` and is never thinned.
+        Below :data:`GLACIERS_COMPLETE_ZOOM` the overview: outlines of the
+        glaciers that span :data:`SHAPE_MIN_PX` pixels, and a point per grid
+        cell for the others. From it on every glacier is kept. Each label
+        enters at its ``label_minzoom`` and is never thinned.
     """
     entry = ",".join(f"{z}={z}" for z in range(LABEL_MINZOOM, MAXZOOM + 1))
     return [
-        LayerSpec(
-            "glaciers",
-            glaciers,
-            GLACIERS_MINZOOM,
-            GLACIERS_COMPLETE_ZOOM - 1,
-            POLYGON_OVERVIEW,
-            properties=GLACIER_OVERVIEW_COLUMNS,
-        ),
+        *overview_layers("glaciers", overview),
         LayerSpec(
             "glaciers",
             glaciers,
@@ -361,6 +459,7 @@ def version_layers(
     products: dict[str, Path],
     labels: Path,
     region_labels: Path,
+    overviews: dict[str, dict[int, Path]],
 ) -> list[LayerSpec]:
     """Return the bands of every layer of the archive, bottom to top.
 
@@ -372,6 +471,9 @@ def version_layers(
         The glacier label file from :func:`write_labels`.
     region_labels
         The region label file from :func:`write_region_labels`.
+    overviews
+        The overview inputs of the glaciers and the complexes, by layer name,
+        from :func:`write_overview`.
 
     Returns
     -------
@@ -400,14 +502,7 @@ def version_layers(
             ("--no-density-drop", "--point-thinning", "0"),
             complete=True,
         ),
-        LayerSpec(
-            "complexes",
-            products["complexes"],
-            GLACIERS_MINZOOM,
-            GLACIERS_COMPLETE_ZOOM - 1,
-            POLYGON_OVERVIEW,
-            properties=COMPLEX_OVERVIEW_COLUMNS,
-        ),
+        *overview_layers("complexes", overviews["complexes"]),
         LayerSpec(
             "complexes",
             products["complexes"],
@@ -416,7 +511,7 @@ def version_layers(
             POLYGON_COMPLETE,
             complete=True,
         ),
-        *glacier_layers(products["glaciers"], labels),
+        *glacier_layers(products["glaciers"], labels, overviews["glaciers"]),
         LayerSpec(
             "centerlines",
             products["centerlines"],
@@ -496,7 +591,7 @@ def build_archive(
                 "--min-zoom",
                 str(layer.minzoom),
                 "--max-zoom",
-                str(layer.maxzoom),
+                str(layer.maxzoom + layer.pad_zoom),
                 "--no-simple-clip-fastpath",
                 "--report",
                 report,
@@ -657,13 +752,20 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
     work = staging / version_dir(version) / ".tiles"
     labels = write_labels(products["glaciers"], work / "labels.parquet")
     region_labels = write_region_labels(products["regions"], work / "region-labels.parquet")
-    return build_archive(
-        version_layers(products, labels, region_labels),
-        archive_path(staging, version),
-        name=ARCHIVE_NAME,
-        attribution=ARCHIVE_ATTRIBUTION,
-        description=ARCHIVE_DESCRIPTION,
-    )
+    # The overview inputs hold most outlines once per zoom. They go once the
+    # archive is built.
+    with tempfile.TemporaryDirectory(dir=work, prefix="overview-") as tmp:
+        overviews = {
+            name: write_overview(products[name], Path(tmp) / name, columns)
+            for name, columns in OVERVIEW_COLUMNS.items()
+        }
+        return build_archive(
+            version_layers(products, labels, region_labels, overviews),
+            archive_path(staging, version),
+            name=ARCHIVE_NAME,
+            attribution=ARCHIVE_ATTRIBUTION,
+            description=ARCHIVE_DESCRIPTION,
+        )
 
 
 def _tiles(args: argparse.Namespace) -> None:

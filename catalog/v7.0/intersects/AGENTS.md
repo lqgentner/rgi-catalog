@@ -7,6 +7,13 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[glacier intersects product](https://rgidata.org/user_guide/products/intersects_product.html):
+
+> The glacier intersects products includes only the “divides” or “borders” between adjacent glaciers rather than the complete outlines. The resulting geometries are single lines (each with their own id), with attributes rgi_g_id_1 and rgi_g_id_2 indicating which glacier entities are adjacent. This product is useful for describing the connection between two glaciers (for example by the length of a common boundary) or for glacier models able to use this kind of information.
+
 ## The file
 
 `https://data.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet`: 130,429

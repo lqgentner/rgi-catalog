@@ -14,41 +14,46 @@ GLYPHS = "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf"
 LABEL_FONT = ["Open Sans Italic"]
 REGION_FONTS = {1: ["Open Sans Bold"], 2: ["Open Sans Regular"]}
 
-GLACIER_FILL = "#9ecae1"
-GLACIER_LINE = "#2171b5"
-LABEL_COLOR = "#08306b"
-NO_DATA = "#bdbdbd"
-COMPLEX_FILL = "#bcbddc"
-COMPLEX_LINE = "#6a51a3"
-CENTERLINE_COLOR = "#cb181d"
-INTERSECT_COLOR = "#252525"
-REGION_LINE = "#636363"
-REGION_LABEL = "#525252"
-# The glaciers under the centerlines and the intersects.
-CONTEXT_FILL = "#deebf7"
-CONTEXT_LINE = "#9ecae1"
+# One colour per product, the same in every style. Each clears 3:1 against a
+# light grey basemap, and the four stay apart for colour-blind readers.
+GLACIER_FILL = "#1e88e5"
+GLACIER_LINE = "#0d47a1"
+LABEL_COLOR = "#0d2a5c"
+NO_DATA = "#9e9e9e"
+COMPLEX_FILL = "#8e24aa"
+COMPLEX_LINE = "#4a148c"
+CENTERLINE_COLOR = "#d55e00"
+INTERSECT_COLOR = "#00897b"
+REGION_LINE = "#263238"
+REGION_LINE_2 = "#546e7a"
+REGION_LABEL = "#37474f"
 # At world scale a glacier is smaller than a pixel, so a fill alone draws
 # nothing. An outline of about one pixel keeps every tiled glacier visible.
 OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
-# At the lowest zooms the archive holds each glacier as a point. A glacier
-# at the antimeridian is a MultiPoint where the tile buffer wraps.
+# Below z10 the archive holds a glacier too small to draw as a point. A
+# glacier at the antimeridian is a MultiPoint where the tile buffer wraps.
 POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
 DOT_RADIUS = ["interpolate", ["linear"], ["zoom"], 0, 1.5, 6, 2.5]
 
 
-def _dots(color: Any, layer: str = "glaciers") -> dict[str, Any]:
+def _dots(color: Any, layer: str = "glaciers", opacity: float = 0.85) -> dict[str, Any]:
     """Return the circle layer that draws a polygon layer's points."""
     return {
         "id": f"{layer}-dots",
         "type": "circle",
         "source-layer": layer,
         "filter": POINTS,
-        "paint": {"circle-color": color, "circle-radius": DOT_RADIUS, "circle-opacity": 0.85},
+        "paint": {"circle-color": color, "circle-radius": DOT_RADIUS, "circle-opacity": opacity},
     }
 
 
-def _polygons(layer: str, fill: Any, line: Any, opacity: float) -> list[dict[str, Any]]:
+def _polygons(
+    layer: str, fill: Any, line: Any, opacity: float, line_opacity: float = 1.0
+) -> list[dict[str, Any]]:
     """Return the fill, outline and dot layers of a polygon layer."""
+    outline: dict[str, Any] = {"line-color": line, "line-width": OUTLINE_WIDTH}
+    if line_opacity < 1:
+        outline["line-opacity"] = line_opacity
     return [
         {
             "id": f"{layer}-fill",
@@ -56,13 +61,8 @@ def _polygons(layer: str, fill: Any, line: Any, opacity: float) -> list[dict[str
             "source-layer": layer,
             "paint": {"fill-color": fill, "fill-opacity": opacity},
         },
-        {
-            "id": f"{layer}-outline",
-            "type": "line",
-            "source-layer": layer,
-            "paint": {"line-color": line, "line-width": OUTLINE_WIDTH},
-        },
-        _dots(line, layer),
+        {"id": f"{layer}-outline", "type": "line", "source-layer": layer, "paint": outline},
+        _dots(fill, layer, min(0.85, line_opacity)),
     ]
 
 
@@ -114,14 +114,14 @@ LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
             "id": "regions-outline-1",
             "type": "line",
             "filter": ["==", ["get", "level"], 1],
-            "paint": {"line-color": REGION_LINE, "line-width": 1.2, "line-dasharray": [4, 2]},
+            "paint": {"line-color": REGION_LINE, "line-width": 1.5},
         },
         {
             "id": "regions-outline-2",
             "type": "line",
             "filter": ["==", ["get", "level"], 2],
             "minzoom": 3,
-            "paint": {"line-color": REGION_LINE, "line-width": 0.6, "line-dasharray": [2, 2]},
+            "paint": {"line-color": REGION_LINE_2, "line-width": 0.8, "line-dasharray": [3, 2]},
         },
     ],
     "region-labels": [_region_labels(1, 1, 6, 12), _region_labels(2, 4, 9, 11)],
@@ -150,15 +150,16 @@ LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
         {
             "id": "intersects",
             "type": "line",
-            "paint": {"line-color": INTERSECT_COLOR, "line-width": 1.2},
+            "paint": {"line-color": INTERSECT_COLOR, "line-width": 2.0},
         },
     ],
     "glacier-labels": [LABELS],
 }
 ARCHIVE_LAYERS = tuple(LAYER_STYLES)
 REFERENCE_LAYERS = ("regions", "glaciers", "centerlines", "region-labels", "glacier-labels")
-# The glaciers drawn pale, under the centerlines or the intersects.
-GLACIER_CONTEXT = _polygons("glaciers", CONTEXT_FILL, CONTEXT_LINE, 0.6)
+# The glaciers under the centerlines or the intersects: the glacier colours,
+# faint, so the lines are the subject.
+GLACIER_CONTEXT = _polygons("glaciers", GLACIER_FILL, GLACIER_LINE, 0.2, line_opacity=0.35)
 
 
 @dataclass(frozen=True)
@@ -210,43 +211,37 @@ class Theme:
 THEMES: dict[str, Theme] = {
     "median-elevation": Theme(
         title="Median elevation",
-        description=(
-            "Glaciers coloured by median elevation (zmed_m) in 1,000 m classes, "
-            "from below 1,000 m (dark purple) to 5,000 m and above (yellow)."
-        ),
+        description=("Glaciers by median elevation (zmed_m), in 1,000 m classes."),
         column="zmed_m",
         stops=(1000, 2000, 3000, 4000, 5000),
-        colors=("#440154", "#414487", "#2a788e", "#22a884", "#7ad151", "#fde725"),
+        colors=("#a88bd9", "#8c69c8", "#7050b2", "#573a96", "#3f2875", "#291852"),
     ),
     "surge-evidence": Theme(
         title="Surge evidence",
-        description=(
-            "Glaciers coloured by the evidence for surging (surge_type): no evidence, "
-            "possible, probable or observed."
-        ),
+        description=("Glaciers by evidence for surging (surge_type)."),
         column="surge_type",
         codes={0: "No evidence", 1: "Possible", 2: "Probable", 3: "Observed"},
-        colors=("#c6dbef", "#fdd0a2", "#fd8d3c", "#d94801"),
+        colors=(NO_DATA, "#ea8a3a", "#d4471f", "#9c1b12"),
     ),
     "terminus-type": Theme(
         title="Terminus type",
         description=(
-            "Glaciers coloured by terminus type (term_type). RGI 7.0 assigns only the "
-            "marine-terminating class. Every other glacier is not assigned."
+            "Glaciers by terminus type (term_type). RGI 7.0 assigns only the "
+            "marine-terminating class."
         ),
         column="term_type",
         codes={1: "Marine-terminating", 9: "Not assigned"},
-        colors=("#08519c", NO_DATA),
+        colors=("#0072b2", NO_DATA),
     ),
     "same-as-rgi6": Theme(
         title="Same as RGI 6.0",
         description=(
-            "Glaciers coloured by whether the outline is the same as in RGI 6.0 "
-            "(is_rgi6) or new in RGI 7.0, as in the map of the RGI 7.0 user guide."
+            "Glaciers by whether the outline is the same as in RGI 6.0 (is_rgi6), "
+            "as in the map of the RGI 7.0 user guide."
         ),
         column="is_rgi6",
         codes={True: "Same as RGI 6.0", False: "New in RGI 7.0"},
-        colors=("#1f77b4", "#d62728"),
+        colors=("#0072b2", "#d55e00"),
     ),
 }
 DEFAULT_STYLE = "reference"
@@ -263,7 +258,7 @@ REGION_LEVELS = Theme(
     description="",
     column="level",
     codes={1: "First-order region", 2: "Second-order region"},
-    colors=("#fdae6b", "#9e9ac8"),
+    colors=("#e69f00", "#0072b2"),
 )
 
 
@@ -341,11 +336,7 @@ def reference_style(archive_href: str) -> dict[str, Any]:
     """
     return _style(
         "Reference map",
-        (
-            "Glacier outlines (blue) and centerlines (red), with glacier names and the "
-            "boundaries and names of the glacier regions. Larger glaciers are named at "
-            "lower zooms."
-        ),
+        "Glacier outlines, centerlines and names, with the glacier regions.",
         archive_href,
         _layers_of(list(REFERENCE_LAYERS)),
     )
@@ -411,19 +402,19 @@ def _own_style(name: str, archive_href: str) -> dict[str, Any]:
     if name == "complexes":
         return _style(
             "Glacier complexes",
-            "Glacier complexes (purple): connected glaciers merged into one outline.",
+            "Glacier complexes: connected glaciers merged into one outline.",
             archive_href,
             _layers_of(["complexes"]),
         )
     if name in {"centerlines", "intersects"}:
         what = {
-            "centerlines": "Glacier centerlines (red), the main centerline wider",
-            "intersects": "Intersects (black): the divides between adjacent glaciers",
+            "centerlines": "Glacier centerlines, the main centerline wider",
+            "intersects": "Intersects, the divides between adjacent glaciers",
         }[name]
         zoom = {"centerlines": "z8", "intersects": "z10"}[name]
         return _style(
             name.capitalize(),
-            f"{what}, from {zoom}, over the glacier outlines (pale blue).",
+            f"{what}, from {zoom}, over the glacier outlines.",
             archive_href,
             [*GLACIER_CONTEXT, *_layers_of([name]), labels],
         )
@@ -435,7 +426,7 @@ def _own_style(name: str, archive_href: str) -> dict[str, Any]:
     }
     return _style(
         "Glacier regions",
-        "First-order (orange) and second-order (purple) glacier regions, with their names.",
+        "First-order and second-order glacier regions, with their names.",
         archive_href,
         [fill, *_layers_of(["regions", "region-labels"])],
     )

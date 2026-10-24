@@ -15,7 +15,7 @@ The public root is `https://data.source.coop/lqgentner/rgi/catalog.json`. Each R
 sub-catalog. Each RGI product is a collection with one GeoParquet file and no
 items.
 
-- `v7.0/`: RGI 7.0, mirror revision `7.0-r1`. Collections: `glaciers`, `complexes`, `centerlines`, `intersects`, `regions`. Read `v7.0/AGENTS.md` next.
+- `v7.0/`: RGI 7.0, mirror revision `7.0-r1`. Collections: `glaciers`, `complexes`, `intersects`, `centerlines`, `regions`. Read `v7.0/AGENTS.md` next.
 
 ## How to read it
 

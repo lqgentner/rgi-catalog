@@ -7,7 +7,7 @@
   "id": "rgi",
   "title": "Randolph Glacier Inventory Mirror",
   "description": "The Randolph Glacier Inventory (RGI) is a globally complete inventory of glacier outlines. This catalog republishes it as GeoParquet files and a web map archive. The values are those of the RGI release. Fixes of documented upstream errors are listed in the provenance record.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
-  "updated": "2026-10-23T10:20:22Z",
+  "updated": "2026-10-24T10:04:46Z",
   "links": [
     {
       "rel": "root",
@@ -24,22 +24,28 @@
       "rel": "describedby",
       "href": "./README.md",
       "type": "text/markdown",
-      "title": "Randolph Glacier Inventory Mirror documentation"
+      "title": "Catalog README"
     },
     {
       "rel": "agents",
       "href": "./AGENTS.md",
       "type": "text/markdown",
-      "title": "Randolph Glacier Inventory Mirror agent guide"
+      "title": "Catalog agents guide"
+    },
+    {
+      "rel": "describedby",
+      "href": "https://rgidata.org/user_guide/",
+      "type": "text/html",
+      "title": "RGI 7.0 user guide (official documentation)"
     },
     {
       "rel": "preview",
       "href": "./thumbnail.webp",
       "type": "image/webp",
       "title": "Thumbnail",
-      "description": "The default style of the data, drawn by chiitiler over the Esri World Light Gray Base map. Basemap: Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community.",
-      "file:size": 60304,
-      "file:checksum": "12203c2ad98515ec0172daf2ec0c5837a0197e8922bb04adcf81564db7453bd5f8a7"
+      "description": "The default style of the data, drawn by chiitiler. The world views show the land of Natural Earth, which is in the public domain. The glacier products share one frame, the Garibaldi and Marinelli glaciers in the Cordillera Darwin, on white.",
+      "file:size": 55640,
+      "file:checksum": "12207e15a1c3439b8edab36059deb9d932f10558f85d4a55c6b1a37cb3d116890a43"
     },
     {
       "rel": "child",
@@ -54,22 +60,10 @@
       "title": "RGI 7.0 at NSIDC (authoritative source)"
     },
     {
-      "rel": "cite-as",
-      "href": "https://doi.org/10.5067/F6JMOVY5NAVZ",
-      "type": "text/html",
-      "title": "DOI of RGI 7.0 at NSIDC"
-    },
-    {
       "rel": "license",
       "href": "https://creativecommons.org/licenses/by/4.0/",
       "type": "text/html",
       "title": "CC-BY-4.0"
-    },
-    {
-      "rel": "alternate",
-      "href": "https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/catalog.json",
-      "type": "text/html",
-      "title": "Open in the data browser"
     },
     {
       "rel": "vcs",

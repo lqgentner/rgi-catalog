@@ -1,6 +1,6 @@
 # RGI 7.0 glacier regions
 
-[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
+[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/02_regions_definition.html) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
 The 20 first-order and 90 second-order glacier regions of RGI 7.0, in one GeoParquet file. Regions 10 and 19-15 cross the antimeridian and are two rows each. The web map archive holds the boundaries and the names.
 
@@ -8,14 +8,21 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[rgi glacier regions](https://rgidata.org/user_guide/02_regions_definition.html):
+
+> RGI outlines are organized into 20 first-order glacier regions. This is one more than in RGI 6.0 and earlier versions, since former region 19 was split into two regions (global map; Table 1a). These are further subdivided into second-order regions, of which there are 90 in total in RGI 7.0 (Table 1b). Glacier regions are useful for regional assessments of glacier change and other variables.
+
 ## Files
 
 - [`rgi7.0-regions.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet): 112 rows, 1.0 MB. GeoParquet 2.0.0 in 1 row groups of up to 112 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
 - [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `regions`, `region-labels`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `long_code`.
 ## Map styles
 
-- [Glacier regions](./styles/regions.json) (default): First-order (orange) and second-order (purple) glacier regions, with their names.
-- [Reference map](./styles/reference.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
+- [Glacier regions](./styles/regions.json) (default): First-order and second-order glacier regions, with their names.
+- [Reference map](./styles/reference.json): Glacier outlines, centerlines and names, with the glacier regions.
 
 ## Access
 

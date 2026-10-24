@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import geopandas as gpd
+import numpy as np
 import pandas as pd
 from pmtiles.reader import MmapSource, Reader, all_tiles
 import pyarrow as pa
@@ -45,7 +46,12 @@ GLACIERS = [
     ("RGI2000-v7.0-G-11-00002", 10.805, 46.855, 0.5, None),
     ("RGI2000-v7.0-G-11-00003", 10.905, 46.905, 0.2, "Tiny Glacier"),
     ("RGI2000-v7.0-G-10-00001", 179.95, 65.005, 100.0, "Antimeridian Glacier"),
+    ("RGI2000-v7.0-G-01-00001", -147.0, 61.0, 1000.0, "Big Glacier"),
 ]
+# Half the side of each fixture square, in degrees. The big glacier spans a
+# degree, so it is a shape from a low zoom on.
+HALF_SIDE = {"RGI2000-v7.0-G-01-00001": 0.5}
+BIG = "RGI2000-v7.0-G-01-00001"
 
 
 def _glaciers_frame() -> gpd.GeoDataFrame:
@@ -60,7 +66,7 @@ def _glaciers_frame() -> gpd.GeoDataFrame:
             "cenlon": [g[1] for g in GLACIERS],
             "cenlat": [g[2] for g in GLACIERS],
             "area_km2": [g[3] for g in GLACIERS],
-            "term_type": pd.Series([0, 0, 1, 2], dtype="uint8"),
+            "term_type": pd.Series([0, 0, 1, 2, 9], dtype="uint8"),
             "display_name": [g[4] for g in GLACIERS],
             "hypso_permille": pd.Series(permille, dtype=pd.ArrowDtype(permille.type)),
             "rgi6_links": pd.Series(links, dtype=pd.ArrowDtype(links.type)),
@@ -68,13 +74,14 @@ def _glaciers_frame() -> gpd.GeoDataFrame:
         geometry=[
             Polygon(
                 [
-                    (lon - 0.005, lat - 0.005),
-                    (lon + 0.005, lat - 0.005),
-                    (lon + 0.005, lat + 0.005),
-                    (lon - 0.005, lat + 0.005),
+                    (lon - h, lat - h),
+                    (lon + h, lat - h),
+                    (lon + h, lat + h),
+                    (lon - h, lat + h),
                 ],
             )
-            for _, lon, lat, _, _ in GLACIERS
+            for rgi_id, lon, lat, _, _ in GLACIERS
+            for h in [HALF_SIDE.get(rgi_id, 0.005)]
         ],
         crs="EPSG:4326",
     )
@@ -93,9 +100,15 @@ def labels_parquet(glaciers_parquet: Path) -> Path:
 
 
 @pytest.fixture(scope="module")
-def archive(glaciers_parquet: Path, labels_parquet: Path) -> Path:
+def overview(glaciers_parquet: Path) -> dict[int, Path]:
+    out = glaciers_parquet.parent / "overview"
+    return tiles.write_overview(glaciers_parquet, out, tiles.GLACIER_OVERVIEW_COLUMNS)
+
+
+@pytest.fixture(scope="module")
+def archive(glaciers_parquet: Path, labels_parquet: Path, overview: dict[int, Path]) -> Path:
     return build_archive(
-        glacier_layers(glaciers_parquet, labels_parquet),
+        glacier_layers(glaciers_parquet, labels_parquet, overview),
         glaciers_parquet.parent / "rgi7.0.pmtiles",
         name=tiles.ARCHIVE_NAME,
         attribution=tiles.ARCHIVE_ATTRIBUTION,
@@ -186,15 +199,55 @@ def test_build_archive_glaciers_complete_from_complete_zoom(
         assert counts[zoom] == len(GLACIERS)
 
 
-def test_build_archive_glaciers_are_points_at_low_zoom(archive: Path, tmp_path: Path) -> None:
+def _shape_zooms() -> dict[str, int]:
+    frame = _glaciers_frame()
+    bounds = frame.to_crs(3857).bounds
+    extent = np.maximum(
+        (bounds["maxx"] - bounds["minx"]).to_numpy(), (bounds["maxy"] - bounds["miny"]).to_numpy()
+    )
+    zooms = tiles.shape_minzoom(extent)
+    return dict(zip(frame["rgi_id"], (int(z) for z in zooms), strict=True))
+
+
+def test_shape_minzoom() -> None:
+    px = tiles.SHAPE_MIN_PX * tiles.pixel_m(0)
+    extents = np.array([px, px * 0.99, px / 2**5, 1.0])
+    assert tiles.shape_minzoom(extents).tolist() == [0, 1, 5, tiles.GLACIERS_COMPLETE_ZOOM]
+
+
+def test_write_overview_shapes_large_glaciers_only(
+    glaciers_parquet: Path,
+    overview: dict[int, Path],
+) -> None:
+    shape_zooms = _shape_zooms()
+    assert 0 < shape_zooms[BIG] < min(z for k, z in shape_zooms.items() if k != BIG)
+    assert sorted(overview) == list(range(tiles.GLACIERS_COMPLETE_ZOOM))
+    for zoom, path in overview.items():
+        rows = gpd.read_parquet(path)
+        assert len(rows) == len(GLACIERS)
+        assert [c for c in rows.columns if c != "geometry"] == [
+            c for c in tiles.GLACIER_OVERVIEW_COLUMNS if c in tile_properties(glaciers_parquet)
+        ]
+        for rgi_id, lon, lat, _, _ in GLACIERS:
+            geom = rows.loc[rows["rgi_id"] == rgi_id].geometry.iloc[0]
+            if zoom >= shape_zooms[rgi_id]:
+                assert geom.geom_type == "Polygon", (rgi_id, zoom)
+            else:
+                # A glacier too small to draw is RGI's point (cenlon, cenlat).
+                assert (geom.geom_type, geom.x, geom.y) == ("Point", lon, lat), zoom
+
+
+def test_build_archive_draws_large_glaciers_as_shapes(archive: Path, tmp_path: Path) -> None:
     decoded = gpd.read_parquet(decode(archive, tmp_path / "low.parquet", layer="glaciers"))
-    for zoom, rows in decoded.groupby("zoom"):
-        types = set(rows.geom_type)
-        # A glacier at the antimeridian is a MultiPoint where the buffer wraps.
-        if zoom <= tiles.GLACIERS_POINT_MAXZOOM:
-            assert types <= {"Point", "MultiPoint"}, zoom
-        else:
-            assert not types & {"Point", "MultiPoint"}, zoom
+    shape_zooms = _shape_zooms()
+    # A glacier at the antimeridian is a MultiPoint where the buffer wraps.
+    points = {"Point", "MultiPoint"}
+    for (rgi_id, zoom), rows in decoded.groupby(["rgi_id", "zoom"]):
+        is_point = set(rows.geom_type) <= points
+        assert is_point == (zoom < shape_zooms[rgi_id]), (rgi_id, zoom)
+    # Every outline is kept, and the big glacier is in every zoom.
+    big_zooms = set(decoded.loc[decoded["rgi_id"] == BIG, "zoom"])
+    assert big_zooms == set(range(tiles.MAXZOOM + 1))
 
 
 def test_archive_attribution_names_the_producer() -> None:
@@ -295,7 +348,14 @@ def test_write_region_labels_one_per_region(fake_rgi: FakeRGI, tmp_path: Path) -
 
 def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     paths = {name: tmp_path / f"{name}.parquet" for name in tiles.ARCHIVE_PRODUCTS}
-    layers = tiles.version_layers(paths, tmp_path / "labels.parquet", tmp_path / "rl.parquet")
+    zooms = range(tiles.GLACIERS_COMPLETE_ZOOM)
+    overviews = {
+        name: {z: tmp_path / f"{name}-z{z}.parquet" for z in zooms}
+        for name in tiles.OVERVIEW_COLUMNS
+    }
+    layers = tiles.version_layers(
+        paths, tmp_path / "labels.parquet", tmp_path / "rl.parquet", overviews
+    )
     assert {layer.name for layer in layers} == {
         "regions",
         "region-labels",
@@ -317,6 +377,12 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     for layer in layers:
         if layer.name in {"centerlines", "intersects"} and layer.complete:
             assert "--no-coalesce-lines" in layer.extra_args
+    # One overview band per zoom, tiled a zoom further so that its own zoom
+    # is thinned.
+    for name, inputs in overviews.items():
+        bands = [layer for layer in layers if layer.source in inputs.values()]
+        assert [(b.minzoom, b.maxzoom, b.pad_zoom) for b in bands] == [(z, z, 1) for z in zooms]
+        assert all(b.name == name for b in bands)
 
 
 def test_build_archive_overview_carries_style_columns_only(

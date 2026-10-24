@@ -26,7 +26,7 @@
     "GTN-G"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-23T10:20:22Z",
+  "updated": "2026-10-24T10:04:46Z",
   "sci:doi": "10.5904/gtng-glacreg-2023-07",
   "sci:citation": "World Glacier Monitoring Service. (2023). GTN-G glacier regions (GlacReg) [Data set]. Global Terrestrial Network for Glaciers. https://doi.org/10.5904/gtng-glacreg-2023-07",
   "sci:publications": [
@@ -134,24 +134,24 @@
       "href": "./styles/regions.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Glacier regions",
-      "description": "First-order (orange) and second-order (purple) glacier regions, with their names.",
+      "description": "First-order and second-order glacier regions, with their names.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 3077,
-      "file:checksum": "1220ff1b5322b40769def7974c0c3f90277a78cd585e712868d914c560996fe6bce7"
+      "file:size": 2995,
+      "file:checksum": "1220f97272c2a459b2bd52182d8d907cead77486e06c09721695034fdd30fd814660"
     },
     "style-reference": {
       "href": "./styles/reference.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Reference map",
-      "description": "Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.",
+      "description": "Glacier outlines, centerlines and names, with the glacier regions.",
       "roles": [
         "style"
       ],
-      "file:size": 5043,
-      "file:checksum": "1220a855f87beb9f20e504533d9fab279b538b572be5c7d81f2753b3d02714ffaba7"
+      "file:size": 4885,
+      "file:checksum": "1220809a1b15c70cce50857c6f8e6ced427cdee0d4b1ff4919c5f3a00088f60c762a"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
@@ -160,19 +160,19 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1081883870,
-      "file:checksum": "1220388d926151987265479a5df9c1af7ffe335043f60eb12b19e5bad9e888f54681"
+      "file:size": 1044447108,
+      "file:checksum": "122025d4ecf242ebc25745c74769c5b861da1625d79d4c51d8ea130d08e59280513e"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
       "type": "image/webp",
       "title": "Thumbnail",
-      "description": "The default style of the data, drawn by chiitiler over the Esri World Light Gray Base map. Basemap: Esri, HERE, Garmin, (c) OpenStreetMap contributors, and the GIS user community.",
+      "description": "The default style of the data, drawn by chiitiler. The world views show the land of Natural Earth, which is in the public domain. The glacier products share one frame, the Garibaldi and Marinelli glaciers in the Cordillera Darwin, on white.",
       "roles": [
         "thumbnail"
       ],
-      "file:size": 34548,
-      "file:checksum": "12209c8b74020ed0f7f8be925106b0b1a0ed898c9c33fdff086d023c1a5d14d19553"
+      "file:size": 32744,
+      "file:checksum": "1220d0e5c5935ceef1525314086a21430c79f213a209ba8729dd0b5de2efc5246d24"
     }
   },
   "links": [
@@ -192,13 +192,19 @@
       "rel": "describedby",
       "href": "./README.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 glacier regions documentation"
+      "title": "Collection README"
     },
     {
       "rel": "agents",
       "href": "./AGENTS.md",
       "type": "text/markdown",
-      "title": "RGI 7.0 glacier regions agent guide"
+      "title": "Collection agents guide"
+    },
+    {
+      "rel": "describedby",
+      "href": "https://rgidata.org/user_guide/02_regions_definition.html",
+      "type": "text/html",
+      "title": "RGI 7.0 user guide, RGI glacier regions (official documentation)"
     },
     {
       "rel": "via",
@@ -207,22 +213,10 @@
       "title": "RGI 7.0 at NSIDC (authoritative source)"
     },
     {
-      "rel": "cite-as",
-      "href": "https://doi.org/10.5904/GTNG-GLACREG-2023-07",
-      "type": "text/html",
-      "title": "DOI 10.5904/gtng-glacreg-2023-07"
-    },
-    {
       "rel": "license",
       "href": "https://www.gtn-g.ch/glacreg/",
       "type": "text/html",
       "title": "GTN-G Glacier Regions: \"Open access for scientific and educational purposes under requirement of correct citation\""
-    },
-    {
-      "rel": "alternate",
-      "href": "https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json",
-      "type": "text/html",
-      "title": "Open in the data browser"
     },
     {
       "rel": "vcs",
@@ -257,8 +251,8 @@
         "regions",
         "region-labels"
       ],
-      "file:size": 1081883870,
-      "file:checksum": "1220388d926151987265479a5df9c1af7ffe335043f60eb12b19e5bad9e888f54681"
+      "file:size": 1044447108,
+      "file:checksum": "122025d4ecf242ebc25745c74769c5b861da1625d79d4c51d8ea130d08e59280513e"
     }
   ]
 }

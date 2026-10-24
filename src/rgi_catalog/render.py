@@ -20,7 +20,7 @@ from rgi_catalog.paths import CATALOG, METADATA, STAGING, version_dir
 from rgi_catalog.pipeline import PRODUCT_SOURCES
 from rgi_catalog.record import record_path, write_build_record
 from rgi_catalog.sources import load_pins
-from rgi_catalog.tiles import GLACIERS_COMPLETE_ZOOM, GLACIERS_POINT_MAXZOOM, OVERVIEW_COLUMNS
+from rgi_catalog.tiles import GLACIERS_COMPLETE_ZOOM, OVERVIEW_COLUMNS, SHAPE_MIN_PX
 
 if TYPE_CHECKING:
     import argparse
@@ -170,15 +170,14 @@ class Context:
             **_file_fields(data),
         }
 
-    def nav_links(self, path: str, spec: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    def nav_links(self, spec: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """Return the mirror and navigation links every document carries.
 
-        A collection's ``doi`` and ``license`` in ``catalog.yaml`` replace the
-        catalog's in the ``cite-as`` and ``license`` links.
+        A collection's ``license`` in ``catalog.yaml`` replaces the catalog's
+        in the ``license`` link.
         """
         meta = self.meta
         spec = spec or {}
-        doi = spec.get("doi", meta["doi"])
         license_link = {
             "rel": "license",
             "href": spec.get("license_url", meta["license_url"]),
@@ -192,19 +191,7 @@ class Context:
                 "type": HTML,
                 "title": meta["via"]["title"],
             },
-            {
-                "rel": "cite-as",
-                "href": f"https://doi.org/{doi.upper()}",
-                "type": HTML,
-                "title": "DOI of RGI 7.0 at NSIDC" if doi == meta["doi"] else f"DOI {doi}",
-            },
             license_link,
-            {
-                "rel": "alternate",
-                "href": self.browser(path),
-                "type": HTML,
-                "title": "Open in the data browser",
-            },
             {
                 "rel": "vcs",
                 "href": meta["repository"],
@@ -225,21 +212,34 @@ class Context:
             },
         ]
 
-    def docs_links(self, title: str) -> list[dict[str, Any]]:
-        """Return the README and AGENTS links of a document."""
+    def docs_links(self, kind: str, spec: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        """Return the README, AGENTS and user guide links of a document.
+
+        The README and the AGENTS file describe this mirror. The RGI 7.0 user
+        guide is the official documentation, so only its link says so. A
+        collection links the guide's page of its product.
+        """
+        if spec is None:
+            guide_title = "RGI 7.0 user guide (official documentation)"
+            guide_url = self.meta["user_guide"]
+        else:
+            guide = spec["user_guide"]
+            guide_title = f"RGI 7.0 user guide, {guide['title']} (official documentation)"
+            guide_url = guide["url"]
         return [
             {
                 "rel": "describedby",
                 "href": "./README.md",
                 "type": MARKDOWN,
-                "title": f"{title} documentation",
+                "title": f"{kind} README",
             },
             {
                 "rel": "agents",
                 "href": "./AGENTS.md",
                 "type": MARKDOWN,
-                "title": f"{title} agent guide",
+                "title": f"{kind} agents guide",
             },
+            {"rel": "describedby", "href": guide_url, "type": HTML, "title": guide_title},
         ]
 
 
@@ -274,7 +274,6 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
     spec = meta["versions"][version]["collections"][name]
     stats = record["collections"][name]
     vdir = version_dir(version)
-    path = f"{vdir}/{name}/collection.json"
     data_rel = f"{name}/{stats['href']}"
     archive = record["archive"]["href"]
     files = record["files"]
@@ -369,8 +368,8 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
             "type": JSON,
             "title": meta["versions"][version]["title"],
         },
-        *ctx.docs_links(spec["title"]),
-        *ctx.nav_links(path, spec),
+        *ctx.docs_links("Collection", spec),
+        *ctx.nav_links(spec),
         *source_links,
         {
             "rel": "pmtiles",
@@ -431,7 +430,7 @@ def _catalog(
         links.append(
             {"rel": "parent", "href": "../catalog.json", "type": JSON, "title": ctx.meta["title"]}
         )
-    links += ctx.docs_links(title)
+    links += ctx.docs_links("Catalog")
     # A catalog carries no assets (PTL-AST-005), so its thumbnail is a
     # rel:preview link, which clients read when a document has no assets.
     thumbnail = ctx.thumbnail(path.rpartition("/")[0])
@@ -440,7 +439,7 @@ def _catalog(
     links += [
         {"rel": "child", "href": f"./{href}", "type": JSON, "title": t} for href, t in children
     ]
-    links += ctx.nav_links(path)
+    links += ctx.nav_links()
     return {
         "type": "Catalog",
         "stac_version": STAC_VERSION,
@@ -513,7 +512,7 @@ def render(out: Path = CATALOG) -> list[Path]:
                 "path": f"{base}/collection.json",
                 "codes": ctx.codes,
                 "complete_zoom": GLACIERS_COMPLETE_ZOOM,
-                "point_maxzoom": GLACIERS_POINT_MAXZOOM,
+                "shape_min_px": SHAPE_MIN_PX,
                 "has_timestamps": any(
                     c["type"].startswith("timestamp")
                     for c in record["collections"][name]["columns"]

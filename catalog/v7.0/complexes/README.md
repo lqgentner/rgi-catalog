@@ -1,6 +1,6 @@
 # RGI 7.0 glacier complexes
 
-[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/complexes/collection.json) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
+[Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/complexes/collection.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/products/glacier_complex_product.html) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
 One row per glacier complex: the glaciers that touch, merged into one outline, with RGI's attributes and the IDs of the member glaciers, in one GeoParquet file. The web map archive holds the outlines.
 
@@ -8,14 +8,21 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
+## About the product
+
+The RGI 7.0 user guide describes the
+[glacier complex product](https://rgidata.org/user_guide/products/glacier_complex_product.html):
+
+> The glacier complex product is the result of a spatial merge operation of the glacier product (dissolve in the GIS jargon). The operation is realized on geometries only, which means that any cluster of connected glaciers (however small the connection) will be merged into one entity in the glacier complex product. The resulting inventory has the same area but a smaller or equal number of entities as the glacier product. Only a few attributes from the original glacier product remain after the merge.
+
 ## Files
 
 - [`rgi7.0-complexes.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet): 192,869 rows, 213.3 MB. GeoParquet 2.0.0 in 18 row groups of up to 12,157 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
-- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `complexes`. Below z10 the layer is an overview: up to z6 each feature is a point, one per grid cell, and at z7 and z8 a feature too small to draw is a square. Overview features carry only `rgi_id`, `area_km2`. From z10 the tiles carry every column except the list and struct columns, which vector tiles cannot store: `glacier_ids`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `complexes`. Below z10 the layer is an overview. A feature that spans 3 pixels at a zoom is its simplified outline. A smaller feature is a point at RGI's `cenlon` and `cenlat`, one per grid cell of about a pixel, and the largest feature wins the cell. Overview features carry only `rgi_id`, `area_km2`. From z10 the tiles carry every column except the list and struct columns, which vector tiles cannot store: `glacier_ids`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 
-- [Glacier complexes](./styles/complexes.json) (default): Glacier complexes (purple): connected glaciers merged into one outline.
-- [Reference map](./styles/reference.json): Glacier outlines (blue) and centerlines (red), with glacier names and the boundaries and names of the glacier regions. Larger glaciers are named at lower zooms.
+- [Glacier complexes](./styles/complexes.json) (default): Glacier complexes: connected glaciers merged into one outline.
+- [Reference map](./styles/reference.json): Glacier outlines, centerlines and names, with the glacier regions.
 
 ## Access
 

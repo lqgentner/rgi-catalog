@@ -69,8 +69,8 @@ them. A test checks this table against the build record.
 | glaciers | `polygon-validity` | `geometry` | 0 |
 | complexes | `drop-z` | `geometry` | 192,869 |
 | complexes | `polygon-validity` | `geometry` | 7 |
-| centerlines | `drop-z` | `geometry` | 0 |
 | intersects | `drop-z` | `geometry` | 130,429 |
+| centerlines | `drop-z` | `geometry` | 0 |
 | regions | `drop-z` | `geometry` | 0 |
 | regions | `polygon-validity` | `geometry` | 0 |
 
