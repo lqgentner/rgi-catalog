@@ -16,9 +16,10 @@ STYLES="$REPO/catalog/v7.0"
 OUT="$REPO/metadata/thumbnails"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-# The world views, on Natural Earth land. A bbox that spans the full ±180°
-# renders only part of the data, so the frame stops at ±170°.
-WORLD="-170,-60.3,170,82"
+# The world views, on Natural Earth land. The frame runs once around the
+# world from 169°W, the border between Alaska and North Asia, so no region
+# box is cut at the image edges.
+WORLD="-169,-62.15,191,83"
 # The Garibaldi and Marinelli glaciers, Cordillera Darwin, just above map
 # zoom 10, where the intersects start. At exactly z10 chiitiler draws the z9
 # tiles, which have no intersects. The four glacier products share this frame,

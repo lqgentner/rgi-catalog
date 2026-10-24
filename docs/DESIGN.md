@@ -419,8 +419,10 @@ docker run -d --rm --name rgi-chiitiler -p 13579:3000 -e CHIITILER_PROCESSES=0 \
   --mount "type=bind,source=$PWD,target=$PWD,readonly" ghcr.io/kanahiro/chiitiler:latest
 ```
 
-A `/clip` bbox that spans the full ±180° renders only part of the data. Frame
-world views at ±170° or less.
+A `/clip` bbox may run past 180°. The world thumbnails span 169°W to 191°E,
+once around the world from the border between Alaska and North Asia. No
+region box is cut at the image edges. RGI splits North Asia and the Alaska
+region at 180°, so their split edge shows as a line.
 
 ## Thumbnails (rendered 2026-10-24)
 
@@ -443,8 +445,8 @@ archive and drops its symbol layers. No thumbnail needs a credit:
 
 | Image | Style | bbox |
 | --- | --- | --- |
-| root, `v7.0` | Glaciers | -170,-60.3,170,82 |
-| regions | Glacier regions | -170,-60.3,170,82 |
+| root, `v7.0` | Glaciers | -169,-62.15,191,83 |
+| regions | Glacier regions | -169,-62.15,191,83 |
 | glaciers, complexes, intersects, centerlines | each default | -70.078019,-54.786293,-69.421981,-54.533313 |
 
 The frame holds 232 intersects, ten times the divide length of a frame of the
