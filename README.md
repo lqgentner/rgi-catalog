@@ -18,6 +18,10 @@ outlines as a PMTiles web map archive. The values are those of the RGI
 release. [docs/PROVENANCE.md](docs/PROVENANCE.md) lists each fix of a
 documented upstream error.
 
+In QGIS, use the
+[Portolan Registry plugin](https://github.com/portolan-sdi/portolan-registry-qgis).
+**View on map** adds the PMTiles and **Load full data** adds the GeoParquet.
+
 ## Three kinds of file
 
 | Kind | Where | Example |

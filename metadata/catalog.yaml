@@ -140,6 +140,8 @@ versions:
           what: one glacier
           columns: rgi_id, display_name, area_km2, zmed_m
           where: rgi_id = 'RGI2000-v7.0-G-11-01706'
+          py_columns: [rgi_id, display_name, area_km2, zmed_m]
+          py_filters: '[("rgi_id", "==", "RGI2000-v7.0-G-11-01706")]'
       complexes:
         # The product page of the RGI 7.0 user guide, and its first paragraph.
         user_guide:
@@ -170,6 +172,9 @@ versions:
           what: the glacier complex of the Rhone glacier
           columns: rgi_id, area_km2, len(glacier_ids) AS n_glaciers
           where: rgi_id = 'RGI2000-v7.0-C-11-01208'
+          py_columns: [rgi_id, area_km2, glacier_ids]
+          py_filters: '[("rgi_id", "==", "RGI2000-v7.0-C-11-01208")]'
+          py_after: 'gdf["n_glaciers"] = gdf.pop("glacier_ids").map(len)'
       intersects:
         # The product page of the RGI 7.0 user guide, and its first paragraph.
         user_guide:
@@ -197,6 +202,8 @@ versions:
           what: the intersects of the Rhone glacier
           columns: rgi_id, rgi_g_id_1, rgi_g_id_2, length_m
           where: "'RGI2000-v7.0-G-11-01706' IN (rgi_g_id_1, rgi_g_id_2)"
+          py_columns: [rgi_id, rgi_g_id_1, rgi_g_id_2, length_m]
+          py_filters: "[\n        [(\"rgi_g_id_1\", \"==\", \"RGI2000-v7.0-G-11-01706\")],\n        [(\"rgi_g_id_2\", \"==\", \"RGI2000-v7.0-G-11-01706\")],\n    ]"
       centerlines:
         # The product page of the RGI 7.0 user guide, and its first paragraph.
         user_guide:
@@ -238,6 +245,8 @@ versions:
           what: the main centerline of the Rhone glacier
           columns: rgi_id, rgi_g_id, segment_id, length_m
           where: rgi_g_id = 'RGI2000-v7.0-G-11-01706' AND is_main
+          py_columns: [rgi_id, rgi_g_id, segment_id, length_m]
+          py_filters: '[("rgi_g_id", "==", "RGI2000-v7.0-G-11-01706"), ("is_main", "==", True)]'
       regions:
         # The product page of the RGI 7.0 user guide, and its first paragraph.
         user_guide:
@@ -276,3 +285,5 @@ versions:
           what: the first-order regions
           columns: o1region, full_name, long_code
           where: level = 1
+          py_columns: [o1region, full_name, long_code]
+          py_filters: '[("level", "==", 1)]'

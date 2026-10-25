@@ -16,8 +16,22 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 ## Access
 
-Every file is public over HTTPS and S3. No account is needed. This DuckDB
-query counts the glaciers of each first-order region without a download:
+Every file is public over HTTPS and S3. No account is needed. Install
+`geopandas`, `pyarrow`, `fsspec`, and `aiohttp`. This geopandas code reads the
+glaciers in a box. The `bbox` argument filters on the bbox column:
+
+```python
+import geopandas as gpd
+
+alps = gpd.read_parquet(
+    "https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet",
+    columns=["rgi_id", "display_name", "area_km2", "geometry"],
+    bbox=(6, 45.5, 11, 47.5),
+)
+```
+
+This DuckDB query counts the glaciers of each first-order region without a
+download:
 
 ```sql
 INSTALL httpfs; LOAD httpfs;
@@ -26,6 +40,15 @@ FROM 'https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parqu
 GROUP BY o1region
 ORDER BY o1region;
 ```
+
+## QGIS
+
+Install the [Portolan Registry plugin](https://github.com/portolan-sdi/portolan-registry-qgis).
+Open it from the Web menu and select a collection.
+
+- **View on map** adds the PMTiles web map with the collection's style. Use it to look at the glaciers at any zoom.
+- **Load full data** adds the GeoParquet file for an area of interest that you draw. Use it for analysis.
+  The plugin reads the file with DuckDB 1.5.0 or newer in the Python of QGIS.
 
 ## Citation
 

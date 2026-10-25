@@ -26,7 +26,23 @@ The RGI 7.0 user guide describes the
 
 ## Access
 
-No account and no download are needed. This DuckDB query reads the intersects of the Rhone glacier:
+No account and no download are needed. This geopandas code reads the intersects of the Rhone glacier.
+Install `geopandas`, `pyarrow`, `fsspec`, and `aiohttp`.
+
+```python
+import geopandas as gpd
+
+gdf = gpd.read_parquet(
+    "https://data.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet",
+    columns=["rgi_id", "rgi_g_id_1", "rgi_g_id_2", "length_m", "geometry"],
+    filters=[
+        [("rgi_g_id_1", "==", "RGI2000-v7.0-G-11-01706")],
+        [("rgi_g_id_2", "==", "RGI2000-v7.0-G-11-01706")],
+    ],
+)
+```
+
+This DuckDB query reads the same rows:
 
 ```sql
 INSTALL httpfs; LOAD httpfs;
@@ -37,6 +53,15 @@ WHERE 'RGI2000-v7.0-G-11-01706' IN (rgi_g_id_1, rgi_g_id_2);
 
 `intersects/AGENTS.md` has more recipes. Each file is also readable over
 anonymous S3 at `s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet`.
+
+## QGIS
+
+Install the [Portolan Registry plugin](https://github.com/portolan-sdi/portolan-registry-qgis).
+Open it from the Web menu and select this collection.
+
+- **View on map** adds the PMTiles web map with the collection's style.
+- **Load full data** adds the GeoParquet file for an area of interest that you draw.
+  The plugin reads the file with DuckDB 1.5.0 or newer in the Python of QGIS.
 
 ## Columns
 

@@ -29,7 +29,20 @@ The RGI 7.0 user guide describes the
 
 ## Access
 
-No account and no download are needed. This DuckDB query reads one glacier:
+No account and no download are needed. This geopandas code reads one glacier.
+Install `geopandas`, `pyarrow`, `fsspec`, and `aiohttp`.
+
+```python
+import geopandas as gpd
+
+gdf = gpd.read_parquet(
+    "https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet",
+    columns=["rgi_id", "display_name", "area_km2", "zmed_m", "geometry"],
+    filters=[("rgi_id", "==", "RGI2000-v7.0-G-11-01706")],
+)
+```
+
+This DuckDB query reads the same rows:
 
 ```sql
 INSTALL httpfs; LOAD httpfs;
@@ -40,6 +53,15 @@ WHERE rgi_id = 'RGI2000-v7.0-G-11-01706';
 
 `glaciers/AGENTS.md` has more recipes. Each file is also readable over
 anonymous S3 at `s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet`.
+
+## QGIS
+
+Install the [Portolan Registry plugin](https://github.com/portolan-sdi/portolan-registry-qgis).
+Open it from the Web menu and select this collection.
+
+- **View on map** adds the PMTiles web map with the collection's style.
+- **Load full data** adds the GeoParquet file for an area of interest that you draw.
+  The plugin reads the file with DuckDB 1.5.0 or newer in the Python of QGIS.
 
 ## Columns
 
