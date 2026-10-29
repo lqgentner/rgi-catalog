@@ -235,6 +235,48 @@ The glaciers file is 261.4 MB in 68 row groups of up to 4,096 rows. The
 build takes 5 min 9 s. The schema and the rows equal those of the Hilbert
 file.
 
+### The other products in `rgi_id` order (measured 2026-10-29)
+
+The complexes and the centerlines use the glaciers layout: `rgi_id` order in
+row groups of 4,096 rows. The intersects use `rgi_id` order in row groups of
+10,240 rows. The regions keep the Hilbert order. They are 110 rows in one
+row group, so every read fetches the whole file.
+
+In the centerlines, the `rgi_id` order is also the `rgi_g_id` order. The
+lines of one glacier are consecutive, so a filter on `rgi_g_id` selects one
+row group, or two at a boundary. The intersect IDs do not follow the glacier
+IDs as closely.
+
+`scripts/measure_lookups.py --product NAME` reads each file by the key of
+its README example. The sample is one random row of each first-order region,
+and Grosser Aletsch Gletscher for the centerlines and the intersects. MB
+fetched, median / maximum:
+
+| Product | Key | Reader | Before | After |
+| --- | --- | --- | ---: | ---: |
+| complexes | `rgi_id` | geopandas | 99.3 / 152.2 | 5.3 / 22.5 |
+| complexes | `rgi_id` | DuckDB | 11.3 / 26.5 | 4.2 / 12.4 |
+| complexes | `rgi_id` and bbox | geopandas | 36.7 / 60.8 | 14.3 / 22.6 |
+| centerlines | `rgi_g_id` | geopandas | 56.6 / 127.8 | 7.7 / 8.1 |
+| centerlines | `rgi_g_id` | DuckDB | 30.9 / 72.9 | 2.9 / 3.3 |
+| centerlines | `rgi_g_id` and bbox | geopandas | 23.1 / 40.2 | 7.8 / 8.2 |
+| intersects | `rgi_g_id_1` or `rgi_g_id_2` | geopandas | 14.1 / 18.1 | 6.5 / 7.1 |
+| intersects | `rgi_g_id_1` or `rgi_g_id_2` | DuckDB | 14.1 / 14.1 | 14.0 / 14.0 |
+| intersects | either key and bbox | DuckDB | 1.6 / 2.2 | 1.8 / 2.3 |
+
+DuckDB 1.5.6 does not skip row groups on an `OR` across two columns. It
+reads the whole intersects file for the README lookup in both orders. A bbox
+filter lets it skip row groups.
+
+| Product | Row groups before | Row groups after | MB before | MB after |
+| --- | ---: | ---: | ---: | ---: |
+| complexes | 18 | 48 | 213.3 | 214.7 |
+| centerlines | 36 | 90 | 211.0 | 210.3 |
+| intersects | 13 | 13 | 17.0 | 16.8 |
+
+`rashid check --data` finds no PTL-DAT-006 error on any of the files. The
+schema and the rows of each file equal those of its Hilbert version.
+
 ## The other products (measured 2026-10-23)
 
 `convert` builds all five files in 12 min 5 s and peaks at 5.8 GB of memory.

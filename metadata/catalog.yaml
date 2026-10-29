@@ -172,6 +172,9 @@ versions:
           one GeoParquet file. The web map archive holds the outlines.
         keywords: [glacier complexes]
         pmtiles_layers: [complexes]
+        layout:
+          order_by: rgi_id
+          row_group_size: 4096
         known_issues:
           - text: Glacier complex product may have artifacts at glacier divides
             issue: 21
@@ -205,6 +208,9 @@ versions:
           archive holds the lines from z10.
         keywords: [glacier divides]
         pmtiles_layers: [intersects]
+        layout:
+          order_by: rgi_id
+          row_group_size: 10240
         example:
           what: the intersects of the Rhone glacier
           columns: rgi_id, rgi_g_id_1, rgi_g_id_2, length_m
@@ -232,6 +238,9 @@ versions:
           GeoParquet file. The web map archive holds the lines from z8.
         keywords: [glacier centerlines, glacier length]
         pmtiles_layers: [centerlines]
+        layout:
+          order_by: rgi_id
+          row_group_size: 4096
         # The centerlines page of the user guide asks for these as well.
         publications:
           - doi: 10.5194/tc-8-503-2014

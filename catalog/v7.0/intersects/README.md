@@ -17,7 +17,7 @@ The RGI 7.0 user guide describes the
 
 ## Files
 
-- [`rgi7.0-intersects.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet): 130,429 rows, 17.0 MB. GeoParquet 2.0.0 in 13 row groups of up to 10,240 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
+- [`rgi7.0-intersects.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/intersects/rgi7.0-intersects.parquet): 130,429 rows, 16.8 MB. GeoParquet 2.0.0 in 13 row groups of up to 10,240 rows, zstd-compressed and ordered by `rgi_id`. Each row group holds a separate range of `rgi_id` values, so a filter on one value reads one row group. A `bbox` column lets readers skip row groups in a spatial filter.
 - [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `intersects`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 

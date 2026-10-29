@@ -472,8 +472,8 @@
       "geoparquet_version": "2.0.0",
       "href": "rgi7.0-centerlines.parquet",
       "row_count": 367724,
-      "row_group_size": 10784,
-      "row_groups": 36
+      "row_group_size": 4096,
+      "row_groups": 90
     },
     "complexes": {
       "bbox": [
@@ -527,8 +527,8 @@
       "geoparquet_version": "2.0.0",
       "href": "rgi7.0-complexes.parquet",
       "row_count": 192869,
-      "row_group_size": 12157,
-      "row_groups": 18
+      "row_group_size": 4096,
+      "row_groups": 48
     },
     "glaciers": {
       "bbox": [
@@ -806,28 +806,28 @@
   },
   "files": {
     "centerlines/rgi7.0-centerlines.parquet": {
-      "file:checksum": "12207021cba6f829fd88e60f277577de34497fa0c2949877fa266b1cd8b91552bb83",
-      "size": 211015780
+      "file:checksum": "1220888ffa7a5876613494167423c64ec83af3ad6e289891daa92e6af6e80f6fb9f4",
+      "size": 210294494
     },
     "complexes/rgi7.0-complexes.parquet": {
-      "file:checksum": "12208fc1a02490e07fbdf2ae2936c5cbec1526489a7a0793f55a49670e7e7958309f",
-      "size": 213284871
+      "file:checksum": "12203caa2e1b01628b7272d2e9a845a02a2996be31d71251c2e952ad3271647799ac",
+      "size": 214686136
     },
     "glaciers/rgi7.0-glaciers.parquet": {
       "file:checksum": "12200da927ce6c8f26d9fb0f5f22aa8cb1b21167561e77d76754518b8aee47a2b044",
       "size": 261370344
     },
     "intersects/rgi7.0-intersects.parquet": {
-      "file:checksum": "1220308105564f10d4b88a76edd4cce591e1b2c3c62da244ab08010c0e6ca0e97aa7",
-      "size": 16953216
+      "file:checksum": "1220a10e70936f5d6f869fb67dc4dbed97a0d7990fb326544115eca4c81f00525220",
+      "size": 16791243
     },
     "regions/rgi7.0-regions.parquet": {
       "file:checksum": "1220cf0f42d89e502e4fd1550275e73f4a3f84cb37de44131703f222fe3cf41771db",
       "size": 955336
     },
     "rgi7.0.pmtiles": {
-      "file:checksum": "12208f54048facb949d67b871f5f7da2cc024c74694a2c398c71b421ccd912d5f09d",
-      "size": 1043757450
+      "file:checksum": "12204162686ad312bf91711e1ada32312b3ab635df7c87f8fc544915706eab88d98a",
+      "size": 1043033735
     }
   },
   "fixes": {
@@ -914,6 +914,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-10-29T09:19:50Z",
+  "updated": "2026-10-29T10:29:43Z",
   "version": "7.0"
 }

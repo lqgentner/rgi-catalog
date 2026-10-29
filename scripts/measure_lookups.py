@@ -2,14 +2,19 @@
 
 Usage::
 
-    pixi run python scripts/measure_lookups.py PATH [PATH ...]
+    pixi run python scripts/measure_lookups.py [--product NAME] PATH [PATH ...]
 
+``--product`` is ``glaciers`` (the default), ``complexes``, ``centerlines``
+or ``intersects``.
 Each file is served from a local server that honours Range requests. The
-sample is Grosser Aletsch Gletscher and one random glacier of each
-first-order region (seed 0), taken from the first file. Each glacier is read
-by its ``rgi_id`` four times: alone, and after a ``bbox``, an ``o1region``
-or an ``o2region`` filter. geopandas and DuckDB read the columns of the
-glaciers README example.
+sample holds one random row of each first-order region (seed 0), taken from
+the first file. It also holds Grosser Aletsch Gletscher when the key column
+holds its ID. Each sample row is read by the key of its README example:
+``rgi_id``, ``rgi_g_id`` for the centerlines, and ``rgi_g_id_1`` or
+``rgi_g_id_2`` for the intersects. The read runs alone and
+after a ``bbox`` filter. Where the file has the columns, it also runs after
+an ``o1region`` or an ``o2region`` filter. geopandas and DuckDB read the
+columns of the README example.
 
 The server counts the body bytes it writes, not the ``Content-Length`` it
 announces. fsspec closes a connection before the end of a range, so the
@@ -21,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path
 import random
 import socket
@@ -38,8 +44,37 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
 
 ALETSCH = "RGI2000-v7.0-G-11-02596"
-COLUMNS = ["rgi_id", "display_name", "area_km2", "zmed_m", "geometry"]
 CASES = ("none", "bbox", "o1region", "o2region")
+
+
+@dataclass(frozen=True)
+class Lookup:
+    """The key and the columns of a product's README example.
+
+    A read matches the value of ``key`` in ``key`` or in any column of ``also``.
+    """
+
+    key: str
+    columns: list[str]
+    cases: tuple[str, ...] = CASES
+    also: tuple[str, ...] = ()
+
+
+PRODUCTS = {
+    "glaciers": Lookup("rgi_id", ["rgi_id", "display_name", "area_km2", "zmed_m", "geometry"]),
+    "complexes": Lookup("rgi_id", ["rgi_id", "area_km2", "glacier_ids", "geometry"]),
+    "centerlines": Lookup(
+        "rgi_g_id",
+        ["rgi_id", "rgi_g_id", "segment_id", "length_m", "geometry"],
+        ("none", "bbox"),
+    ),
+    "intersects": Lookup(
+        "rgi_g_id_1",
+        ["rgi_id", "rgi_g_id_1", "rgi_g_id_2", "length_m", "geometry"],
+        ("none", "bbox"),
+        ("rgi_g_id_2",),
+    ),
+}
 # The send buffer of each connection. A small buffer limits the bytes that
 # the kernel accepts for a client that has closed the connection.
 SEND_BUFFER = 65_536
@@ -81,46 +116,54 @@ def _serve(root: Path) -> Iterator[str]:
         server.server_close()
 
 
-def sample(path: Path) -> list[dict[str, Any]]:
-    """Return Aletsch and one random glacier of each first-order region.
+def sample(path: Path, lookup: Lookup) -> list[dict[str, Any]]:
+    """Return one random row of each first-order region, and Aletsch.
+
+    The region is the third field of the key, as in ``RGI2000-v7.0-G-11-02596``.
 
     Parameters
     ----------
     path
-        A glaciers GeoParquet file.
+        A GeoParquet file of the product.
+    lookup
+        The product's key and columns.
 
     Returns
     -------
     list[dict[str, Any]]
-        The ``rgi_id``, ``o1region``, ``o2region`` and ``bbox`` of each glacier.
+        The key, ``bbox`` and, where the file has them, ``o1region`` and
+        ``o2region`` of each sample row.
     """
-    rows = pq.read_table(path, columns=["rgi_id", "o1region", "o2region", "bbox"]).to_pylist()
+    names = [lookup.key, "bbox", *(c for c in lookup.cases if c in CASES[2:])]
+    rows = pq.read_table(path, columns=names).to_pylist()
     rng = random.Random(0)  # noqa: S311
     by_region: dict[str, list[dict[str, Any]]] = {}
-    for row in sorted(rows, key=lambda r: r["rgi_id"]):
-        by_region.setdefault(row["o1region"], []).append(row)
-    picks = [r for r in rows if r["rgi_id"] == ALETSCH]
+    for row in sorted(rows, key=lambda r: r[lookup.key]):
+        by_region.setdefault(row[lookup.key].split("-")[3], []).append(row)
+    picks = [r for r in rows if r[lookup.key] == ALETSCH][:1]
     picks.extend(rng.choice(by_region[region]) for region in sorted(by_region))
     return picks
 
 
-def _geopandas(url: str, glacier: dict[str, Any], case: str) -> int:
-    filters: list[tuple[str, str, str]] = [("rgi_id", "==", glacier["rgi_id"])]
+def _geopandas(url: str, lookup: Lookup, row: dict[str, Any], case: str) -> int:
+    first: list[tuple[str, str, str]] = []
     kwargs: dict[str, Any] = {}
     if case in ("o1region", "o2region"):
-        filters.insert(0, (case, "==", glacier[case]))
+        first.append((case, "==", row[case]))
     elif case == "bbox":
-        b = glacier["bbox"]
+        b = row["bbox"]
         kwargs["bbox"] = (b["xmin"], b["ymin"], b["xmax"], b["ymax"])
-    return len(gpd.read_parquet(url, columns=COLUMNS, filters=filters, **kwargs))
+    filters = [[*first, (k, "==", row[lookup.key])] for k in (lookup.key, *lookup.also)]
+    return len(gpd.read_parquet(url, columns=lookup.columns, filters=filters, **kwargs))
 
 
-def _duckdb(url: str, glacier: dict[str, Any], case: str) -> int:
-    where = [f"rgi_id = '{glacier['rgi_id']}'"]
+def _duckdb(url: str, lookup: Lookup, row: dict[str, Any], case: str) -> int:
+    match = " OR ".join(f"{k} = '{row[lookup.key]}'" for k in (lookup.key, *lookup.also))
+    where = [f"({match})"]
     if case in ("o1region", "o2region"):
-        where.insert(0, f"{case} = '{glacier[case]}'")
+        where.insert(0, f"{case} = '{row[case]}'")
     elif case == "bbox":
-        b = glacier["bbox"]
+        b = row["bbox"]
         where.insert(
             0,
             f"bbox.xmin <= {b['xmax']} AND bbox.xmax >= {b['xmin']} "
@@ -130,18 +173,23 @@ def _duckdb(url: str, glacier: dict[str, Any], case: str) -> int:
     con.install_extension("httpfs")
     con.load_extension("httpfs")
     con.sql("SET enable_external_file_cache = false")
-    query = f"SELECT {', '.join(COLUMNS)} FROM read_parquet('{url}') WHERE {' AND '.join(where)}"  # noqa: S608
+    columns = ", ".join(lookup.columns)
+    query = f"SELECT {columns} FROM read_parquet('{url}') WHERE {' AND '.join(where)}"  # noqa: S608
     return len(con.sql(query).fetchall())
 
 
-def measure(path: Path, glaciers: list[dict[str, Any]]) -> dict[tuple[str, str], list[int]]:
-    """Read each glacier in each case with each reader and count the bytes.
+def measure(
+    path: Path, lookup: Lookup, rows: list[dict[str, Any]]
+) -> dict[tuple[str, str], list[int]]:
+    """Read each sample row in each case with each reader and count the bytes.
 
     Parameters
     ----------
     path
-        A glaciers GeoParquet file.
-    glaciers
+        A GeoParquet file of the product.
+    lookup
+        The product's key and columns.
+    rows
         The sample, from :func:`sample`.
 
     Returns
@@ -152,17 +200,17 @@ def measure(path: Path, glaciers: list[dict[str, Any]]) -> dict[tuple[str, str],
     Raises
     ------
     RuntimeError
-        If a read does not return exactly one row.
+        If a read returns no row.
     """
     fetched: dict[tuple[str, str], list[int]] = {}
     with _serve(path.parent) as base:
         url = f"{base}/{path.name}"
-        for glacier in glaciers:
-            for case in CASES:
+        for row in rows:
+            for case in lookup.cases:
                 for reader, read in (("geopandas", _geopandas), ("duckdb", _duckdb)):
                     _CountingHandler.bytes_sent = 0
-                    if (rows := read(url, glacier, case)) != 1:
-                        msg = f"{reader} {case} {glacier['rgi_id']}: {rows} rows"
+                    if not read(url, lookup, row, case):
+                        msg = f"{reader} {case} {row[lookup.key]}: no rows"
                         raise RuntimeError(msg)
                     fetched.setdefault((reader, case), []).append(_CountingHandler.bytes_sent)
     return fetched
@@ -171,15 +219,17 @@ def measure(path: Path, glaciers: list[dict[str, Any]]) -> dict[tuple[str, str],
 def main() -> None:
     """Print the median and maximum MB of each reader and case for each file."""
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--product", choices=sorted(PRODUCTS), default="glaciers")
     parser.add_argument("paths", type=Path, nargs="+")
     args = parser.parse_args()
-    glaciers = sample(args.paths[0])
-    print(f"{'file':<32} {'reader':<10} " + " ".join(f"{c:>15}" for c in CASES))
+    lookup = PRODUCTS[args.product]
+    rows = sample(args.paths[0], lookup)
+    print(f"{'file':<32} {'reader':<10} " + " ".join(f"{c:>15}" for c in lookup.cases))
     for path in args.paths:
-        fetched = measure(path, glaciers)
+        fetched = measure(path, lookup, rows)
         for reader in ("geopandas", "duckdb"):
             cells = []
-            for case in CASES:
+            for case in lookup.cases:
                 values = fetched[reader, case]
                 cells.append(f"{statistics.median(values) / 1e6:6.1f} / {max(values) / 1e6:5.1f}")
             print(f"{path.name:<32} {reader:<10} " + " ".join(f"{c:>15}" for c in cells))

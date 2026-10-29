@@ -17,7 +17,7 @@ The RGI 7.0 user guide describes the
 
 ## Files
 
-- [`rgi7.0-complexes.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet): 192,869 rows, 213.3 MB. GeoParquet 2.0.0 in 18 row groups of up to 12,157 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
+- [`rgi7.0-complexes.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/complexes/rgi7.0-complexes.parquet): 192,869 rows, 214.7 MB. GeoParquet 2.0.0 in 48 row groups of up to 4,096 rows, zstd-compressed and ordered by `rgi_id`. Each row group holds a separate range of `rgi_id` values, so a filter on one value reads one row group. A `bbox` column lets readers skip row groups in a spatial filter.
 - [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `complexes`. Below z10 the layer is an overview. A feature that spans 3 pixels at a zoom is its simplified outline. A smaller feature is a point at RGI's `cenlon` and `cenlat`, one per grid cell of about a pixel, and the largest feature wins the cell. Overview features carry only `rgi_id`, `area_km2`. From z10 the tiles carry every column except the list and struct columns, which vector tiles cannot store: `glacier_ids`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 
