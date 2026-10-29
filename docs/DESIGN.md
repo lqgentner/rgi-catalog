@@ -41,8 +41,9 @@ assets. Without the asset it falls back to the GeoParquet file.
    metadata carries the key-value metadata (`rgi:version`,
    `rgi:mirror_revision`, `rgi:sources`, `rgi:citation`, `rgi:catalog`).
 2. The gpio Python API reads that file, adds the bbox covering column,
-   orders the rows on the Hilbert curve, and writes the published file in
-   one pass. The settings are GeoParquet 2.0, zstd level 19, and the chosen
+   orders the rows, and writes the published file in one pass. The rows
+   follow the Hilbert curve, or the column that the collection's `layout`
+   in `metadata/catalog.yaml` names. The settings are GeoParquet 2.0, zstd level 19, and the chosen
    row group size. gpio carries the input's non-geo key-value metadata into
    the output (geoparquet-io #690).
 
@@ -147,9 +148,92 @@ The cost is about 20 more requests per full scan. The size is below the
 50,000 to 150,000 range that the distribution guide recommends. rashid runs
 against the data in Task 11.
 
-The final glaciers file is 258.0 MB in 24 row groups of 10,269 to 12,122
-rows. The build takes 5 min 28 s and peaks at 5.9 GB of memory. Two builds
-from the same inputs gave identical bytes.
+The glaciers file was 258.0 MB in 24 row groups of 10,269 to 12,122 rows.
+The build took 5 min 28 s and peaked at 5.9 GB of memory. Two builds from the
+same inputs gave identical bytes. The next section replaces this layout for
+the glaciers. The other products keep it.
+
+### Row order (measured 2026-10-29)
+
+Issue #1 reports that a geopandas read of one glacier fetches a large part of
+the Hilbert-ordered file. The glaciers file is now in `rgi_id` order in row
+groups of 4,096 rows. A geopandas read of one glacier fetches 6 to 15 MB at
+the median, against 56 to 120 MB before.
+
+`scripts/measure_lookups.py` serves each candidate file from a local Range
+server. The sample is Grosser Aletsch Gletscher (`RGI2000-v7.0-G-11-02596`)
+and one random glacier of each first-order region. geopandas 1.2.0 (pyarrow
+25.0.0, fsspec) and DuckDB 1.5.6 read each glacier by `rgi_id` with the
+columns of the README example. Each read has one of four filters before the
+`rgi_id` filter: none, a `bbox`, an `o1region` or an `o2region`.
+
+The server counts the body bytes that it writes. fsspec closes connections
+before the end of a range, so the announced `Content-Length` overstates a
+geopandas read by a factor of about 5. For DuckDB the two counts are equal.
+
+geopandas, MB fetched for one glacier, median / maximum over 20 glaciers:
+
+| Layout | Rows per group | none | bbox | o1region | o2region |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Hilbert | 10,240 | 115.7 / 200.9 | 55.8 / 87.5 | 120.0 / 199.9 | 118.9 / 205.7 |
+| Hilbert, page index | 10,240 | 124.8 / 215.7 | 56.8 / 88.5 | 121.3 / 204.4 | 122.2 / 203.0 |
+| `o1region`, then Hilbert | 10,240 | 21.3 / 94.2 | 22.7 / 99.3 | 24.5 / 106.2 | 27.1 / 94.2 |
+| `o2region`, then Hilbert | 10,240 | 21.9 / 89.0 | 23.2 / 104.6 | 21.2 / 106.3 | 21.1 / 111.3 |
+| `rgi_id` | 10,240 | 19.9 / 33.8 | 20.2 / 34.1 | 18.9 / 33.8 | 18.1 / 39.1 |
+| `rgi_id` | 4,096 | 8.0 / 27.3 | 14.6 / 33.4 | 5.7 / 22.8 | 5.7 / 38.6 |
+| `rgi_id` | 2,048 | 6.0 / 16.5 | 13.0 / 18.6 | 6.0 / 13.3 | 6.0 / 13.3 |
+
+DuckDB, MB fetched for one glacier, median / maximum over the four filters:
+
+| Layout | Rows per group | MB |
+| --- | ---: | ---: |
+| Hilbert | 10,240 | 10.0 / 23.6 |
+| `o2region`, then Hilbert | 10,240 | 11.1 / 20.9 |
+| `rgi_id` | 10,240 | 11.1 / 24.1 |
+| `rgi_id` | 4,096 | 4.9 / 13.4 |
+| `rgi_id` | 2,048 | 3.9 / 9.2 |
+
+The `rgi_id` layouts, by file size, footer size and a DuckDB
+`SELECT avg(area_km2)` scan (median of 3 runs):
+
+| Layout | Rows per group | Row groups | File MB | Footer KB | Scan s | Scan MB |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Hilbert | 10,240 | 24 | 258.0 | 145 | 1.076 | 2.62 |
+| `rgi_id` | 10,240 | 27 | 258.0 | 165 | 1.066 | 2.62 |
+| `rgi_id` | 4,096 | 68 | 261.4 | 404 | 1.063 | 3.44 |
+| `rgi_id` | 2,048 | 135 | 265.3 | 795 | 1.057 | 4.26 |
+
+Findings:
+
+- **The page index has no effect.** pyarrow and DuckDB do not use it. The
+  test file has column indexes for `rgi_id`, `o1region` and `o2region`. Both
+  readers fetch the same bytes as from the same file without them.
+- **The Hilbert order defeats the `rgi_id` statistics.** Each row group spans
+  many regions, so an `rgi_id` filter selects many row groups. A region
+  filter selects as many.
+- **`rgi_id` order gives each row group a separate range of `rgi_id`.** A
+  filter on one `rgi_id` selects one row group. RGI numbers the glaciers by
+  second-order region and then by neighbour. The median step between
+  consecutive glaciers is 0.006° in longitude in region 13. The order is
+  therefore spatial, and the bbox reads also improve.
+- **geopandas fetches about twice the projected column chunks of a row
+  group.** pyarrow reads each column chunk through fsspec, which reads ahead
+  by 5 MB, and the ranges overlap. The row group size sets the remaining
+  cost.
+- **A read of one region falls.** geopandas fetches 98.0 MB for `rgi_id` and
+  `geometry` of region 11 from the Hilbert file and 13.0 MB from the
+  `rgi_id` file at 4,096 rows.
+
+**Decision: `rgi_id` order, 4,096 rows per group.** The median geopandas read
+falls by a factor of 14 to 21 without a bbox filter, and by a factor of 3.8
+with one. At 2,048 rows the median does not
+fall further and the footer doubles. The scan time does not change.
+PTL-DAT-006 requires spatially ordered rows. The row groups average 1.8% of
+the file extent, against 4.7% for the Hilbert file and the 30% limit.
+
+The glaciers file is 261.4 MB in 68 row groups of up to 4,096 rows. The
+build takes 5 min 9 s. The schema and the rows equal those of the Hilbert
+file.
 
 ## The other products (measured 2026-10-23)
 

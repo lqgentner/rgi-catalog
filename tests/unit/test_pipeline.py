@@ -31,7 +31,15 @@ def test_convert_glaciers_on_fixture(
         assert version == "7.0"
         return {k: (v, f"sha-{k}") for k, v in files.items()}
 
+    layouts: list[dict[str, object]] = []
+    write = pipeline.write_geoparquet
+
+    def spy(gdf: object, out: Path, **kwargs: object) -> None:
+        layouts.append({k: kwargs[k] for k in ("order_by", "row_group_size")})
+        write(gdf, out, **kwargs)  # type: ignore[arg-type]
+
     monkeypatch.setattr(pipeline, "source_files", fake_source_files)
+    monkeypatch.setattr(pipeline, "write_geoparquet", spy)
     staging = tmp_path / "staging"
     result = pipeline.convert("7.0", ["glaciers"], staging=staging)
 
@@ -39,6 +47,7 @@ def test_convert_glaciers_on_fixture(
     assert result.paths == {"glaciers": out}
     assert result.row_counts == {"glaciers": 3}
     assert pq.ParquetFile(out).metadata.num_rows == 3
+    assert layouts == [{"order_by": "rgi_id", "row_group_size": 4096}]
     footer = {k.decode(): v.decode() for k, v in pq.ParquetFile(out).metadata.metadata.items()}
     assert footer["rgi:version"] == "7.0"
     assert json.loads(footer["rgi:sources"]) == {

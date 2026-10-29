@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 import json
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
@@ -16,7 +16,7 @@ from rgi_catalog.assemble import (
     load_glacier_sources,
     regions,
 )
-from rgi_catalog.geoparquet import write_geoparquet
+from rgi_catalog.geoparquet import ROW_GROUP_SIZE, write_geoparquet
 from rgi_catalog.paths import METADATA, STAGING, version_dir
 from rgi_catalog.sources import fetch, load_pins
 
@@ -144,7 +144,7 @@ def convert(
         raise ValueError(msg)
     files = source_files(version)
     meta = catalog_metadata()
-    versions = cast("dict[str, dict[str, str]]", meta["versions"])
+    versions = cast("dict[str, dict[str, Any]]", meta["versions"])
     kv_base = {
         "rgi:version": version,
         "rgi:mirror_revision": versions[version]["mirror_revision"],
@@ -157,7 +157,14 @@ def convert(
         used = {files[k][0].name: files[k][1] for k in PRODUCT_SOURCES[product]}
         out = output_path(staging, version, product)
         kv = {**kv_base, "rgi:sources": json.dumps(used, sort_keys=True)}
-        write_geoparquet(gdf, out, kv=kv)
+        layout = versions[version]["collections"][product].get("layout", {})
+        write_geoparquet(
+            gdf,
+            out,
+            kv=kv,
+            order_by=layout.get("order_by"),
+            row_group_size=layout.get("row_group_size", ROW_GROUP_SIZE),
+        )
         result.paths[product] = out
         result.row_counts[product] = len(gdf)
         result.fixes.extend(fixes)

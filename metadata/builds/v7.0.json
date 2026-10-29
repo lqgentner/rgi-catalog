@@ -714,8 +714,8 @@
       "geoparquet_version": "2.0.0",
       "href": "rgi7.0-glaciers.parquet",
       "row_count": 274531,
-      "row_group_size": 12122,
-      "row_groups": 24,
+      "row_group_size": 4096,
+      "row_groups": 68,
       "temporal": [
         "1943-09-09T00:00:00Z",
         "2021-02-26T00:00:00Z"
@@ -814,8 +814,8 @@
       "size": 213284871
     },
     "glaciers/rgi7.0-glaciers.parquet": {
-      "file:checksum": "12202ab137a904684ab063d282450dc4cc62e9cab6098b15c44558f1d0a3e818bbe3",
-      "size": 258040219
+      "file:checksum": "12200da927ce6c8f26d9fb0f5f22aa8cb1b21167561e77d76754518b8aee47a2b044",
+      "size": 261370344
     },
     "intersects/rgi7.0-intersects.parquet": {
       "file:checksum": "1220308105564f10d4b88a76edd4cce591e1b2c3c62da244ab08010c0e6ca0e97aa7",
@@ -826,8 +826,8 @@
       "size": 955336
     },
     "rgi7.0.pmtiles": {
-      "file:checksum": "1220197763fc304d1fdcf1ce0f7af606caea7ffe6437ee3c1d0edfe559af0574bf68",
-      "size": 1043796626
+      "file:checksum": "12208f54048facb949d67b871f5f7da2cc024c74694a2c398c71b421ccd912d5f09d",
+      "size": 1043757450
     }
   },
   "fixes": {
@@ -914,6 +914,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-10-24T11:55:41Z",
+  "updated": "2026-10-29T09:19:50Z",
   "version": "7.0"
 }

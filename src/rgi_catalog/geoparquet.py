@@ -2,8 +2,9 @@
 
 geopandas writes a plain intermediate file that carries the key-value
 metadata. gpio's Python API then adds the bbox covering column, orders the
-rows on the Hilbert curve and writes the published file in one pass:
-GeoParquet 2.0, zstd level 15 and the chosen row group size. gpio carries the
+rows and writes the published file in one pass: GeoParquet 2.0, zstd level 19
+and the chosen row group size. The rows follow the Hilbert curve, or a column
+of unique values when the caller names one. gpio carries the
 input's non-geo key-value metadata into the output (geoparquet-io #690).
 """
 
@@ -39,6 +40,7 @@ def write_geoparquet(
     *,
     kv: dict[str, str],
     row_group_size: int = ROW_GROUP_SIZE,
+    order_by: str | None = None,
 ) -> None:
     """Write a GeoDataFrame as published GeoParquet.
 
@@ -56,16 +58,24 @@ def write_geoparquet(
     row_group_size
         The target rows per row group. gpio rounds a value above 2,048 to a
         multiple of 2,048, and its writer treats the result as a target.
+    order_by
+        A column of unique values to order the rows by. Each row group then
+        holds a disjoint range of the column, so a filter on one value selects
+        one row group. ``None`` orders the rows on the Hilbert curve.
 
     Raises
     ------
     ValueError
-        If ``kv`` lacks a key of :data:`KV_KEYS`.
+        If ``kv`` lacks a key of :data:`KV_KEYS`, or ``order_by`` holds a
+        duplicate value.
     GeoParquetWriteError
         If a written row group has more than :data:`MAX_ROW_GROUP_ROWS` rows.
     """
     if missing := [k for k in KV_KEYS if k not in kv]:
         msg = f"kv metadata lacks {missing}"
+        raise ValueError(msg)
+    if order_by is not None and not gdf[order_by].is_unique:
+        msg = f"order_by column {order_by!r} holds duplicate values"
         raise ValueError(msg)
     out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=out.parent, prefix=f".{out.stem}-") as work:
@@ -77,7 +87,9 @@ def write_geoparquet(
             table.replace_schema_metadata({**(table.schema.metadata or {}), **extra}), plain
         )
         written = Path(work) / "written.parquet"
-        gpio.read(str(plain)).add_bbox().sort_hilbert().write(
+        source = gpio.read(str(plain)).add_bbox()
+        ordered = source.sort_hilbert() if order_by is None else source.sort_column(order_by)
+        ordered.write(
             written,
             geoparquet_version=GEOPARQUET_VERSION,
             compression="ZSTD",

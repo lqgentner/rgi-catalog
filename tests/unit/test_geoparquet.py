@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import itertools
 import json
 from typing import TYPE_CHECKING
 
@@ -28,7 +29,9 @@ if TYPE_CHECKING:
 
 N = 5000
 ROW_GROUP = 2048
-LINK = pa.struct([("rgi6_id", pa.string()), ("overlap_area_km2", pa.float64())])
+LINK = pa.struct(
+    [("rgi6_id", pa.string()), ("overlap_area_km2", pa.float64()), ("cluster_id", pa.int32())]
+)
 
 
 def _frame() -> gpd.GeoDataFrame:
@@ -45,7 +48,8 @@ def _frame() -> gpd.GeoDataFrame:
     )
     links = pa.array(
         [
-            [{"rgi6_id": f"RGI60-11.{i:05d}", "overlap_area_km2": i / 3}] * (i % 3)
+            [{"rgi6_id": f"RGI60-11.{i:05d}", "overlap_area_km2": i / 3, "cluster_id": i}]
+            * (i % 3)
             for i in range(N)
         ],
         type=pa.list_(LINK),
@@ -81,10 +85,10 @@ KV = {
 }
 
 
-@pytest.fixture(scope="module")
-def written(tmp_path_factory: pytest.TempPathFactory) -> Path:
+@pytest.fixture(scope="module", params=[None, "rgi_id"])
+def written(tmp_path_factory: pytest.TempPathFactory, request: pytest.FixtureRequest) -> Path:
     out = tmp_path_factory.mktemp("gpq") / "out.parquet"
-    write_geoparquet(_frame(), out, kv=KV, row_group_size=ROW_GROUP)
+    write_geoparquet(_frame(), out, kv=KV, row_group_size=ROW_GROUP, order_by=request.param)
     return out
 
 
@@ -132,6 +136,7 @@ def test_write_geoparquet_round_trip(written: Path) -> None:
     assert table.schema.field("utm_zone").type == pa.uint8()
     assert table.schema.field("hypso_z0_m").type == pa.int32()
     assert table.schema.field("src_date").type == pa.timestamp("us")
+    assert table.schema.field("rgi6_links").type == pa.list_(LINK)
     for column in want.columns:
         if column == "geometry":
             continue
@@ -143,12 +148,33 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def test_write_geoparquet_is_deterministic(tmp_path: Path) -> None:
+@pytest.mark.parametrize("order_by", [None, "rgi_id"])
+def test_write_geoparquet_is_deterministic(tmp_path: Path, order_by: str | None) -> None:
     first = tmp_path / "a.parquet"
     second = tmp_path / "b.parquet"
-    write_geoparquet(_frame(), first, kv=KV, row_group_size=ROW_GROUP)
-    write_geoparquet(_frame(), second, kv=KV, row_group_size=ROW_GROUP)
+    write_geoparquet(_frame(), first, kv=KV, row_group_size=ROW_GROUP, order_by=order_by)
+    write_geoparquet(_frame(), second, kv=KV, row_group_size=ROW_GROUP, order_by=order_by)
     assert _sha256(first) == _sha256(second)
+
+
+def test_write_geoparquet_orders_by_a_column(tmp_path: Path) -> None:
+    out = tmp_path / "ordered.parquet"
+    shuffled = _frame().sample(frac=1, random_state=0)
+    write_geoparquet(shuffled, out, kv=KV, row_group_size=ROW_GROUP, order_by="rgi_id")
+    ids = pq.read_table(out, columns=["rgi_id"]).column(0).to_pylist()
+    assert ids == sorted(ids)
+    meta = pq.ParquetFile(out).metadata
+    column = meta.schema.names.index("rgi_id")
+    stats = [meta.row_group(i).column(column).statistics for i in range(meta.num_row_groups)]
+    assert len(stats) > 1
+    assert all(a.max < b.min for a, b in itertools.pairwise(stats))
+
+
+def test_write_geoparquet_refuses_a_non_unique_order_column(tmp_path: Path) -> None:
+    out = tmp_path / "ambiguous.parquet"
+    with pytest.raises(ValueError, match="o1region"):
+        write_geoparquet(_frame(), out, kv=KV, row_group_size=ROW_GROUP, order_by="o1region")
+    assert not out.exists()
 
 
 def test_write_geoparquet_keeps_invalid_geometry_exactly(tmp_path: Path) -> None:

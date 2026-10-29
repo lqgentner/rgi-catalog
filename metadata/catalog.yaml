@@ -121,6 +121,13 @@ versions:
           file. The web map archive holds the outlines and the glacier names.
         keywords: [glacier outlines, hypsometry]
         pmtiles_layers: [glaciers, glacier-labels]
+        # The row order and the rows per row group of the GeoParquet file. In
+        # rgi_id order a filter on one rgi_id selects one row group. The
+        # products without a layout follow the Hilbert curve in groups of
+        # ROW_GROUP_SIZE rows. docs/DESIGN.md has the measurements.
+        layout:
+          order_by: rgi_id
+          row_group_size: 4096
         # Processing notes besides the fix counts. Known issues quote the
         # issue titles.
         processing_notes:
