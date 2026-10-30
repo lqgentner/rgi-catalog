@@ -13,7 +13,7 @@
   ],
   "id": "rgi-v7-0-centerlines",
   "title": "RGI 7.0 glacier centerlines",
-  "description": "One row per centerline: the main centerline and the tributary centerlines of every glacier, with RGI's attributes, in one GeoParquet file. The web map archive holds the main centerlines from z8 and the others from z9.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "description": "One row per centerline: the main centerline and the tributary centerlines of every glacier, with RGI's attributes, in one GeoParquet file. The web map archive holds the main centerlines from z8 and the others from z9. A longer line enters at the first zoom at which it spans 32 pixels, from z4 on.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "license": "CC-BY-4.0",
   "keywords": [
     "glaciers",
@@ -26,7 +26,7 @@
     "glacier length"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-30T15:38:06Z",
+  "updated": "2026-10-30T20:56:36Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -154,13 +154,13 @@
       "href": "./styles/centerlines.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Centerlines",
-      "description": "Glacier centerlines over the glacier outlines: the main centerlines, drawn wider, from z8, the others from z9.",
+      "description": "Glacier centerlines over the glacier outlines: the main centerlines, drawn wider, from z8, the others from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 5313,
-      "file:checksum": "1220a1a020fcdc1b91647230a9ed0dcf60708984f255a5e2be96b60e8e12799887a7"
+      "file:size": 5394,
+      "file:checksum": "122028b3048848ef7a8e62e045f040dd75c100ec8a9e807f006d4f1107df0d1c5138"
     },
     "style-glaciers": {
       "href": "./styles/glaciers.json",
@@ -180,8 +180,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1066646703,
-      "file:checksum": "1220b42b7000e25e751bef03dc53b85ae4238841ca5c78d51fe32580b8ce6e0d0289"
+      "file:size": 1098815070,
+      "file:checksum": "122062ecb4a3524d565a36b9ad03468315cd973148a9593c94bab7399f4c6b70a662"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -270,8 +270,8 @@
       "pmtiles:layers": [
         "centerlines"
       ],
-      "file:size": 1066646703,
-      "file:checksum": "1220b42b7000e25e751bef03dc53b85ae4238841ca5c78d51fe32580b8ce6e0d0289"
+      "file:size": 1098815070,
+      "file:checksum": "122062ecb4a3524d565a36b9ad03468315cd973148a9593c94bab7399f4c6b70a662"
     }
   ]
 }

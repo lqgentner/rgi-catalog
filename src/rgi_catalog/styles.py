@@ -436,11 +436,14 @@ def _own_style(name: str, archive_href: str) -> dict[str, Any]:
         what = {
             "centerlines": (
                 "Glacier centerlines over the glacier outlines: the main "
-                "centerlines, drawn wider, from z8, the others from z9."
+                "centerlines, drawn wider, from z8, the others from z9. A "
+                "longer line shows from the first zoom at which it spans 32 "
+                "pixels, from z4 on."
             ),
             "intersects": (
                 "Intersects, the divides between adjacent glaciers, from z9, "
-                "over the glacier outlines."
+                "over the glacier outlines. A longer divide shows from the "
+                "first zoom at which it spans 32 pixels, from z4 on."
             ),
         }[name]
         return _style(

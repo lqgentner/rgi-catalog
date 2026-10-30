@@ -315,9 +315,11 @@ schema and the rows of each file equal those of its Hilbert version.
   snapped to a grid of 1e-5 degrees (about 1.1 m) and noded. The grid is
   finer than a z12 tile resolves. The outline that closes regions 10, 19,
   19-15, 20 and 20-01 at the antimeridian is not a border and is left out.
+  The outline of region 19 along the South Pole is left out for the same
+  reason. Web Mercator cannot show it.
   The border of 10-05 and 10-06 at the antimeridian is kept at 180 only.
   Contiguous lines of one level are merged into one LineString. The 110
-  polygons give 419 lines: 67 of level 1 and 352 of level 2.
+  polygons give 418 lines: 66 of level 1 and 352 of level 2.
 - **Regions license.** The regions are GTN-G's. Their DataCite record states
   "Open access for scientific and educational purposes under requirement of
   correct citation", not CC-BY-4.0. The collection declares `license: other`
@@ -348,8 +350,11 @@ for byte and replaces only the metadata block.
 
 1. `write_labels` writes one point per glacier with a `display_name`, at
    RGI's own `cenlon`/`cenlat`, to `staging/v7.0/.tiles/labels.parquet`.
-2. `tylertoo tiles` builds each zoom band of each layer into its own archive.
-3. `tylertoo pyramid --band LO-HI:ARCHIVE:LAYER …` joins the bands. Bands of
+2. `write_early_lines` writes the centerlines and the intersects that enter
+   before z9, with their `line_minzoom`.
+3. `write_web_mercator` writes each band's input in Web Mercator.
+4. `tylertoo tiles` builds each zoom band of each layer into its own archive.
+5. `tylertoo pyramid --band LO-HI:ARCHIVE:LAYER …` joins the bands. Bands of
    different layers may share zooms. Each band's label must equal its layer
    name, or `pyramid` refuses the build.
 
@@ -362,11 +367,12 @@ for byte and replaces only the metadata block.
 | `region-boundaries` | z0–12 | as `intersects` |
 | `region-labels` | z0–12 | `--no-density-drop --point-thinning 0` |
 | `complexes` | z0, …, z9, z10–12 | as `glaciers` |
-| `centerlines` | z8 (`is_main` only), z9, z10–12 | `--no-density-drop --line-thinning 0 --line-visibility 0 --no-coalesce-lines --simplify-factor 0.5` |
-| `intersects` | z9–12 | as `centerlines`, with `--simplify-factor 0` |
+| `centerlines` | z4–7 (early lines), z8 (early lines), z9, z10–12 | `--no-density-drop --line-thinning 0 --line-visibility 0 --no-coalesce-lines --simplify-factor 0.5`, and `--entry-zoom line_minzoom:4=4,…,7=7 --filter "line_minzoom < 8"` at z4–7 |
+| `intersects` | z4–8 (early lines), z9–12 | as `centerlines`, with `--simplify-factor 0`, and `--entry-zoom line_minzoom:4=4,…,8=8` at z4–8 |
 
-Every band from z10 is complete, and so are the region bands and the
-centerline and intersects bands from z9.
+Every band from z10 is complete, and so are the region bands, the
+centerline and intersects bands from z9, and the early-line bands except
+the z8 centerlines.
 
 - **Line coalescing** joins touching segments into one feature with the
   attributes of one of them. It is on by default. With it on, z10 kept
@@ -399,6 +405,54 @@ Measured on the full glaciers table:
   `RGI2000-v7.0-G-17-28135`). `--simplify-factor 0.5` keeps them.
 - Labels with `--entry-zoom` alone appear from their entry zoom but are
   thinned after it (Alps z12: 981 of 1,005). `--no-density-drop` keeps all.
+- The finest zoom of a tiling keeps every source feature, whatever its
+  entry zoom. Without a filter the z4–7 centerline band kept all 286,376
+  early lines at z7 instead of 9,579, and 27 z7 tiles exceeded the size
+  limit. `--filter "line_minzoom < 8"` keeps the lines that enter at z8 out.
+
+### Simplification at high latitudes
+
+tylertoo 0.8.0 simplifies lon/lat input with its tolerance in degrees. On
+the map a degree of latitude is 1/cos(lat) times as long as a degree of
+longitude. At 78°N the tolerance is therefore five times too large in the
+north-south direction. On Barents Island (Svalbard) the overview outlines
+moved up to 2.5 pixels at z7–9 and 1.2 pixels at z10, instead of 0.5 and
+0.25. The outlines looked jagged one zoom before the full outline arrived.
+
+The same glaciers as Web Mercator input moved at most 0.55 pixels at z9 and
+kept 5,155 instead of 3,434 vertices. `tiles.write_web_mercator` therefore
+gives the tiler each band's input in EPSG:3857. Web Mercator ends at
+85.05°. The region polygons reach -90°, and the input cuts them off there.
+No other product reaches beyond 84°.
+
+A tiling does not simplify its finest zoom. A unit test pads its band for
+that reason.
+
+The overview points are thinned on a grid of 4 GSD. In map units that grid
+is square, so high latitudes keep more points than before. The z0 tile grew
+from 101 KB to 190 KB, and the archive from 1,066.6 MB to 1,098.8 MB.
+
+At its first outline zoom a sliver narrower than half a pixel collapses
+under simplification and is absent at that zoom: 55 of 82,272 glaciers at
+z7. The degree tolerance collapsed at least as many.
+
+### Line entry zooms
+
+Before, the main centerlines entered at z8 and every other line at z9. An
+ice cap then showed its outline for several zooms before its centerlines
+and divides. `tiles.write_early_lines` gives each line the first zoom from
+z4 at which its Web Mercator bounding box spans 32 pixels (`line_minzoom`).
+A main centerline enters at z8 at the latest and every other line at z9.
+On Barents Island the main centerlines enter at z6–7 and the long divides
+at z7–8. The z8 band keeps 282,123 of the 286,376 early centerlines. Its
+oversized tiles drop the rest, which enter at z9.
+
+Lines that span 32 pixels, worldwide:
+
+| z | 4 | 5 | 6 | 7 | 8 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| centerlines | 159 | 881 | 3,399 | 9,579 | 22,337 |
+| intersects | 22 | 196 | 815 | 2,342 | 5,418 |
 
 ### Zoom range
 

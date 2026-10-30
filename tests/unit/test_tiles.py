@@ -363,6 +363,8 @@ def test_write_region_boundaries_draws_each_border_once(tmp_path: Path) -> None:
         (1, MultiPolygon([box(170, 10, 180, 20), box(-180, 10, -170, 20)])),
         # A first-order region whose outer edge lies on the antimeridian.
         (1, box(-180, 30, -175, 35)),
+        # A first-order region around the South Pole, closed at -90.
+        (1, box(-180, -90, 180, -80)),
         (2, box(0, 0, 1, 2)),
         # The edge at x = 2 is split at (2, 0.5), not at (2, 1).
         (2, Polygon([(1, 0), (2, 0), (2, 0.5), (2, 2), (1, 2)])),
@@ -384,11 +386,12 @@ def test_write_region_boundaries_draws_each_border_once(tmp_path: Path) -> None:
     lengths = pd.Series(shapely.length(boundaries.geometry.to_numpy()))
     by_level = lengths.groupby(boundaries["level"]).sum()
     # Level 1: the outline of both squares and their border (14), the
-    # antimeridian region without its cut (60), the region at -180 (20).
+    # antimeridian region without its cut (60), the region at -180 (20), the
+    # polar region without its cut and its edge at the pole (360).
     # Level 2: the border at x = 1 (2) and the border at the antimeridian (10).
-    assert by_level.to_dict() == pytest.approx({1: 94.0, 2: 12.0})
+    assert by_level.to_dict() == pytest.approx({1: 454.0, 2: 12.0})
     # No border is stored twice.
-    assert shapely.union_all(boundaries.geometry.to_numpy()).length == pytest.approx(106.0)
+    assert shapely.union_all(boundaries.geometry.to_numpy()).length == pytest.approx(466.0)
     # The border at the antimeridian is kept at 180 only.
     west = shapely.intersection(
         shapely.union_all(boundaries.geometry.to_numpy()),
@@ -399,22 +402,153 @@ def test_write_region_boundaries_draws_each_border_once(tmp_path: Path) -> None:
     assert np.isclose(lengths, 20.0).sum() == 1
 
 
-def test_write_main_centerlines_keeps_the_main_lines(tmp_path: Path) -> None:
+def test_span_minzoom_per_feature_maxzoom() -> None:
+    px = 32 * tiles.pixel_m(5)
+    extents = np.array([px, px, px / 2**10, px / 2**10])
+    zooms = tiles.span_minzoom(extents, 32, 4, np.array([8, 4, 8, 9]))
+    assert zooms.tolist() == [5, 4, 8, 9]
+
+
+def _degrees(metres: float) -> float:
+    """Return the longitude span of a distance at the equator."""
+    return metres / tiles.WORLD_M * 360
+
+
+# (rgi_id, is_main, zoom). Each line runs east along the equator. It spans
+# a little more than LINE_MIN_PX pixels at its zoom.
+EARLY_LINES = [
+    ("z5", False, 5),
+    ("z7", True, 7),
+    ("z3", True, 3),
+    ("short-main", True, 12),
+    ("short", False, 12),
+]
+
+
+@pytest.fixture
+def centerlines_parquet(tmp_path: Path) -> Path:
     lines = gpd.GeoDataFrame(
-        {"rgi_id": ["a", "a", "b"], "is_main": [True, False, True]},
-        geometry=shapely.linestrings([[(0, 0), (1, 1)], [(0, 1), (1, 1)], [(2, 2), (3, 3)]]),
+        {"rgi_id": [r[0] for r in EARLY_LINES], "is_main": [r[1] for r in EARLY_LINES]},
+        geometry=[
+            shapely.LineString(
+                [(0, 0), (_degrees(1.01 * tiles.LINE_MIN_PX * tiles.pixel_m(z)), 0)]
+            )
+            for _, _, z in EARLY_LINES
+        ],
         crs="OGC:CRS84",
     )
     lines.to_parquet(tmp_path / "c.parquet")
-    main = gpd.read_parquet(
-        tiles.write_main_centerlines(tmp_path / "c.parquet", tmp_path / "m.parquet")
+    return tmp_path / "c.parquet"
+
+
+def test_write_early_lines_enters_long_lines_first(
+    centerlines_parquet: Path, tmp_path: Path
+) -> None:
+    early = gpd.read_parquet(tiles.write_early_lines(centerlines_parquet, tmp_path / "e.parquet"))
+    zooms = dict(zip(early["rgi_id"], early["line_minzoom"], strict=True))
+    # A short line that is not a main centerline enters with the full band.
+    assert zooms == {
+        "z5": 5,
+        "z7": 7,
+        "z3": tiles.LINES_MINZOOM,
+        "short-main": tiles.CENTERLINES_MINZOOM,
+    }
+    divides = gpd.read_parquet(centerlines_parquet).drop(columns="is_main")
+    divides.to_parquet(tmp_path / "i.parquet")
+    early = gpd.read_parquet(
+        tiles.write_early_lines(tmp_path / "i.parquet", tmp_path / "f.parquet")
     )
-    assert main["is_main"].all()
-    assert list(main["rgi_id"]) == ["a", "b"]
+    assert sorted(early["rgi_id"]) == ["z3", "z5", "z7"]
+
+
+def test_build_archive_early_centerlines_enter_at_their_zoom(
+    centerlines_parquet: Path, tmp_path: Path
+) -> None:
+    early = tiles.write_early_lines(centerlines_parquet, tmp_path / "e.parquet")
+    layers = tiles.version_layers(
+        dict.fromkeys(tiles.ARCHIVE_PRODUCTS, centerlines_parquet),
+        tmp_path / "labels.parquet",
+        tmp_path / "rl.parquet",
+        tmp_path / "rb.parquet",
+        {"centerlines": early, "intersects": early},
+        {name: {} for name in tiles.OVERVIEW_COLUMNS},
+    )
+    bands = [b for b in layers if b.name == "centerlines" and b.maxzoom < tiles.INTERSECTS_MINZOOM]
+    archive = build_archive(bands, tmp_path / "out.pmtiles", **META)
+    rows = pq.read_table(decode(archive, tmp_path / "d.parquet"), columns=["rgi_id", "zoom"])
+    zooms = {k: sorted(set(v)) for k, v in rows.to_pandas().groupby("rgi_id")["zoom"]}
+    # The last zoom of a band keeps every source feature unless the band
+    # filters out the lines that enter after it.
+    eight = tiles.CENTERLINES_MINZOOM
+    assert zooms == {
+        "z5": list(range(5, eight + 1)),
+        "z7": [7, eight],
+        "z3": list(range(tiles.LINES_MINZOOM, eight + 1)),
+        "short-main": [eight],
+    }
+
+
+def test_build_archive_simplifies_in_map_units_at_high_latitude(tmp_path: Path) -> None:
+    # A square at 78°N with a bump of 1.5 pixels at z9 on its north edge.
+    # The tolerance at --simplify-factor 1 is half a pixel, so the bump
+    # stays. A tolerance in degrees would be 2.5 pixels there. The finest
+    # zoom of a tiling is not simplified, so the band is padded.
+    zoom = 9
+    lon, lat = 0.35, 78.0
+    side = 0.2
+    bump = 1.5 * tiles.pixel_m(zoom)
+    north = gpd.GeoSeries([shapely.Point(lon, lat + side)], crs="EPSG:4326").to_crs(3857)
+    bumped = gpd.GeoSeries(
+        [shapely.Point(north.x.iloc[0], north.y.iloc[0] + bump)], crs=3857
+    ).to_crs(4326)
+    square = shapely.Polygon(
+        [
+            (lon - side, lat),
+            (lon + side, lat),
+            (lon + side, lat + side),
+            (lon, bumped.y.iloc[0]),
+            (lon - side, lat + side),
+        ]
+    )
+    source = tmp_path / "g.parquet"
+    gpd.GeoDataFrame({"rgi_id": ["a"]}, geometry=[square], crs="EPSG:4326").to_parquet(source)
+    layer = LayerSpec(
+        "glaciers",
+        source,
+        zoom,
+        zoom,
+        (
+            "--no-density-drop",
+            "--polygon-thinning",
+            "0",
+            "--polygon-visibility",
+            "0",
+            "--simplify-factor",
+            "1",
+        ),
+        complete=True,
+        pad_zoom=1,
+    )
+    archive = build_archive([layer], tmp_path / "out.pmtiles", **META)
+    decoded = gpd.read_parquet(decode(archive, tmp_path / "d.parquet")).to_crs(3857)
+    top = max(shapely.get_coordinates(decoded.geometry.to_numpy())[:, 1])
+    assert top == pytest.approx(north.y.iloc[0] + bump, abs=tiles.pixel_m(zoom) / 4)
+
+
+def test_write_web_mercator_cuts_off_the_poles(tmp_path: Path) -> None:
+    region = shapely.box(-180, -90, 180, -60)
+    source = tmp_path / "r.parquet"
+    gpd.GeoDataFrame({"level": [1]}, geometry=[region], crs="OGC:CRS84").to_parquet(source)
+    out = gpd.read_parquet(tiles.write_web_mercator(source, tmp_path / "m.parquet", ["level"]))
+    assert out.crs.to_epsg() == 3857
+    _, south, _, north = out.total_bounds
+    assert south == pytest.approx(-tiles.WORLD_M / 2)
+    assert north < 0
 
 
 def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     paths = {name: tmp_path / f"{name}.parquet" for name in tiles.ARCHIVE_PRODUCTS}
+    early = {name: tmp_path / f"early-{name}.parquet" for name in ("centerlines", "intersects")}
     zooms = range(tiles.GLACIERS_COMPLETE_ZOOM)
     overviews = {
         name: {z: tmp_path / f"{name}-z{z}.parquet" for z in zooms}
@@ -425,7 +559,7 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         tmp_path / "labels.parquet",
         tmp_path / "rl.parquet",
         tmp_path / "rb.parquet",
-        tmp_path / "main.parquet",
+        early,
         overviews,
     )
     assert {layer.name for layer in layers} == {
@@ -449,15 +583,20 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         ("centerlines", tiles.INTERSECTS_MINZOOM + 1, tiles.MAXZOOM),
         ("intersects", tiles.INTERSECTS_MINZOOM, tiles.MAXZOOM),
     }
-    # The main centerlines come first. The other centerlines enter with the
-    # divides.
-    first = {
-        name: min(b.minzoom for b in layers if b.name == name)
-        for name in ("centerlines", "intersects")
+    # The early lines enter at their own zoom, and the main centerlines and
+    # the long lines fill z8. From z9 every line is in the archive.
+    bands = {
+        name: [(b.minzoom, b.maxzoom, b.entry_zoom_column) for b in layers if b.source == path]
+        for name, path in early.items()
     }
-    assert first["intersects"] == first["centerlines"] + 1
-    main_band = [b for b in layers if b.source == tmp_path / "main.parquet"]
-    assert [(b.minzoom, b.maxzoom) for b in main_band] == [(first["centerlines"],) * 2]
+    first = tiles.LINES_MINZOOM
+    assert bands == {
+        "centerlines": [
+            (first, tiles.CENTERLINES_MINZOOM - 1, "line_minzoom"),
+            (tiles.CENTERLINES_MINZOOM, tiles.CENTERLINES_MINZOOM, None),
+        ],
+        "intersects": [(first, tiles.INTERSECTS_MINZOOM - 1, "line_minzoom")],
+    }
     for layer in layers:
         if layer.name in {"region-boundaries", "centerlines", "intersects"} and layer.complete:
             assert "--no-coalesce-lines" in layer.extra_args

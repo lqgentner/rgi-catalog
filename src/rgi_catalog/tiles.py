@@ -61,6 +61,8 @@ GLACIERS_COMPLETE_ZOOM = 10
 SHAPE_MIN_PX = 3
 # The circumference of the Web Mercator world, in metres.
 WORLD_M = 2 * math.pi * 6378137
+# The latitude at which the Web Mercator world ends.
+MERCATOR_MAX_LAT = math.degrees(math.atan(math.sinh(math.pi)))
 # MapLibre draws a vector tile 512 pixels wide.
 TILE_PX = 512
 LABEL_MINZOOM = 7
@@ -210,6 +212,52 @@ def pixel_m(zoom: int) -> float:
     return WORLD_M / (TILE_PX * 2**zoom)
 
 
+def mercator_extent(geometry: gpd.GeoSeries) -> np.ndarray:
+    """Return the longer side of each feature's Web Mercator bounding box.
+
+    Parameters
+    ----------
+    geometry
+        The features.
+
+    Returns
+    -------
+    np.ndarray
+        The extents, in metres.
+    """
+    bounds = shapely.bounds(geometry.to_crs(3857).to_numpy())
+    return np.maximum(bounds[:, 2] - bounds[:, 0], bounds[:, 3] - bounds[:, 1])
+
+
+def span_minzoom(
+    extent_m: np.ndarray, min_px: float, minzoom: int, maxzoom: int | np.ndarray
+) -> np.ndarray:
+    """Return the first zoom at which each feature spans a number of pixels.
+
+    Parameters
+    ----------
+    extent_m
+        The longer side of each feature's Web Mercator bounding box, in metres.
+    min_px
+        The pixels the feature must span.
+    minzoom
+        The first zoom returned.
+    maxzoom
+        The zoom of a feature that spans fewer pixels before it, for all
+        features or for each one.
+
+    Returns
+    -------
+    np.ndarray
+        A zoom from ``minzoom`` to ``maxzoom`` per feature.
+    """
+    maxzoom = np.broadcast_to(maxzoom, extent_m.shape)
+    zooms = maxzoom.astype(np.int64)
+    for zoom in range(int(maxzoom.max(initial=minzoom)) - 1, minzoom - 1, -1):
+        zooms[(extent_m >= min_px * pixel_m(zoom)) & (zoom < maxzoom)] = zoom
+    return zooms
+
+
 def shape_minzoom(extent_m: np.ndarray) -> np.ndarray:
     """Return the zoom from which each feature is drawn as an outline.
 
@@ -224,10 +272,7 @@ def shape_minzoom(extent_m: np.ndarray) -> np.ndarray:
         The first zoom at which the feature spans :data:`SHAPE_MIN_PX`
         pixels, at most :data:`GLACIERS_COMPLETE_ZOOM`.
     """
-    zooms = np.full(len(extent_m), GLACIERS_COMPLETE_ZOOM, dtype=np.int64)
-    for zoom in range(GLACIERS_COMPLETE_ZOOM - 1, -1, -1):
-        zooms[extent_m >= SHAPE_MIN_PX * pixel_m(zoom)] = zoom
-    return zooms
+    return span_minzoom(extent_m, SHAPE_MIN_PX, GLACIERS_MINZOOM, GLACIERS_COMPLETE_ZOOM)
 
 
 def write_overview(source: Path, out_dir: Path, columns: Sequence[str]) -> dict[int, Path]:
@@ -254,9 +299,7 @@ def write_overview(source: Path, out_dir: Path, columns: Sequence[str]) -> dict[
     """
     keep = [c for c in columns if c in tile_properties(source)]
     frame = gpd.read_parquet(source, columns=[*keep, "cenlon", "cenlat", "geometry"])
-    bounds = frame.geometry.to_crs(3857).bounds
-    extent = np.maximum(bounds["maxx"] - bounds["minx"], bounds["maxy"] - bounds["miny"])
-    shape_zoom = shape_minzoom(extent.to_numpy())
+    shape_zoom = shape_minzoom(mercator_extent(frame.geometry))
     points = gpd.points_from_xy(frame["cenlon"], frame["cenlat"], crs=frame.crs)
     out_dir.mkdir(parents=True, exist_ok=True)
     out = {}
@@ -352,17 +395,41 @@ LINE_COMPLETE = (
     "0",
     "--no-coalesce-lines",
 )
-# The main centerline of each glacier enters at CENTERLINES_MINZOOM. The
-# other centerlines and the intersects, the divides between glaciers, enter
-# a zoom later. At z8 they crowd the main lines.
+# The main centerline of each glacier enters at CENTERLINES_MINZOOM at the
+# latest. The other centerlines and the intersects, the divides between
+# glaciers, enter a zoom later. At z8 they crowd the main lines.
 CENTERLINES_MINZOOM = 8
 INTERSECTS_MINZOOM = CENTERLINES_MINZOOM + 1
+# A line enters earlier at the zoom at which it spans LINE_MIN_PX pixels, but
+# not before LINES_MINZOOM. The long lines of an ice cap then show with its
+# outline.
+LINE_MIN_PX = 32
+LINES_MINZOOM = 4
 # Neighbouring regions split a shared border at different vertices. On this
 # grid the outlines node into one set of lines. A degree of 1e-5 is about
 # 1.1 m, finer than the 2.4 m that a z12 tile resolves.
 BOUNDARY_GRID = 1e-5
 # The products the archive draws, by collection name.
 ARCHIVE_PRODUCTS = ("regions", "complexes", "glaciers", "centerlines", "intersects")
+
+
+def entry_zoom_args(column: str, minzoom: int, maxzoom: int) -> tuple[str, str]:
+    """Return the tiler arguments that make each feature enter at its own zoom.
+
+    Parameters
+    ----------
+    column
+        The column of each feature's entry zoom.
+    minzoom, maxzoom
+        The range of the entry zooms.
+
+    Returns
+    -------
+    tuple[str, str]
+        ``--entry-zoom`` and its value, which maps each zoom to itself.
+    """
+    zooms = ",".join(f"{z}={z}" for z in range(minzoom, maxzoom + 1))
+    return "--entry-zoom", f"{column}:{zooms}"
 
 
 def overview_layers(name: str, overview: dict[int, Path]) -> list[LayerSpec]:
@@ -406,7 +473,6 @@ def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> l
         cell for the others. From it on every glacier is kept. Each label
         enters at its ``label_minzoom`` and is never thinned.
     """
-    entry = ",".join(f"{z}={z}" for z in range(LABEL_MINZOOM, MAXZOOM + 1))
     return [
         *overview_layers("glaciers", overview),
         LayerSpec(
@@ -422,7 +488,7 @@ def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> l
             labels,
             LABEL_MINZOOM,
             MAXZOOM,
-            ("--entry-zoom", f"label_minzoom:{entry}", "--no-density-drop"),
+            (*entry_zoom_args("label_minzoom", LABEL_MINZOOM, MAXZOOM), "--no-density-drop"),
             complete=True,
             entry_zoom_column="label_minzoom",
         ),
@@ -486,6 +552,10 @@ def _antimeridian_cut(region: Any) -> shapely.MultiLineString:
     return _lines(shapely.union(cut, translate(cut, -360), grid_size=BOUNDARY_GRID))
 
 
+# The outline of a region at a pole closes it there. It is not a border.
+_POLES = shapely.multilinestrings([[(-180, -90), (180, -90)], [(-180, 90), (180, 90)]])
+
+
 def write_region_boundaries(regions_parquet: Path, out: Path) -> Path:
     """Write each region border once, as lines with the lowest level it bounds.
 
@@ -493,7 +563,8 @@ def write_region_boundaries(regions_parquet: Path, out: Path) -> Path:
     directions, and a dash pattern drawn twice looks solid. The outlines of
     each level are snapped to :data:`BOUNDARY_GRID` and noded into one set of
     lines. A second-order border on a first-order border is level 1. The
-    outline that closes a region at the antimeridian is left out. A border at
+    outline that closes a region at the antimeridian or at a pole is left
+    out. A border at
     the antimeridian is kept at 180 only. Contiguous lines of one level are
     merged, so a dash pattern runs along them.
 
@@ -515,7 +586,7 @@ def write_region_boundaries(regions_parquet: Path, out: Path) -> Path:
     for level in levels:
         polygons = regions.geometry[regions["level"] == level].to_numpy()
         outlines = shapely.union_all(shapely.boundary(polygons), grid_size=BOUNDARY_GRID)
-        cuts = shapely.union_all([_antimeridian_cut(p) for p in polygons])
+        cuts = shapely.union_all([*(_antimeridian_cut(p) for p in polygons), _POLES])
         lines[level] = _lines(shapely.difference(outlines, cuts, grid_size=BOUNDARY_GRID))
     east = _lines(
         shapely.intersection(
@@ -546,24 +617,36 @@ def write_region_boundaries(regions_parquet: Path, out: Path) -> Path:
     return out
 
 
-def write_main_centerlines(centerlines: Path, out: Path) -> Path:
-    """Write the main centerline of each glacier, for the first centerline zoom.
+def write_early_lines(lines: Path, out: Path) -> Path:
+    """Write the lines that enter before :data:`INTERSECTS_MINZOOM`, with their entry zoom.
+
+    A line enters at the first zoom from :data:`LINES_MINZOOM` at which it
+    spans :data:`LINE_MIN_PX` pixels. A main centerline (``is_main``) enters
+    at :data:`CENTERLINES_MINZOOM` at the latest. Every other line enters at
+    :data:`INTERSECTS_MINZOOM` at the latest.
 
     Parameters
     ----------
-    centerlines
-        The centerlines GeoParquet file.
+    lines
+        The centerlines or the intersects GeoParquet file.
     out
-        The GeoParquet file to write.
+        The GeoParquet file to write, with the entry zoom in ``line_minzoom``.
 
     Returns
     -------
     Path
         ``out``.
     """
-    main = gpd.read_parquet(centerlines, filters=[("is_main", "==", True)])
+    frame = gpd.read_parquet(lines)
+    latest = (
+        np.where(frame["is_main"].to_numpy(bool), CENTERLINES_MINZOOM, INTERSECTS_MINZOOM)
+        if "is_main" in frame
+        else INTERSECTS_MINZOOM
+    )
+    zooms = span_minzoom(mercator_extent(frame.geometry), LINE_MIN_PX, LINES_MINZOOM, latest)
+    early = frame.assign(line_minzoom=zooms.astype("uint8")).loc[zooms < INTERSECTS_MINZOOM]
     out.parent.mkdir(parents=True, exist_ok=True)
-    main.to_parquet(out, index=False)
+    early.to_parquet(out, index=False)
     return out
 
 
@@ -572,7 +655,7 @@ def version_layers(
     labels: Path,
     region_labels: Path,
     region_boundaries: Path,
-    main_centerlines: Path,
+    early_lines: dict[str, Path],
     overviews: dict[str, dict[int, Path]],
 ) -> list[LayerSpec]:
     """Return the bands of every layer of the archive, bottom to top.
@@ -587,8 +670,9 @@ def version_layers(
         The region label file from :func:`write_region_labels`.
     region_boundaries
         The region boundary file from :func:`write_region_boundaries`.
-    main_centerlines
-        The main centerline file from :func:`write_main_centerlines`.
+    early_lines
+        The early lines of the centerlines and the intersects, by layer
+        name, from :func:`write_early_lines`.
     overviews
         The overview inputs of the glaciers and the complexes, by layer name,
         from :func:`write_overview`.
@@ -596,12 +680,23 @@ def version_layers(
     Returns
     -------
     list[LayerSpec]
-        The regions, their boundaries and their labels at every zoom. The complexes and the
-        glaciers as in :func:`glacier_layers`. The main centerlines at
-        :data:`CENTERLINES_MINZOOM`. From :data:`INTERSECTS_MINZOOM` all of
-        the centerlines and all of the intersects.
+        The regions, their boundaries and their labels at every zoom. The
+        complexes and the glaciers as in :func:`glacier_layers`. From
+        :data:`LINES_MINZOOM` each early line at its ``line_minzoom``. From
+        :data:`INTERSECTS_MINZOOM` all of the centerlines and all of the
+        intersects.
     """
     lines = (*LINE_COMPLETE, "--simplify-factor", "0.5")
+    divides = (*LINE_COMPLETE, "--simplify-factor", "0")
+    # The finest zoom of a tiling keeps every source feature, whatever its
+    # entry zoom. The filter keeps a line that enters at CENTERLINES_MINZOOM
+    # out of the band before it.
+    early_centerlines = (
+        *entry_zoom_args("line_minzoom", LINES_MINZOOM, CENTERLINES_MINZOOM - 1),
+        "--filter",
+        f"line_minzoom < {CENTERLINES_MINZOOM}",
+    )
+    early_intersects = entry_zoom_args("line_minzoom", LINES_MINZOOM, INTERSECTS_MINZOOM - 1)
     return [
         LayerSpec(
             "regions",
@@ -638,10 +733,20 @@ def version_layers(
             complete=True,
         ),
         *glacier_layers(products["glaciers"], labels, overviews["glaciers"]),
-        # Main centerlines only. Eleven z8 tiles exceed the size limit.
         LayerSpec(
             "centerlines",
-            main_centerlines,
+            early_lines["centerlines"],
+            LINES_MINZOOM,
+            CENTERLINES_MINZOOM - 1,
+            (*lines, *early_centerlines),
+            complete=True,
+            entry_zoom_column="line_minzoom",
+        ),
+        # The main centerlines and the long lines. Eleven z8 tiles exceed the
+        # size limit.
+        LayerSpec(
+            "centerlines",
+            early_lines["centerlines"],
             CENTERLINES_MINZOOM,
             INTERSECTS_MINZOOM - 1,
             lines,
@@ -667,13 +772,57 @@ def version_layers(
         # Simplification at half a GSD still collapses short divides.
         LayerSpec(
             "intersects",
+            early_lines["intersects"],
+            LINES_MINZOOM,
+            INTERSECTS_MINZOOM - 1,
+            (*divides, *early_intersects),
+            complete=True,
+            entry_zoom_column="line_minzoom",
+        ),
+        LayerSpec(
+            "intersects",
             products["intersects"],
             INTERSECTS_MINZOOM,
             MAXZOOM,
-            (*LINE_COMPLETE, "--simplify-factor", "0"),
+            divides,
             complete=True,
         ),
     ]
+
+
+def write_web_mercator(source: Path, out: Path, columns: Sequence[str]) -> Path:
+    """Write a band's input in Web Mercator, the input the tiler simplifies correctly.
+
+    The tiler simplifies lon/lat input with a tolerance in degrees. On the
+    map a degree of latitude is 1/cos(lat) times as long as a degree of
+    longitude. At 78°N the outlines moved 2.5 pixels instead of half a pixel.
+    Web Mercator input is simplified in map units. The parts beyond
+    :data:`MERCATOR_MAX_LAT`, which no tile shows, are cut off.
+
+    Parameters
+    ----------
+    source
+        A GeoParquet file in lon/lat.
+    out
+        The GeoParquet file to write.
+    columns
+        The columns to carry.
+
+    Returns
+    -------
+    Path
+        ``out``.
+    """
+    frame = gpd.read_parquet(source, columns=[*columns, "geometry"])
+    geometry = frame.geometry.to_numpy().copy()
+    bounds = shapely.bounds(geometry)
+    beyond = (bounds[:, 1] < -MERCATOR_MAX_LAT) | (bounds[:, 3] > MERCATOR_MAX_LAT)
+    if beyond.any():
+        world = shapely.box(-180, -MERCATOR_MAX_LAT, 180, MERCATOR_MAX_LAT)
+        geometry[beyond] = shapely.intersection(geometry[beyond], world)
+    frame = frame.set_geometry(gpd.GeoSeries(geometry, index=frame.index, crs=frame.crs))
+    frame.to_crs(3857).to_parquet(out, index=False)
+    return out
 
 
 def build_archive(
@@ -719,9 +868,10 @@ def build_archive(
             if layer.properties is not None:
                 available = [p for p in available if p in layer.properties]
             props = [a for p in available for a in ("--include-property", p)]
+            source = write_web_mercator(layer.source, work / f"band-{i}.parquet", available)
             _run(
                 "tiles",
-                layer.source,
+                source,
                 band,
                 "--layer-name",
                 layer.name,
@@ -735,6 +885,7 @@ def build_archive(
                 *props,
                 *layer.extra_args,
             )
+            source.unlink()
             if layer.complete:
                 _check_complete(layer, json.loads(report.read_text())["export"])
             bands.extend(["--band", f"{layer.minzoom}-{layer.maxzoom}:{band}:{layer.name}"])
@@ -892,9 +1043,10 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
     region_boundaries = write_region_boundaries(
         products["regions"], work / "region-boundaries.parquet"
     )
-    main_centerlines = write_main_centerlines(
-        products["centerlines"], work / "main-centerlines.parquet"
-    )
+    early_lines = {
+        name: write_early_lines(products[name], work / f"early-{name}.parquet")
+        for name in ("centerlines", "intersects")
+    }
     # The overview inputs hold most outlines once per zoom. They go once the
     # archive is built.
     with tempfile.TemporaryDirectory(dir=work, prefix="overview-") as tmp:
@@ -904,7 +1056,7 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
         }
         return build_archive(
             version_layers(
-                products, labels, region_labels, region_boundaries, main_centerlines, overviews
+                products, labels, region_labels, region_boundaries, early_lines, overviews
             ),
             archive_path(staging, version),
             name=ARCHIVE_NAME,

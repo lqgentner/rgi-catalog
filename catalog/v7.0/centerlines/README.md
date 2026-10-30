@@ -2,7 +2,7 @@
 
 [Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/centerlines/collection.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/products/centerlines_product.html) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
-One row per centerline: the main centerline and the tributary centerlines of every glacier, with RGI's attributes, in one GeoParquet file. The web map archive holds the main centerlines from z8 and the others from z9.
+One row per centerline: the main centerline and the tributary centerlines of every glacier, with RGI's attributes, in one GeoParquet file. The web map archive holds the main centerlines from z8 and the others from z9. A longer line enters at the first zoom at which it spans 32 pixels, from z4 on.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -21,7 +21,7 @@ The RGI 7.0 user guide describes the
 - [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `centerlines`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `rgi_id`.
 ## Map styles
 
-- [Centerlines](./styles/centerlines.json) (default): Glacier centerlines over the glacier outlines: the main centerlines, drawn wider, from z8, the others from z9.
+- [Centerlines](./styles/centerlines.json) (default): Glacier centerlines over the glacier outlines: the main centerlines, drawn wider, from z8, the others from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on.
 - [Glaciers](./styles/glaciers.json): Glacier outlines and names.
 
 ## Access
