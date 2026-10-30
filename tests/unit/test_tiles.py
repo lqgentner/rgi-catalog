@@ -12,7 +12,8 @@ from pmtiles.reader import MmapSource, Reader, all_tiles
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
-from shapely.geometry import Polygon
+import shapely
+from shapely.geometry import MultiPolygon, Polygon
 
 from rgi_catalog import assemble, styles, tiles
 from rgi_catalog.geoparquet import write_geoparquet
@@ -349,6 +350,55 @@ def test_write_region_labels_one_per_region(fake_rgi: FakeRGI, tmp_path: Path) -
     assert 170 < north_asia.x < 180
 
 
+def test_write_region_boundaries_draws_each_border_once(tmp_path: Path) -> None:
+    def box(x0: float, y0: float, x1: float, y1: float) -> Polygon:
+        return Polygon([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
+
+    rows = [
+        # Two first-order regions. The west one splits their border at (2, 1).
+        (1, Polygon([(0, 0), (2, 0), (2, 1), (2, 2), (0, 2)])),
+        (1, box(2, 0, 4, 2)),
+        # One first-order region split at the antimeridian. Its parts are
+        # second-order regions that border each other there.
+        (1, MultiPolygon([box(170, 10, 180, 20), box(-180, 10, -170, 20)])),
+        # A first-order region whose outer edge lies on the antimeridian.
+        (1, box(-180, 30, -175, 35)),
+        (2, box(0, 0, 1, 2)),
+        # The edge at x = 2 is split at (2, 0.5), not at (2, 1).
+        (2, Polygon([(1, 0), (2, 0), (2, 0.5), (2, 2), (1, 2)])),
+        (2, box(2, 0, 4, 2)),
+        (2, box(170, 10, 180, 20)),
+        (2, box(-180, 10, -170, 20)),
+    ]
+    regions = gpd.GeoDataFrame(
+        {"level": np.array([level for level, _ in rows], dtype=np.uint8)},
+        geometry=[geom for _, geom in rows],
+        crs="OGC:CRS84",
+    )
+    regions.to_parquet(tmp_path / "regions.parquet")
+    out = tiles.write_region_boundaries(tmp_path / "regions.parquet", tmp_path / "b.parquet")
+    boundaries = gpd.read_parquet(out)
+
+    assert list(boundaries.columns) == ["level", "geometry"]
+    assert set(boundaries.geom_type) == {"LineString"}
+    lengths = pd.Series(shapely.length(boundaries.geometry.to_numpy()))
+    by_level = lengths.groupby(boundaries["level"]).sum()
+    # Level 1: the outline of both squares and their border (14), the
+    # antimeridian region without its cut (60), the region at -180 (20).
+    # Level 2: the border at x = 1 (2) and the border at the antimeridian (10).
+    assert by_level.to_dict() == pytest.approx({1: 94.0, 2: 12.0})
+    # No border is stored twice.
+    assert shapely.union_all(boundaries.geometry.to_numpy()).length == pytest.approx(106.0)
+    # The border at the antimeridian is kept at 180 only.
+    west = shapely.intersection(
+        shapely.union_all(boundaries.geometry.to_numpy()),
+        shapely.LineString([(-180, -90), (-180, 90)]),
+    )
+    assert west.length == pytest.approx(5.0)
+    # Contiguous edges are one line: the region at -180 is one closed ring.
+    assert np.isclose(lengths, 20.0).sum() == 1
+
+
 def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     paths = {name: tmp_path / f"{name}.parquet" for name in tiles.ARCHIVE_PRODUCTS}
     zooms = range(tiles.GLACIERS_COMPLETE_ZOOM)
@@ -357,10 +407,15 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         for name in tiles.OVERVIEW_COLUMNS
     }
     layers = tiles.version_layers(
-        paths, tmp_path / "labels.parquet", tmp_path / "rl.parquet", overviews
+        paths,
+        tmp_path / "labels.parquet",
+        tmp_path / "rl.parquet",
+        tmp_path / "rb.parquet",
+        overviews,
     )
     assert {layer.name for layer in layers} == {
         "regions",
+        "region-boundaries",
         "region-labels",
         "complexes",
         "glaciers",
@@ -371,6 +426,7 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     complete = {(layer.name, layer.minzoom, layer.maxzoom) for layer in layers if layer.complete}
     assert complete >= {
         ("regions", 0, tiles.MAXZOOM),
+        ("region-boundaries", 0, tiles.MAXZOOM),
         ("region-labels", 0, tiles.MAXZOOM),
         ("complexes", tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM),
         ("glaciers", tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM),
@@ -378,7 +434,7 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         ("intersects", tiles.INTERSECTS_MINZOOM, tiles.MAXZOOM),
     }
     for layer in layers:
-        if layer.name in {"centerlines", "intersects"} and layer.complete:
+        if layer.name in {"region-boundaries", "centerlines", "intersects"} and layer.complete:
             assert "--no-coalesce-lines" in layer.extra_args
     # One overview band per zoom, tiled a zoom further so that its own zoom
     # is thinned.

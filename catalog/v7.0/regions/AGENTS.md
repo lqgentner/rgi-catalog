@@ -77,6 +77,12 @@ WHERE ST_Contains(geometry, ST_Point(8.0, 46.5));
   shapefiles as two polygons, eastern and western." Here each is one row,
   a MultiPolygon of both parts. Its bounding box spans almost every
   longitude, so a bbox filter always reads it.
+- The `regions` layer of the web map archive draws each shared border
+  twice, once per polygon. The `region-boundaries` layer holds each border
+  once, as lines with one column, `level`: 1 where the line bounds a
+  first-order region, else 2. Its lines are snapped to 1e-5 degrees, so
+  they are not exact copies of the polygon outlines. It leaves out the
+  edges that close regions 10, 19, 19-15, 20 and 20-01 at the antimeridian.
 - Region 20 (Antarctic Mainland) and the second-order regions 19-23 and
   20-01 have no glaciers.
 - The regions are GTN-G's, not the RGI Consortium's. Cite them as the

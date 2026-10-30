@@ -20,6 +20,7 @@ from pmtiles.tile import Compression, deserialize_header, serialize_header
 import pyarrow as pa
 import pyarrow.parquet as pq
 import shapely
+from shapely.affinity import translate
 
 from rgi_catalog.paths import CACHE, STAGING, version_dir
 from rgi_catalog.pipeline import output_path
@@ -354,6 +355,10 @@ LINE_COMPLETE = (
 CENTERLINES_MINZOOM = 8
 # Intersects are divides between glaciers, readable only at high zooms.
 INTERSECTS_MINZOOM = 10
+# Neighbouring regions split a shared border at different vertices. On this
+# grid the outlines node into one set of lines. A degree of 1e-5 is about
+# 1.1 m, finer than the 2.4 m that a z12 tile resolves.
+BOUNDARY_GRID = 1e-5
 # The products the archive draws, by collection name.
 ARCHIVE_PRODUCTS = ("regions", "complexes", "glaciers", "centerlines", "intersects")
 
@@ -456,10 +461,94 @@ def write_region_labels(regions_parquet: Path, out: Path) -> Path:
     return out
 
 
+def _lines(geometry: Any) -> shapely.MultiLineString:
+    """Return the line parts of an overlay result, without its points."""
+    parts = shapely.get_parts(shapely.get_parts(geometry))
+    return shapely.multilinestrings(parts[shapely.get_type_id(parts) == 1])
+
+
+def _meridian(x: float) -> shapely.LineString:
+    return shapely.LineString([(x, -90), (x, 90)])
+
+
+def _antimeridian_cut(region: Any) -> shapely.MultiLineString:
+    """Return the outline a region has at both 180 and -180, on both sides.
+
+    That outline closes the region where it is split at the antimeridian. It
+    is not a border.
+    """
+    outline = shapely.boundary(region)
+    east = _lines(shapely.intersection(outline, _meridian(180), grid_size=BOUNDARY_GRID))
+    west = _lines(shapely.intersection(outline, _meridian(-180), grid_size=BOUNDARY_GRID))
+    cut = _lines(shapely.intersection(east, translate(west, 360), grid_size=BOUNDARY_GRID))
+    return _lines(shapely.union(cut, translate(cut, -360), grid_size=BOUNDARY_GRID))
+
+
+def write_region_boundaries(regions_parquet: Path, out: Path) -> Path:
+    """Write each region border once, as lines with the lowest level it bounds.
+
+    Neighbouring polygons store a shared border once each, in opposite
+    directions, and a dash pattern drawn twice looks solid. The outlines of
+    each level are snapped to :data:`BOUNDARY_GRID` and noded into one set of
+    lines. A second-order border on a first-order border is level 1. The
+    outline that closes a region at the antimeridian is left out. A border at
+    the antimeridian is kept at 180 only. Contiguous lines of one level are
+    merged, so a dash pattern runs along them.
+
+    Parameters
+    ----------
+    regions_parquet
+        The regions GeoParquet file.
+    out
+        The boundary GeoParquet file to write, one row per merged line.
+
+    Returns
+    -------
+    Path
+        ``out``.
+    """
+    regions = gpd.read_parquet(regions_parquet)
+    levels = sorted(regions["level"].unique())
+    lines: dict[Any, Any] = {}
+    for level in levels:
+        polygons = regions.geometry[regions["level"] == level].to_numpy()
+        outlines = shapely.union_all(shapely.boundary(polygons), grid_size=BOUNDARY_GRID)
+        cuts = shapely.union_all([_antimeridian_cut(p) for p in polygons])
+        lines[level] = _lines(shapely.difference(outlines, cuts, grid_size=BOUNDARY_GRID))
+    east = _lines(
+        shapely.intersection(
+            shapely.union_all(list(lines.values()), grid_size=BOUNDARY_GRID),
+            _meridian(180),
+            grid_size=BOUNDARY_GRID,
+        )
+    )
+    for level, line in lines.items():
+        west = _lines(shapely.intersection(line, _meridian(-180), grid_size=BOUNDARY_GRID))
+        twin = _lines(shapely.intersection(translate(west, 360), east, grid_size=BOUNDARY_GRID))
+        kept = shapely.difference(line, translate(twin, -360), grid_size=BOUNDARY_GRID)
+        lines[level] = _lines(shapely.union(kept, twin, grid_size=BOUNDARY_GRID))
+    # Each level gives up the lines of the levels above it.
+    for i, level in enumerate(levels):
+        for lower in levels[:i]:
+            lines[level] = _lines(
+                shapely.difference(lines[level], lines[lower], grid_size=BOUNDARY_GRID)
+            )
+    boundaries = gpd.GeoDataFrame(
+        {"level": np.array(levels, dtype=regions["level"].dtype)},
+        geometry=[shapely.line_merge(lines[level]) for level in levels],
+        crs=regions.crs,
+    )
+    boundaries = boundaries.explode(index_parts=False).reset_index(drop=True)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    boundaries.to_parquet(out, index=False)
+    return out
+
+
 def version_layers(
     products: dict[str, Path],
     labels: Path,
     region_labels: Path,
+    region_boundaries: Path,
     overviews: dict[str, dict[int, Path]],
 ) -> list[LayerSpec]:
     """Return the bands of every layer of the archive, bottom to top.
@@ -472,6 +561,8 @@ def version_layers(
         The glacier label file from :func:`write_labels`.
     region_labels
         The region label file from :func:`write_region_labels`.
+    region_boundaries
+        The region boundary file from :func:`write_region_boundaries`.
     overviews
         The overview inputs of the glaciers and the complexes, by layer name,
         from :func:`write_overview`.
@@ -479,7 +570,7 @@ def version_layers(
     Returns
     -------
     list[LayerSpec]
-        The regions and their labels at every zoom. The complexes and the
+        The regions, their boundaries and their labels at every zoom. The complexes and the
         glaciers as in :func:`glacier_layers`. The centerlines from
         :data:`CENTERLINES_MINZOOM`, all of them from
         :data:`GLACIERS_COMPLETE_ZOOM`. The intersects from
@@ -493,6 +584,15 @@ def version_layers(
             0,
             MAXZOOM,
             ("--no-density-drop", "--polygon-thinning", "0", "--polygon-visibility", "0"),
+            complete=True,
+        ),
+        # Simplification collapses short boundary lines at low zooms.
+        LayerSpec(
+            "region-boundaries",
+            region_boundaries,
+            0,
+            MAXZOOM,
+            (*LINE_COMPLETE, "--simplify-factor", "0"),
             complete=True,
         ),
         LayerSpec(
@@ -753,6 +853,9 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
     work = staging / version_dir(version) / ".tiles"
     labels = write_labels(products["glaciers"], work / "labels.parquet")
     region_labels = write_region_labels(products["regions"], work / "region-labels.parquet")
+    region_boundaries = write_region_boundaries(
+        products["regions"], work / "region-boundaries.parquet"
+    )
     # The overview inputs hold most outlines once per zoom. They go once the
     # archive is built.
     with tempfile.TemporaryDirectory(dir=work, prefix="overview-") as tmp:
@@ -761,7 +864,7 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
             for name, columns in OVERVIEW_COLUMNS.items()
         }
         return build_archive(
-            version_layers(products, labels, region_labels, overviews),
+            version_layers(products, labels, region_labels, region_boundaries, overviews),
             archive_path(staging, version),
             name=ARCHIVE_NAME,
             attribution=ARCHIVE_ATTRIBUTION,

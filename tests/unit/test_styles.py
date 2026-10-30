@@ -184,7 +184,7 @@ def test_every_collection_has_a_default_and_the_glaciers_style(name: str) -> Non
 def test_glaciers_style_draws_the_glaciers_and_the_regions() -> None:
     full = styles.glaciers_style(HREF)
     assert {layer["source-layer"] for layer in full["layers"]} == {
-        "regions",
+        "region-boundaries",
         "region-labels",
         "glaciers",
         "glacier-labels",
@@ -243,28 +243,31 @@ def test_style_descriptions_name_no_colour(name: str) -> None:
 
 @pytest.mark.parametrize("name", COLLECTIONS)
 def test_every_style_draws_region_boundaries_and_names(name: str) -> None:
-    # Neighbouring regions share edges, so a dash pattern drawn twice breaks
-    # up. Solid lines stay clean.
+    # The boundaries come from the layer that stores each border once, so
+    # their dash patterns stay in step. A first-order dash is the longer.
     for key, style in styles.collection_styles(name, HREF).items():
         layers = style["layers"]
         ids = [layer["id"] for layer in layers]
-        bounds = [i for i, x in enumerate(ids) if x.startswith("regions-outline-")]
-        assert [ids[i] for i in bounds] == ["regions-outline-2", "regions-outline-1"], key
-        assert not any("line-dasharray" in layers[i]["paint"] for i in bounds), key
+        bounds = [i for i, x in enumerate(ids) if x.startswith("region-boundaries-")]
+        assert [ids[i] for i in bounds] == ["region-boundaries-2", "region-boundaries-1"], key
+        assert {layers[i]["source-layer"] for i in bounds} == {"region-boundaries"}, key
+        dash = [layers[i]["paint"]["line-dasharray"] for i in bounds]
+        assert dash[1][0] > dash[0][0], key
         data = [
             i
             for i, layer in enumerate(layers)
-            if layer["source-layer"] not in {"regions", "region-labels"}
+            if layer["source-layer"] not in {"regions", "region-boundaries", "region-labels"}
         ]
         assert max(bounds) < min(data, default=len(layers)), (name, key)
         assert {"region-labels-1", "region-labels-2"} <= set(ids), (name, key)
 
 
-def test_second_order_region_labels_show_the_number() -> None:
+@pytest.mark.parametrize(("level", "code"), [(1, "o1region"), (2, "o2region")])
+def test_region_labels_show_the_number(level: int, code: str) -> None:
     label = next(
         layer
         for layer in styles.glaciers_style(HREF)["layers"]
-        if layer["id"] == "region-labels-2"
+        if layer["id"] == f"region-labels-{level}"
     )
-    assert ["get", "o2region"] in label["layout"]["text-field"]
+    assert ["get", code] in label["layout"]["text-field"]
     assert ["get", "full_name"] in label["layout"]["text-field"]

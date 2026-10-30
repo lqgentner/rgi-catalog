@@ -26,7 +26,7 @@
     "GTN-G"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-29T10:29:43Z",
+  "updated": "2026-10-30T11:52:44Z",
   "sci:doi": "10.5904/gtng-glacreg-2023-07",
   "sci:citation": "World Glacier Monitoring Service. (2023). GTN-G glacier regions (GlacReg) [Data set]. Global Terrestrial Network for Glaciers. https://doi.org/10.5904/gtng-glacreg-2023-07",
   "sci:publications": [
@@ -139,8 +139,8 @@
         "style",
         "default"
       ],
-      "file:size": 3062,
-      "file:checksum": "12200377182e966a01891bae51c954eb6771d0af6c22391f2dca7ca9d19a87304899"
+      "file:size": 3351,
+      "file:checksum": "1220a2c374aceaf9f698400ff120ff75fe277d02330885ef820a70f91c939b3cb898"
     },
     "style-glaciers": {
       "href": "./styles/glaciers.json",
@@ -150,8 +150,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 4248,
-      "file:checksum": "1220f067610ddbf44a681db9b4906e14f78182fc4600b58eca3347500c6537887da1"
+      "file:size": 4537,
+      "file:checksum": "1220b0ab0dc2cee44398c2220ed7392f2df0a7b40f36248d7e82a8467305bb57fc41"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
@@ -160,8 +160,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1043033735,
-      "file:checksum": "12204162686ad312bf91711e1ada32312b3ab635df7c87f8fc544915706eab88d98a"
+      "file:size": 1053353029,
+      "file:checksum": "1220512aaf023dd3d26fbd152346d9270511f4cb2294b9170c7ca2374fafa1b2eb48"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -171,8 +171,8 @@
       "roles": [
         "thumbnail"
       ],
-      "file:size": 30024,
-      "file:checksum": "122049eef15556cfd0aaa6a945b451eabc5ff71c90a3d6b686ee6200eddf6f9c7fbd"
+      "file:size": 43726,
+      "file:checksum": "1220df66911b3d127813d84c9df88342c3dcc16067d1dfa9ed3a1f898723162cb016"
     }
   },
   "links": [
@@ -249,10 +249,11 @@
       "title": "Web map archive (vector tiles)",
       "pmtiles:layers": [
         "regions",
+        "region-boundaries",
         "region-labels"
       ],
-      "file:size": 1043033735,
-      "file:checksum": "12204162686ad312bf91711e1ada32312b3ab635df7c87f8fc544915706eab88d98a"
+      "file:size": 1053353029,
+      "file:checksum": "1220512aaf023dd3d26fbd152346d9270511f4cb2294b9170c7ca2374fafa1b2eb48"
     }
   ]
 }

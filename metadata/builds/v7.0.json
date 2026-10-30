@@ -3,6 +3,7 @@
     "href": "rgi7.0.pmtiles",
     "layers": [
       "regions",
+      "region-boundaries",
       "region-labels",
       "complexes",
       "glaciers",
@@ -826,8 +827,8 @@
       "size": 955336
     },
     "rgi7.0.pmtiles": {
-      "file:checksum": "12204162686ad312bf91711e1ada32312b3ab635df7c87f8fc544915706eab88d98a",
-      "size": 1043033735
+      "file:checksum": "1220512aaf023dd3d26fbd152346d9270511f4cb2294b9170c7ca2374fafa1b2eb48",
+      "size": 1053353029
     }
   },
   "fixes": {
@@ -914,6 +915,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-10-29T10:29:43Z",
+  "updated": "2026-10-30T11:52:44Z",
   "version": "7.0"
 }

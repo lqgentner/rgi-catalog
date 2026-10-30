@@ -18,7 +18,7 @@ The RGI 7.0 user guide describes the
 ## Files
 
 - [`rgi7.0-regions.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/regions/rgi7.0-regions.parquet): 110 rows, 1.0 MB. GeoParquet 2.0.0 in 1 row groups of up to 110 rows, zstd-compressed and ordered along a Hilbert curve. A `bbox` column lets readers skip row groups in a spatial filter.
-- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `regions`, `region-labels`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `long_code`.
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the web map archive (PMTiles, vector tiles, z0 to z12), with the layers `regions`, `region-boundaries`, `region-labels`. The tiles carry every column except the list and struct columns, which vector tiles cannot store: `bbox`. Fetch those from the GeoParquet file by `long_code`.
 ## Map styles
 
 - [Glacier regions](./styles/regions.json) (default): First-order and second-order glacier regions, with their names.

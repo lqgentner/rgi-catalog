@@ -13,8 +13,8 @@
   },
   "layers": [
     {
-      "source-layer": "regions",
-      "id": "regions-outline-2",
+      "source-layer": "region-boundaries",
+      "id": "region-boundaries-2",
       "type": "line",
       "filter": [
         "==",
@@ -26,14 +26,18 @@
       ],
       "minzoom": 3,
       "paint": {
-        "line-color": "#bdbdbd",
-        "line-width": 0.5
+        "line-color": "#9e9e9e",
+        "line-width": 0.8,
+        "line-dasharray": [
+          2.5,
+          2.5
+        ]
       },
       "source": "data"
     },
     {
-      "source-layer": "regions",
-      "id": "regions-outline-1",
+      "source-layer": "region-boundaries",
+      "id": "region-boundaries-1",
       "type": "line",
       "filter": [
         "==",
@@ -44,8 +48,12 @@
         1
       ],
       "paint": {
-        "line-color": "#9e9e9e",
-        "line-width": 0.8
+        "line-color": "#757575",
+        "line-width": 1.2,
+        "line-dasharray": [
+          5,
+          2.5
+        ]
       },
       "source": "data"
     },
@@ -174,8 +182,16 @@
       "maxzoom": 6,
       "layout": {
         "text-field": [
-          "get",
-          "full_name"
+          "concat",
+          [
+            "get",
+            "o1region"
+          ],
+          "\n",
+          [
+            "get",
+            "full_name"
+          ]
         ],
         "text-font": [
           "Open Sans Bold"

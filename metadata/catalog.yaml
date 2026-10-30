@@ -285,7 +285,7 @@ versions:
           one GeoParquet file, one row per region. The web map archive holds
           the boundaries and the names.
         keywords: [glacier regions, GTN-G]
-        pmtiles_layers: [regions, region-labels]
+        pmtiles_layers: [regions, region-boundaries, region-labels]
         # The regions are GTN-G's, with their own citation and terms.
         doi: 10.5904/gtng-glacreg-2023-07
         citation: >-

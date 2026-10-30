@@ -7,7 +7,7 @@
   "id": "rgi-v7-0",
   "title": "RGI 7.0",
   "description": "RGI 7.0, released in 2023. It holds 274,531 glacier outlines with their attributes.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
-  "updated": "2026-10-29T10:29:43Z",
+  "updated": "2026-10-30T11:52:44Z",
   "links": [
     {
       "rel": "root",
@@ -45,8 +45,8 @@
       "type": "image/webp",
       "title": "Thumbnail",
       "description": "The default style of the data, drawn by chiitiler. The world views show the land of Natural Earth, which is in the public domain. The glacier products share one frame, the Garibaldi and Marinelli glaciers in the Cordillera Darwin, on white.",
-      "file:size": 52992,
-      "file:checksum": "1220b2aff70a8e5365144058a8d759b5bc384ae99d55441889c80c648f5170c46679"
+      "file:size": 66992,
+      "file:checksum": "122025e9fbd2fab1c1dd2070d73af963ad39db07613ef13724fee97226181f0a1187"
     },
     {
       "rel": "child",

@@ -307,6 +307,17 @@ schema and the rows of each file equal those of its Hilbert version.
 - **Region labels.** The regions have no label point. The tiles use the
   `point_on_surface` of each region's largest polygon. The label points are
   not a column of the GeoParquet file.
+- **Region boundaries.** Neighbouring polygons store a shared border once
+  each, and a dash pattern drawn twice looks solid. The `region-boundaries`
+  layer holds each border once (`tiles.write_region_boundaries`). Its only
+  column is `level`: 1 where the line bounds a first-order region, else 2.
+  Neighbours often split a border at different vertices, so the outlines are
+  snapped to a grid of 1e-5 degrees (about 1.1 m) and noded. The grid is
+  finer than a z12 tile resolves. The outline that closes regions 10, 19,
+  19-15, 20 and 20-01 at the antimeridian is not a border and is left out.
+  The border of 10-05 and 10-06 at the antimeridian is kept at 180 only.
+  Contiguous lines of one level are merged into one LineString. The 110
+  polygons give 419 lines: 67 of level 1 and 352 of level 2.
 - **Regions license.** The regions are GTN-G's. Their DataCite record states
   "Open access for scientific and educational purposes under requirement of
   correct citation", not CC-BY-4.0. The collection declares `license: other`
@@ -348,6 +359,7 @@ for byte and replaces only the metadata block.
 | `glaciers` | z10–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0 --simplify-factor 0.5` |
 | `glacier-labels` | z7–12 | `--entry-zoom label_minzoom:7=7,…,12=12 --no-density-drop` |
 | `regions` | z0–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0` |
+| `region-boundaries` | z0–12 | as `intersects` |
 | `region-labels` | z0–12 | `--no-density-drop --point-thinning 0` |
 | `complexes` | z0, …, z9, z10–12 | as `glaciers` |
 | `centerlines` | z8–9, z10–12 | `--no-density-drop --line-thinning 0 --line-visibility 0 --no-coalesce-lines --simplify-factor 0.5` |
@@ -359,7 +371,8 @@ Every band from z10 is complete, and so are the region bands.
   attributes of one of them. It is on by default. With it on, z10 kept
   127,439 of 130,429 intersects and z8 lost 4,116 centerlines.
 - **Simplification** at half a GSD still collapsed short divides: z10 kept
-  127,730 intersects. With `--simplify-factor 0` it keeps all of them.
+  127,730 intersects. With `--simplify-factor 0` it keeps all of them. At
+  the default factor z0 kept 261 of 419 region boundaries.
 
 Every band uses `--no-simple-clip-fastpath` and `--include-property` for
 each scalar column (`tile_properties`). List and struct columns
@@ -476,15 +489,18 @@ builds the styles of the glaciers collection.
 | Style | Column | Expression | Legend |
 | --- | --- | --- | --- |
 | `glaciers` (default) | none | outlines and names | no |
-
-Every style draws the region boundaries under its data and the region names
-over it. First-order boundaries show from z0, second-order ones from z3, each
-second-order name under its number (`11-01`). The lines are solid, because
-neighbouring regions share edges and a dash pattern drawn twice breaks up.
 | `median-elevation` | `zmed_m` | `step` at 1,000 m to 5,000 m | 6 classes |
 | `surge-evidence` | `surge_type` | `match` on 0 to 3 | 4 classes |
 | `terminus-type` | `term_type` | `match` on 1 and 9 | 2 classes |
 | `same-as-rgi6` | `is_rgi6` | `match` on the flag | 2 classes |
+
+Every style draws the region boundaries under its data and the region names
+over it. Each name sits under its number (`11`, `11-01`). The boundaries
+come from the `region-boundaries` layer, which stores each border once, so
+the dash patterns stay in step. A first-order boundary is a long dash
+(`[5, 2.5]` line widths, 1.2 px, `#757575`) and shows from z0. A
+second-order boundary is a short dash (`[2.5, 2.5]`, 0.8 px, `#9e9e9e`) and
+shows from z3.
 
 Every style draws the names on top. The names use CARTO's glyphs, which the
 browser's default basemaps also use, in Open Sans Italic.
@@ -550,10 +566,10 @@ docker run -d --rm --name rgi-chiitiler -p 13579:3000 -e CHIITILER_PROCESSES=0 \
 
 A `/clip` bbox may run past 180°. The world thumbnails span 169°W to 191°E,
 once around the world from the border between Alaska and North Asia. No
-region box is cut at the image edges. RGI splits North Asia and the Alaska
-region at 180°, so their split edge shows as a line.
+region box is cut at the image edges. The region boundaries leave out the
+edge that closes North Asia at 180°, so the boundary does not cross it.
 
-## Thumbnails (rendered 2026-10-24)
+## Thumbnails (rendered 2026-10-24 and 2026-10-30)
 
 Each collection, the root catalog and the version catalog have a 1024 px
 WebP thumbnail (quality 85). The images live in `metadata/thumbnails/` at the
@@ -576,6 +592,11 @@ archive and drops its symbol layers. No thumbnail needs a credit:
 | --- | --- | --- |
 | root, `v7.0` | Glaciers | -169,-62.15,191,83 |
 | regions | Glacier regions | -169,-62.15,191,83 |
+
+The world views were rendered again on 2026-10-30 for the dashed region
+boundaries, with the image at digest `sha256:e1e2f6b3c9c1…`. The new
+renders of the glacier frame differed from the old ones in at most 8 pixels,
+so the old images stay.
 | glaciers, complexes, intersects, centerlines | each default | -70.078019,-54.786293,-69.421981,-54.533313 |
 
 The frame holds 232 intersects, ten times the divide length of a frame of the

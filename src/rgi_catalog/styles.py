@@ -24,8 +24,8 @@ COMPLEX_FILL = "#8e24aa"
 COMPLEX_LINE = "#4a148c"
 CENTERLINE_COLOR = "#d55e00"
 INTERSECT_COLOR = "#00897b"
-REGION_LINE = "#9e9e9e"
-REGION_LINE_2 = "#bdbdbd"
+REGION_LINE = "#757575"
+REGION_LINE_2 = "#9e9e9e"
 REGION_LABEL = "#37474f"
 # At world scale a glacier is smaller than a pixel, so a fill alone draws
 # nothing. An outline of about one pixel keeps every tiled glacier visible.
@@ -75,12 +75,13 @@ def _region_labels(level: int, minzoom: int, maxzoom: int, size: int) -> dict[st
         "minzoom": minzoom,
         "maxzoom": maxzoom,
         "layout": {
-            # A second-order region shows its number above its name.
-            "text-field": (
-                ["get", "full_name"]
-                if level == 1
-                else ["concat", ["get", "o2region"], "\n", ["get", "full_name"]]
-            ),
+            # A region shows its number above its name.
+            "text-field": [
+                "concat",
+                ["get", "o1region" if level == 1 else "o2region"],
+                "\n",
+                ["get", "full_name"],
+            ],
             "text-font": REGION_FONTS[level],
             "text-size": size,
             "text-transform": "uppercase" if level == 1 else "none",
@@ -113,23 +114,30 @@ LABELS: dict[str, Any] = {
 
 # The style layers that draw each archive layer, bottom to top.
 LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
-    # Boundaries only. The regions style adds the fill that gives its legend.
-    # Neighbouring regions share edges, which a dash pattern draws twice out
-    # of step, so the lines are solid. A first-order edge is drawn over the
-    # second-order edge it shares.
-    "regions": [
+    # The archive stores each border once, so a dash pattern stays in step.
+    # A first-order border is a long dash, a second-order border a short one,
+    # thinner and lighter. A dash is measured in line widths.
+    "region-boundaries": [
         {
-            "id": "regions-outline-2",
+            "id": "region-boundaries-2",
             "type": "line",
             "filter": ["==", ["get", "level"], 2],
             "minzoom": 3,
-            "paint": {"line-color": REGION_LINE_2, "line-width": 0.5},
+            "paint": {
+                "line-color": REGION_LINE_2,
+                "line-width": 0.8,
+                "line-dasharray": [2.5, 2.5],
+            },
         },
         {
-            "id": "regions-outline-1",
+            "id": "region-boundaries-1",
             "type": "line",
             "filter": ["==", ["get", "level"], 1],
-            "paint": {"line-color": REGION_LINE, "line-width": 0.8},
+            "paint": {
+                "line-color": REGION_LINE,
+                "line-width": 1.2,
+                "line-dasharray": [5, 2.5],
+            },
         },
     ],
     "region-labels": [_region_labels(1, 1, 6, 12), _region_labels(2, 4, 9, 11)],
@@ -163,11 +171,14 @@ LAYER_STYLES: dict[str, list[dict[str, Any]]] = {
     ],
     "glacier-labels": [LABELS],
 }
-ARCHIVE_LAYERS = tuple(LAYER_STYLES)
-GLACIERS_LAYERS = ("regions", "glaciers", "region-labels", "glacier-labels")
+# The region polygons give only the fill of the regions style.
+ARCHIVE_LAYERS = ("regions", *LAYER_STYLES)
+GLACIERS_LAYERS = ("region-boundaries", "glaciers", "region-labels", "glacier-labels")
 # The region boundaries, drawn under the data of every style, and the region
 # names, drawn over it.
-BOUNDARIES = [{"source-layer": "regions", **spec} for spec in LAYER_STYLES["regions"]]
+BOUNDARIES = [
+    {"source-layer": "region-boundaries", **spec} for spec in LAYER_STYLES["region-boundaries"]
+]
 REGION_NAMES = [
     {"source-layer": "region-labels", **spec} for spec in LAYER_STYLES["region-labels"]
 ]
@@ -443,7 +454,7 @@ def _own_style(name: str, archive_href: str) -> dict[str, Any]:
         "Glacier regions",
         "First-order and second-order glacier regions, with their names.",
         archive_href,
-        [fill, *_layers_of(["regions", "region-labels"])],
+        [fill, *_layers_of(["region-boundaries", "region-labels"])],
     )
 
 
