@@ -362,14 +362,17 @@ for byte and replaces only the metadata block.
 | `region-boundaries` | z0–12 | as `intersects` |
 | `region-labels` | z0–12 | `--no-density-drop --point-thinning 0` |
 | `complexes` | z0, …, z9, z10–12 | as `glaciers` |
-| `centerlines` | z8–9, z10–12 | `--no-density-drop --line-thinning 0 --line-visibility 0 --no-coalesce-lines --simplify-factor 0.5` |
-| `intersects` | z10–12 | as `centerlines`, with `--simplify-factor 0` |
+| `centerlines` | z8 (`is_main` only), z9, z10–12 | `--no-density-drop --line-thinning 0 --line-visibility 0 --no-coalesce-lines --simplify-factor 0.5` |
+| `intersects` | z9–12 | as `centerlines`, with `--simplify-factor 0` |
 
-Every band from z10 is complete, and so are the region bands.
+Every band from z10 is complete, and so are the region bands and the
+centerline and intersects bands from z9.
 
 - **Line coalescing** joins touching segments into one feature with the
   attributes of one of them. It is on by default. With it on, z10 kept
   127,439 of 130,429 intersects and z8 lost 4,116 centerlines.
+- **Band edges.** A band of z9–12 lost one centerline at z9. A band of z9
+  alone kept all 367,724.
 - **Simplification** at half a GSD still collapsed short divides: z10 kept
   127,730 intersects. With `--simplify-factor 0` it keeps all of them. At
   the default factor z0 kept 261 of 419 region boundaries.
@@ -592,16 +595,16 @@ archive and drops its symbol layers. No thumbnail needs a credit:
 | --- | --- | --- |
 | root, `v7.0` | Glaciers | -169,-62.15,191,83 |
 | regions | Glacier regions | -169,-62.15,191,83 |
+| glaciers, complexes, intersects, centerlines | each default | -70.078019,-54.786293,-69.421981,-54.533313 |
 
 The world views were rendered again on 2026-10-30 for the dashed region
 boundaries, with the image at digest `sha256:e1e2f6b3c9c1…`. The new
 renders of the glacier frame differed from the old ones in at most 8 pixels,
 so the old images stay.
-| glaciers, complexes, intersects, centerlines | each default | -70.078019,-54.786293,-69.421981,-54.533313 |
 
 The frame holds 232 intersects, ten times the divide length of a frame of the
-Baltoro glacier at map zoom 11. At exactly map zoom 10 chiitiler drew the z9
-tiles, which hold no intersects, so the frame sits at zoom 10.1.
+Baltoro glacier at map zoom 11. At exactly map zoom 10 chiitiler draws the
+z9 tiles, which hold the glacier overview, so the frame sits at zoom 10.1.
 
 chiitiler can answer `/clip` before every tile has loaded. A long-running
 server also dropped a whole layer from a render. The script therefore

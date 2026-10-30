@@ -13,7 +13,7 @@
   ],
   "id": "rgi-v7-0-intersects",
   "title": "RGI 7.0 glacier intersects",
-  "description": "One row per intersect: a line that divides two adjacent glaciers, with the IDs of both glaciers, in one GeoParquet file. The web map archive holds the lines from z10.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "description": "One row per intersect: a line that divides two adjacent glaciers, with the IDs of both glaciers, in one GeoParquet file. The web map archive holds the lines from z9.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "license": "CC-BY-4.0",
   "keywords": [
     "glaciers",
@@ -25,7 +25,7 @@
     "glacier divides"
   ],
   "version": "7.0-r1",
-  "updated": "2026-10-30T11:52:44Z",
+  "updated": "2026-10-30T15:38:06Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -130,13 +130,13 @@
       "href": "./styles/intersects.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Intersects",
-      "description": "Intersects, the divides between adjacent glaciers, from z10, over the glacier outlines.",
+      "description": "Intersects, the divides between adjacent glaciers, from z9, over the glacier outlines.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 4834,
-      "file:checksum": "12206eda7faaf318faf55de1616fac997cbd6ece56fae72323550d1d3ee8817277fc"
+      "file:size": 4833,
+      "file:checksum": "1220c69c94c5a28405f0d8ea14b10468f0d0a6e401ee2f2c356853024f98bf16844d"
     },
     "style-glaciers": {
       "href": "./styles/glaciers.json",
@@ -156,8 +156,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1053353029,
-      "file:checksum": "1220512aaf023dd3d26fbd152346d9270511f4cb2294b9170c7ca2374fafa1b2eb48"
+      "file:size": 1066646703,
+      "file:checksum": "1220b42b7000e25e751bef03dc53b85ae4238841ca5c78d51fe32580b8ce6e0d0289"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -246,8 +246,8 @@
       "pmtiles:layers": [
         "intersects"
       ],
-      "file:size": 1053353029,
-      "file:checksum": "1220512aaf023dd3d26fbd152346d9270511f4cb2294b9170c7ca2374fafa1b2eb48"
+      "file:size": 1066646703,
+      "file:checksum": "1220b42b7000e25e751bef03dc53b85ae4238841ca5c78d51fe32580b8ce6e0d0289"
     }
   ]
 }

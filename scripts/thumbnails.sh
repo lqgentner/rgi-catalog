@@ -21,9 +21,9 @@ trap 'rm -rf "$WORK"' EXIT
 # box is cut at the image edges.
 WORLD="-169,-62.15,191,83"
 # The Garibaldi and Marinelli glaciers, Cordillera Darwin, just above map
-# zoom 10, where the intersects start. At exactly z10 chiitiler draws the z9
-# tiles, which have no intersects. The four glacier products share this frame,
-# so they compare at a glance.
+# zoom 10, where the tiles hold every glacier. At exactly z10 chiitiler draws
+# the z9 tiles, which hold the glacier overview. The four glacier products
+# share this frame, so they compare at a glance.
 FRAME="-70.078019,-54.786293,-69.421981,-54.533313"
 
 clip() {  # style bbox size out format

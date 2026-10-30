@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Intersects",
   "metadata": {
-    "description": "Intersects, the divides between adjacent glaciers, from z10, over the glacier outlines."
+    "description": "Intersects, the divides between adjacent glaciers, from z9, over the glacier outlines."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {

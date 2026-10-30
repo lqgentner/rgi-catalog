@@ -434,13 +434,18 @@ def _own_style(name: str, archive_href: str) -> dict[str, Any]:
         )
     if name in {"centerlines", "intersects"}:
         what = {
-            "centerlines": "Glacier centerlines, the main centerline wider",
-            "intersects": "Intersects, the divides between adjacent glaciers",
+            "centerlines": (
+                "Glacier centerlines over the glacier outlines: the main "
+                "centerlines, drawn wider, from z8, the others from z9."
+            ),
+            "intersects": (
+                "Intersects, the divides between adjacent glaciers, from z9, "
+                "over the glacier outlines."
+            ),
         }[name]
-        zoom = {"centerlines": "z8", "intersects": "z10"}[name]
         return _style(
             name.capitalize(),
-            f"{what}, from {zoom}, over the glacier outlines.",
+            what,
             archive_href,
             [*BOUNDARIES, *GLACIER_CONTEXT, *_layers_of([name]), *REGION_NAMES, labels],
         )

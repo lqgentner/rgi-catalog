@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Centerlines",
   "metadata": {
-    "description": "Glacier centerlines, the main centerline wider, from z8, over the glacier outlines."
+    "description": "Glacier centerlines over the glacier outlines: the main centerlines, drawn wider, from z8, the others from z9."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {

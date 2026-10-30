@@ -205,7 +205,7 @@ versions:
         description: >-
           One row per intersect: a line that divides two adjacent glaciers,
           with the IDs of both glaciers, in one GeoParquet file. The web map
-          archive holds the lines from z10.
+          archive holds the lines from z9.
         keywords: [glacier divides]
         pmtiles_layers: [intersects]
         layout:
@@ -235,7 +235,8 @@ versions:
         description: >-
           One row per centerline: the main centerline and the tributary
           centerlines of every glacier, with RGI's attributes, in one
-          GeoParquet file. The web map archive holds the lines from z8.
+          GeoParquet file. The web map archive holds the main centerlines
+          from z8 and the others from z9.
         keywords: [glacier centerlines, glacier length]
         pmtiles_layers: [centerlines]
         layout:

@@ -399,6 +399,20 @@ def test_write_region_boundaries_draws_each_border_once(tmp_path: Path) -> None:
     assert np.isclose(lengths, 20.0).sum() == 1
 
 
+def test_write_main_centerlines_keeps_the_main_lines(tmp_path: Path) -> None:
+    lines = gpd.GeoDataFrame(
+        {"rgi_id": ["a", "a", "b"], "is_main": [True, False, True]},
+        geometry=shapely.linestrings([[(0, 0), (1, 1)], [(0, 1), (1, 1)], [(2, 2), (3, 3)]]),
+        crs="OGC:CRS84",
+    )
+    lines.to_parquet(tmp_path / "c.parquet")
+    main = gpd.read_parquet(
+        tiles.write_main_centerlines(tmp_path / "c.parquet", tmp_path / "m.parquet")
+    )
+    assert main["is_main"].all()
+    assert list(main["rgi_id"]) == ["a", "b"]
+
+
 def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     paths = {name: tmp_path / f"{name}.parquet" for name in tiles.ARCHIVE_PRODUCTS}
     zooms = range(tiles.GLACIERS_COMPLETE_ZOOM)
@@ -411,6 +425,7 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         tmp_path / "labels.parquet",
         tmp_path / "rl.parquet",
         tmp_path / "rb.parquet",
+        tmp_path / "main.parquet",
         overviews,
     )
     assert {layer.name for layer in layers} == {
@@ -430,9 +445,19 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         ("region-labels", 0, tiles.MAXZOOM),
         ("complexes", tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM),
         ("glaciers", tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM),
-        ("centerlines", tiles.GLACIERS_COMPLETE_ZOOM, tiles.MAXZOOM),
+        ("centerlines", tiles.INTERSECTS_MINZOOM, tiles.INTERSECTS_MINZOOM),
+        ("centerlines", tiles.INTERSECTS_MINZOOM + 1, tiles.MAXZOOM),
         ("intersects", tiles.INTERSECTS_MINZOOM, tiles.MAXZOOM),
     }
+    # The main centerlines come first. The other centerlines enter with the
+    # divides.
+    first = {
+        name: min(b.minzoom for b in layers if b.name == name)
+        for name in ("centerlines", "intersects")
+    }
+    assert first["intersects"] == first["centerlines"] + 1
+    main_band = [b for b in layers if b.source == tmp_path / "main.parquet"]
+    assert [(b.minzoom, b.maxzoom) for b in main_band] == [(first["centerlines"],) * 2]
     for layer in layers:
         if layer.name in {"region-boundaries", "centerlines", "intersects"} and layer.complete:
             assert "--no-coalesce-lines" in layer.extra_args

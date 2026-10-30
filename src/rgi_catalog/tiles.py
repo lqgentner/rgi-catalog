@@ -352,9 +352,11 @@ LINE_COMPLETE = (
     "0",
     "--no-coalesce-lines",
 )
+# The main centerline of each glacier enters at CENTERLINES_MINZOOM. The
+# other centerlines and the intersects, the divides between glaciers, enter
+# a zoom later. At z8 they crowd the main lines.
 CENTERLINES_MINZOOM = 8
-# Intersects are divides between glaciers, readable only at high zooms.
-INTERSECTS_MINZOOM = 10
+INTERSECTS_MINZOOM = CENTERLINES_MINZOOM + 1
 # Neighbouring regions split a shared border at different vertices. On this
 # grid the outlines node into one set of lines. A degree of 1e-5 is about
 # 1.1 m, finer than the 2.4 m that a z12 tile resolves.
@@ -544,11 +546,33 @@ def write_region_boundaries(regions_parquet: Path, out: Path) -> Path:
     return out
 
 
+def write_main_centerlines(centerlines: Path, out: Path) -> Path:
+    """Write the main centerline of each glacier, for the first centerline zoom.
+
+    Parameters
+    ----------
+    centerlines
+        The centerlines GeoParquet file.
+    out
+        The GeoParquet file to write.
+
+    Returns
+    -------
+    Path
+        ``out``.
+    """
+    main = gpd.read_parquet(centerlines, filters=[("is_main", "==", True)])
+    out.parent.mkdir(parents=True, exist_ok=True)
+    main.to_parquet(out, index=False)
+    return out
+
+
 def version_layers(
     products: dict[str, Path],
     labels: Path,
     region_labels: Path,
     region_boundaries: Path,
+    main_centerlines: Path,
     overviews: dict[str, dict[int, Path]],
 ) -> list[LayerSpec]:
     """Return the bands of every layer of the archive, bottom to top.
@@ -563,6 +587,8 @@ def version_layers(
         The region label file from :func:`write_region_labels`.
     region_boundaries
         The region boundary file from :func:`write_region_boundaries`.
+    main_centerlines
+        The main centerline file from :func:`write_main_centerlines`.
     overviews
         The overview inputs of the glaciers and the complexes, by layer name,
         from :func:`write_overview`.
@@ -571,10 +597,9 @@ def version_layers(
     -------
     list[LayerSpec]
         The regions, their boundaries and their labels at every zoom. The complexes and the
-        glaciers as in :func:`glacier_layers`. The centerlines from
-        :data:`CENTERLINES_MINZOOM`, all of them from
-        :data:`GLACIERS_COMPLETE_ZOOM`. The intersects from
-        :data:`INTERSECTS_MINZOOM`, all of them.
+        glaciers as in :func:`glacier_layers`. The main centerlines at
+        :data:`CENTERLINES_MINZOOM`. From :data:`INTERSECTS_MINZOOM` all of
+        the centerlines and all of the intersects.
     """
     lines = (*LINE_COMPLETE, "--simplify-factor", "0.5")
     return [
@@ -613,17 +638,28 @@ def version_layers(
             complete=True,
         ),
         *glacier_layers(products["glaciers"], labels, overviews["glaciers"]),
+        # Main centerlines only. Eleven z8 tiles exceed the size limit.
+        LayerSpec(
+            "centerlines",
+            main_centerlines,
+            CENTERLINES_MINZOOM,
+            INTERSECTS_MINZOOM - 1,
+            lines,
+        ),
+        # As the first zoom of a z9-12 band, z9 loses one short centerline.
+        # As a band of its own it keeps all of them.
         LayerSpec(
             "centerlines",
             products["centerlines"],
-            CENTERLINES_MINZOOM,
-            GLACIERS_COMPLETE_ZOOM - 1,
+            INTERSECTS_MINZOOM,
+            INTERSECTS_MINZOOM,
             lines,
+            complete=True,
         ),
         LayerSpec(
             "centerlines",
             products["centerlines"],
-            GLACIERS_COMPLETE_ZOOM,
+            INTERSECTS_MINZOOM + 1,
             MAXZOOM,
             lines,
             complete=True,
@@ -856,6 +892,9 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
     region_boundaries = write_region_boundaries(
         products["regions"], work / "region-boundaries.parquet"
     )
+    main_centerlines = write_main_centerlines(
+        products["centerlines"], work / "main-centerlines.parquet"
+    )
     # The overview inputs hold most outlines once per zoom. They go once the
     # archive is built.
     with tempfile.TemporaryDirectory(dir=work, prefix="overview-") as tmp:
@@ -864,7 +903,9 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
             for name, columns in OVERVIEW_COLUMNS.items()
         }
         return build_archive(
-            version_layers(products, labels, region_labels, region_boundaries, overviews),
+            version_layers(
+                products, labels, region_labels, region_boundaries, main_centerlines, overviews
+            ),
             archive_path(staging, version),
             name=ARCHIVE_NAME,
             attribution=ARCHIVE_ATTRIBUTION,
