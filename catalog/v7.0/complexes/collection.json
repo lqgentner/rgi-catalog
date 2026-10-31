@@ -133,7 +133,7 @@
         {
           "name": "glacier_ids",
           "type": "list<element: string>",
-          "description": "The rgi_id of every glacier in this complex, sorted, from the CtoG_links.json file. Its keys are \"the glacier complex identifiers\" and its values \"the corresponding glacier product identifiers (one or more depending on the size of the cluster)\"."
+          "description": "The identifiers of the glaciers in the glacier complex, sorted (one or more depending on the size of the cluster)."
         },
         {
           "name": "geometry",

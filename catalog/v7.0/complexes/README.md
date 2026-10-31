@@ -72,7 +72,7 @@ Open it from the Web menu and select this collection.
 | `cenlat` | `double` | Latitude of the representative point of the glacier complex, guaranteed to be located within the glacier outlines and approximatively central (not the centroid). (degrees) |
 | `utm_zone` | `uint8` | Number of the UTM zone for this glacier complex, based on its representative point. Note that this attribute is for information only, the geometries are all in WGS84. |
 | `area_km2` | `double` | Area of the glacier complex. (km2) |
-| `glacier_ids` | `list<element: string>` | The rgi_id of every glacier in this complex, sorted, from the CtoG_links.json file. Its keys are "the glacier complex identifiers" and its values "the corresponding glacier product identifiers (one or more depending on the size of the cluster)". |
+| `glacier_ids` | `list<element: string>` | The identifiers of the glaciers in the glacier complex, sorted (one or more depending on the size of the cluster). |
 | `geometry` | `binary` | Glacier complex geometry (Polygon) (deg) |
 | `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
 

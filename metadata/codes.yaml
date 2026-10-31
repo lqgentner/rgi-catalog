@@ -4,7 +4,7 @@
 # the title "Undefined".
 
 term_type:
-  source: https://rgidata.org/user_guide/products/glacier_product.html
+  source: https://rgidata.org/user_guide/products/glacier_product.html#terminus-type
   note: >-
     "All glaciers in RGI 7.0 have been assigned the "Not assigned" category,
     except for the marine-terminating". "As of RGI 7.0, no region or glacier
@@ -18,7 +18,7 @@ term_type:
     9: Not assigned
 
 surge_type:
-  source: https://rgidata.org/user_guide/products/glacier_product.html
+  source: https://rgidata.org/user_guide/products/glacier_product.html#surge-type
   classes:
     0: No evidence
     1: Possible
@@ -27,7 +27,7 @@ surge_type:
     9: Not assigned
 
 primeclass:
-  source: https://rgidata.org/user_guide/products/glacier_product.html
+  source: https://rgidata.org/user_guide/products/glacier_product.html#wgms-primary-classification
   note: >-
     "It is currently poorly populated, with only few submissions to GLIMS
     having provided this information."
@@ -45,7 +45,7 @@ primeclass:
     10: Undefined
 
 aspect_sec:
-  source: https://rgidata.org/user_guide/products/glacier_product.html
+  source: https://rgidata.org/user_guide/products/glacier_product.html#slope-attributes
   classes:
     1: North
     2: North-east
@@ -64,7 +64,7 @@ conn_lvl:
     1: Weak connection
 
 dem_source:
-  source: https://rgidata.org/user_guide/products/glacier_product.html
+  source: https://rgidata.org/user_guide/products/glacier_product.html#topography-attributes
   note: >-
     "The main DEM product used for RGI 7.0 is the Copernicus DEM". "For all
     glaciers which grid size is below 60 m we use the 30 m COP-DEM product as

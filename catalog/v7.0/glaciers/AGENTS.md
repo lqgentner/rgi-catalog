@@ -20,7 +20,8 @@ The RGI 7.0 user guide describes the
 rows, one per glacier. The column descriptions are in
 `assets.data["table:columns"]` of `collection.json`, with RGI's own text for
 the upstream columns. Coded columns carry their meanings in
-`classification:classes`.
+`classification:classes`. Their descriptions leave out RGI's pointer to the
+user guide.
 
 ## Recipes
 

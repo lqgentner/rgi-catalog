@@ -78,10 +78,10 @@ Open it from the Web menu and select this collection.
 | `cenlat` | `double` | Latitude of an approximately central point within the glacier outlines (not the centroid). (degrees) |
 | `utm_zone` | `uint8` | Number of the UTM zone for this glacier, based on its representative point. Note that this attribute is for information only, the geometries are all in WGS84. |
 | `area_km2` | `double` | Area of the glacier. (km2) |
-| `primeclass` | `uint8` | WGMS primary classification of the glacier. For a categories description, see user guide. |
-| `conn_lvl` | `uint8` | Level of connection to the Greenland Icesheet (0: no connection; 1: weak connection). |
-| `surge_type` | `uint8` | Flag indicating if surging behavior has been documented for this glacier. For a categories description, see user guide. |
-| `term_type` | `uint8` | Flag indicating the terminus type of the glacier. For a categories description, see user guide. |
+| `primeclass` | `uint8` | WGMS primary classification of the glacier. See [Coded columns](#coded-columns). |
+| `conn_lvl` | `uint8` | Level of connection to the Greenland Icesheet (0: no connection; 1: weak connection). See [Coded columns](#coded-columns). |
+| `surge_type` | `uint8` | Flag indicating if surging behavior has been documented for this glacier. See [Coded columns](#coded-columns). |
+| `term_type` | `uint8` | Flag indicating the terminus type of the glacier. See [Coded columns](#coded-columns). |
 | `glac_name` | `string` | Glacier name (when available). |
 | `is_rgi6` | `bool` | Flag indicating if the outline is the same as in RGI 6.0 (1) or was remapped (0). Note that it does not guarantee strict equivalence of the polygon (in most of the cases it does). |
 | `termlon` | `double` | Longitude of the lowest elevation point on the glacier outline. (degrees) |
@@ -92,31 +92,32 @@ Open it from the Web menu and select this collection.
 | `zmean_m` | `double` | Mean elevation (m above sea level) of the glacier. (m) |
 | `slope_deg` | `double` | Mean slope of the glacier surface. (degrees) |
 | `aspect_deg` | `double` | The aspect (orientation) of the glacier surface presented as an azimuth relative to 0° at due north. (degrees) |
-| `aspect_sec` | `uint8` | The aspect (orientation) of the glacier surface presented as a category. For a categories description, see user guide. |
-| `dem_source` | `string` | The name of the dataset that was used to compute the topography attributes. |
+| `aspect_sec` | `uint8` | The aspect (orientation) of the glacier surface presented as a category. See [Coded columns](#coded-columns). |
+| `dem_source` | `string` | The name of the dataset that was used to compute the topography attributes. See [Coded columns](#coded-columns). |
 | `lmax_m` | `uint32` | Length (m) of the longest surface centerline of the glacier. (m) |
-| `display_name` | `string` | Derived from glac_name for map labels: inventory codes such as CN5Y673P0037 removed, names in capitals re-cased, and placeholders such as S/N set to null. Null when no usable name is left. glac_name keeps RGI's value. The rules are in docs/PROVENANCE.md. |
-| `complex_id` | `string` | The rgi_id of the glacier complex that holds this glacier, from the CtoG_links.json file of the glacier complex product. That file links "the glacier complex to the glacier products, in a JSON dictionary". |
-| `hypso_z0_m` | `int32` | Central elevation of the first band of hypso_permille, in m. The band n has the central elevation hypso_z0_m + 50 * n. "The elevation bands are all 50 m in height." (m) |
-| `hypso_permille` | `list<element: int16>` | The glacier's hypsometry from the hypsometry.csv file: "elevation-band areas in the form of integer thousandths of the glacier's total area in km² (area_km2)". The values sum to 1000. Empty bands below the lowest and above the highest glacierized band are left out. |
-| `rgi6_links` | `list` | The overlaps with RGI 6.0 outlines from the corrected rgi6_links.csv file, one struct per overlap, empty when there is none. The file lists "all overlaps (greater than 200 m²) between pairs of RGI 7.0 and RGI 6.0 glacier outlines". Fields: rgi6_id, rgi7_reg, rgi6_reg, overlap_area_km2, rgi7_area_fraction (overlap divided by the RGI 7.0 area), rgi6_area_fraction (overlap divided by the RGI 6.0 area), cluster_id, n_rgi7 (RGI 7.0 outlines that overlap the RGI 6.0 outline) and n_rgi6 (RGI 6.0 outlines that overlap the RGI 7.0 outline). |
-| `subm_n_outlines` | `uint32` | "Number of outlines from this submission used in RGI 7.0." From the submission_info.csv file of the glacier's first-order region, so it counts the outlines of that region. |
-| `subm_anlys_time` | `timestamp[us]` | "Representative time the outline analysis was carried out." |
-| `subm_release_dt` | `timestamp[us]` | "Date at which the submission was realeased on GLIMS." |
-| `subm_proc_desc` | `string` | "Description of the processing done to create the glacier outlines." |
-| `subm_chief_affl` | `string` | "Affiliation of the chief of the regional center or the person(s) who submitted the data." |
-| `subm_submitters` | `string` | "Person(s) who submitted the data." |
-| `subm_analysts` | `string` | "Person(s) who created the data." |
-| `subm_rc_id` | `uint16` | "GLIMS ID for the regional center." |
+| `display_name` | `string` | The glacier name for map labels, cleaned from glac_name. Null when glac_name holds no usable name. The rules are in docs/PROVENANCE.md. |
+| `complex_id` | `string` | The identifier of the glacier complex to which the glacier belongs. |
+| `hypso_z0_m` | `int32` | Central elevation of the first elevation band of hypso_permille. The elevation bands are all 50 m in height, so band n is centered at hypso_z0_m + 50 * n. (m) |
+| `hypso_permille` | `list<element: int16>` | Hypsometry of the glacier, as elevation-band areas in integer thousandths of the glacier's total area (area_km2). The values sum to 1000. Empty bands at either end are left out. |
+| `rgi6_links` | `list` | All overlaps (greater than 200 m²) with RGI 6.0 glacier outlines, one entry per overlap. Empty when there is none. Each entry gives the RGI 6.0 outline (rgi6_id), the overlap area (overlap_area_km2), and the overlap as a fraction of each outline's area (rgi7_area_fraction, rgi6_area_fraction). |
+| `subm_n_outlines` | `uint32` | Number of outlines from this submission used in RGI 7.0, in the glacier's first-order region. |
+| `subm_anlys_time` | `timestamp[us]` | Representative time the outline analysis was carried out. |
+| `subm_release_dt` | `timestamp[us]` | Date at which the submission was released on GLIMS. |
+| `subm_proc_desc` | `string` | Description of the processing done to create the glacier outlines. |
+| `subm_chief_affl` | `string` | Affiliation of the chief of the regional center or the person(s) who submitted the data. |
+| `subm_submitters` | `string` | Person(s) who submitted the data. |
+| `subm_analysts` | `string` | Person(s) who created the data. |
+| `subm_rc_id` | `uint16` | GLIMS ID for the regional center. |
 | `geometry` | `binary` | Glacier geometry (Polygon) (deg) |
 | `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
 
 ## Coded columns
 
-The codes and their meanings are from the
-[RGI 7.0 user guide](https://rgidata.org/user_guide/).
+The codes and their meanings are from the RGI 7.0 user guide.
 
 ### `primeclass`
+
+From the [RGI 7.0 user guide](https://rgidata.org/user_guide/products/glacier_product.html#wgms-primary-classification).
 
 | Value | Meaning |
 | --- | --- |
@@ -136,12 +137,16 @@ The codes and their meanings are from the
 
 ### `conn_lvl`
 
+From the [RGI 7.0 user guide](https://rgidata.org/user_guide/products/glacier_product.html).
+
 | Value | Meaning |
 | --- | --- |
 | `0` | No connection |
 | `1` | Weak connection |
 
 ### `surge_type`
+
+From the [RGI 7.0 user guide](https://rgidata.org/user_guide/products/glacier_product.html#surge-type).
 
 | Value | Meaning |
 | --- | --- |
@@ -152,6 +157,8 @@ The codes and their meanings are from the
 | `9` | Not assigned |
 
 ### `term_type`
+
+From the [RGI 7.0 user guide](https://rgidata.org/user_guide/products/glacier_product.html#terminus-type).
 
 | Value | Meaning |
 | --- | --- |
@@ -164,6 +171,8 @@ The codes and their meanings are from the
 "All glaciers in RGI 7.0 have been assigned the "Not assigned" category, except for the marine-terminating". "As of RGI 7.0, no region or glacier has any attributes available for lake-terminating or shelf-terminating glaciers."
 
 ### `aspect_sec`
+
+From the [RGI 7.0 user guide](https://rgidata.org/user_guide/products/glacier_product.html#slope-attributes).
 
 | Value | Meaning |
 | --- | --- |
@@ -178,6 +187,8 @@ The codes and their meanings are from the
 | `9` | Not assigned |
 
 ### `dem_source`
+
+From the [RGI 7.0 user guide](https://rgidata.org/user_guide/products/glacier_product.html#topography-attributes).
 
 | Value | Meaning |
 | --- | --- |

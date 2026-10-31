@@ -2,76 +2,67 @@
 # describe: derived columns and columns folded in from side files. The
 # upstream columns take RGI's own text from that file.
 #
-# Every description is quoted from the cited source or measured from the data.
+# Every description follows the wording of the cited source or is measured
+# from the data.
 
 glaciers:
   display_name:
     description: >-
-      Derived from glac_name for map labels: inventory codes such as
-      CN5Y673P0037 removed, names in capitals re-cased, and placeholders such
-      as S/N set to null. Null when no usable name is left. glac_name keeps
-      RGI's value. The rules are in docs/PROVENANCE.md.
+      The glacier name for map labels, cleaned from glac_name. Null when
+      glac_name holds no usable name. The rules are in docs/PROVENANCE.md.
     source: https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md
   complex_id:
-    description: >-
-      The rgi_id of the glacier complex that holds this glacier, from the
-      CtoG_links.json file of the glacier complex product. That file links
-      "the glacier complex to the glacier products, in a JSON dictionary".
+    description: The identifier of the glacier complex to which the glacier belongs.
     source: https://rgidata.org/user_guide/products/glacier_complex_product.html
   hypso_z0_m:
     description: >-
-      Central elevation of the first band of hypso_permille, in m. The band
-      n has the central elevation hypso_z0_m + 50 * n. "The elevation bands
-      are all 50 m in height."
+      Central elevation of the first elevation band of hypso_permille. The
+      elevation bands are all 50 m in height, so band n is centered at
+      hypso_z0_m + 50 * n.
     unit: m
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+    source: https://rgidata.org/user_guide/products/glacier_product.html#product-files
   hypso_permille:
     description: >-
-      The glacier's hypsometry from the hypsometry.csv file: "elevation-band
-      areas in the form of integer thousandths of the glacier's total area in
-      km² (area_km2)". The values sum to 1000. Empty bands below the lowest
-      and above the highest glacierized band are left out.
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+      Hypsometry of the glacier, as elevation-band areas in integer
+      thousandths of the glacier's total area (area_km2). The values sum to
+      1000. Empty bands at either end are left out.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#product-files
   rgi6_links:
     description: >-
-      The overlaps with RGI 6.0 outlines from the corrected rgi6_links.csv
-      file, one struct per overlap, empty when there is none. The file lists
-      "all overlaps (greater than 200 m²) between pairs of RGI 7.0 and RGI 6.0
-      glacier outlines". Fields: rgi6_id, rgi7_reg, rgi6_reg,
-      overlap_area_km2, rgi7_area_fraction (overlap divided by the RGI 7.0
-      area), rgi6_area_fraction (overlap divided by the RGI 6.0 area),
-      cluster_id, n_rgi7 (RGI 7.0 outlines that overlap the RGI 6.0 outline)
-      and n_rgi6 (RGI 6.0 outlines that overlap the RGI 7.0 outline).
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+      All overlaps (greater than 200 m²) with RGI 6.0 glacier outlines, one
+      entry per overlap. Empty when there is none. Each entry gives the RGI
+      6.0 outline (rgi6_id), the overlap area (overlap_area_km2), and the
+      overlap as a fraction of each outline's area (rgi7_area_fraction,
+      rgi6_area_fraction).
+    source: https://rgidata.org/user_guide/products/glacier_product.html#product-files
   subm_n_outlines:
     description: >-
-      "Number of outlines from this submission used in RGI 7.0." From the
-      submission_info.csv file of the glacier's first-order region, so it
-      counts the outlines of that region.
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+      Number of outlines from this submission used in RGI 7.0, in the
+      glacier's first-order region.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_anlys_time:
-    description: '"Representative time the outline analysis was carried out."'
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+    description: Representative time the outline analysis was carried out.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_release_dt:
-    description: '"Date at which the submission was realeased on GLIMS."'
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+    description: Date at which the submission was released on GLIMS.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_proc_desc:
-    description: '"Description of the processing done to create the glacier outlines."'
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+    description: Description of the processing done to create the glacier outlines.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_chief_affl:
     description: >-
-      "Affiliation of the chief of the regional center or the person(s) who
-      submitted the data."
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+      Affiliation of the chief of the regional center or the person(s) who
+      submitted the data.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_submitters:
-    description: '"Person(s) who submitted the data."'
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+    description: Person(s) who submitted the data.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_analysts:
-    description: '"Person(s) who created the data."'
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+    description: Person(s) who created the data.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_rc_id:
-    description: '"GLIMS ID for the regional center."'
-    source: https://rgidata.org/user_guide/products/glacier_product.html
+    description: GLIMS ID for the regional center.
+    source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   bbox: &bbox
     description: >-
       The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet
@@ -81,10 +72,8 @@ glaciers:
 complexes:
   glacier_ids:
     description: >-
-      The rgi_id of every glacier in this complex, sorted, from the
-      CtoG_links.json file. Its keys are "the glacier complex identifiers" and
-      its values "the corresponding glacier product identifiers (one or more
-      depending on the size of the cluster)".
+      The identifiers of the glaciers in the glacier complex, sorted (one or
+      more depending on the size of the cluster).
     source: https://rgidata.org/user_guide/products/glacier_complex_product.html
   bbox: *bbox
 
@@ -104,8 +93,7 @@ regions:
     source: https://rgidata.org/user_guide/02_regions_definition.html
   o1region:
     description: >-
-      The code of the first-order region. "The RGI_CODE column is now called
-      o1region (first order files) and o2region (second-order files)."
+      The code of the first-order region.
     source: https://rgidata.org/user_guide/02_regions_definition.html
   o2region:
     description: >-
@@ -113,13 +101,12 @@ regions:
     source: https://rgidata.org/user_guide/02_regions_definition.html
   full_name:
     description: >-
-      The region name. "All abbreviations in the second-order regions file
-      have been replaced by their full name."
+      The full name of the region, without abbreviations.
     source: https://rgidata.org/user_guide/02_regions_definition.html
   long_code:
     description: >-
-      The code and the name in one text. "This field is used to name the
-      corresponding RGI shapefiles."
+      The code and the name of the region in one text. RGI uses it to name
+      the region files.
     source: https://rgidata.org/user_guide/02_regions_definition.html
   geometry:
     description: >-

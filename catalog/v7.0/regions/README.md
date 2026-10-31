@@ -65,10 +65,10 @@ Open it from the Web menu and select this collection.
 | Column | Type | Description |
 | --- | --- | --- |
 | `level` | `uint8` | 1 for a first-order region, 2 for a second-order region. RGI ships the two levels as two shapefiles. This file holds both, one row per polygon. |
-| `o1region` | `string` | The code of the first-order region. "The RGI_CODE column is now called o1region (first order files) and o2region (second-order files)." |
+| `o1region` | `string` | The code of the first-order region. |
 | `o2region` | `string` | The code of the second-order region. Null for a first-order region. |
-| `full_name` | `string` | The region name. "All abbreviations in the second-order regions file have been replaced by their full name." |
-| `long_code` | `string` | The code and the name in one text. "This field is used to name the corresponding RGI shapefiles." |
+| `full_name` | `string` | The full name of the region, without abbreviations. |
+| `long_code` | `string` | The code and the name of the region in one text. RGI uses it to name the region files. |
 | `geometry` | `binary` | The region outline in EPSG:4326. Regions 10 and 19-15 cross the antimeridian. Each is a MultiPolygon of an eastern and a western part. |
 | `bbox` | `struct` | The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter. |
 

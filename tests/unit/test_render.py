@@ -13,6 +13,7 @@ import pytest
 from rgi_catalog import render
 from rgi_catalog.paths import CATALOG, METADATA, STAGING
 from rgi_catalog.pipeline import output_path
+from rgi_catalog.render import CATEGORIES_IN_GUIDE
 
 DISCLAIMER = (
     "unofficial mirror",
@@ -114,7 +115,11 @@ def test_upstream_columns_described_from_rgi(rendered: Path) -> None:
     glaciers = json.loads((rendered / "v7.0" / "glaciers" / "collection.json").read_text())
     columns = {c["name"]: c for c in glaciers["assets"]["data"]["table:columns"]}
     for name, meta in upstream.items():
-        assert columns[name]["description"] == meta["description"]
+        # RGI's pointer to the user guide is dropped from a coded column.
+        if CATEGORIES_IN_GUIDE in meta["description"]:
+            assert "classification:classes" in columns[name]
+        expected = meta["description"].replace(CATEGORIES_IN_GUIDE, "")
+        assert columns[name]["description"] == expected
 
 
 def test_every_column_documented(rendered: Path) -> None:

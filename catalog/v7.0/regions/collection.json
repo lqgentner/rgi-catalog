@@ -101,7 +101,7 @@
         {
           "name": "o1region",
           "type": "string",
-          "description": "The code of the first-order region. \"The RGI_CODE column is now called o1region (first order files) and o2region (second-order files).\""
+          "description": "The code of the first-order region."
         },
         {
           "name": "o2region",
@@ -111,12 +111,12 @@
         {
           "name": "full_name",
           "type": "string",
-          "description": "The region name. \"All abbreviations in the second-order regions file have been replaced by their full name.\""
+          "description": "The full name of the region, without abbreviations."
         },
         {
           "name": "long_code",
           "type": "string",
-          "description": "The code and the name in one text. \"This field is used to name the corresponding RGI shapefiles.\""
+          "description": "The code and the name of the region in one text. RGI uses it to name the region files."
         },
         {
           "name": "geometry",

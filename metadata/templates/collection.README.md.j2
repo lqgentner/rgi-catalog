@@ -71,18 +71,19 @@ Open it from the Web menu and select this collection.
 | Column | Type | Description |
 | --- | --- | --- |
 {% for c in collection.assets.data["table:columns"] %}
-| `{{ c.name }}` | `{{ c.type if c.type | length < 40 else c.type.split("<")[0] }}` | {{ c.description | replace("|", "\\|") }}{{ " (" ~ c.unit ~ ")" if c.unit is defined }} |
+| `{{ c.name }}` | `{{ c.type if c.type | length < 40 else c.type.split("<")[0] }}` | {{ c.description | replace("|", "\\|") }}{{ " See [Coded columns](#coded-columns)." if c["classification:classes"] is defined }}{{ " (" ~ c.unit ~ ")" if c.unit is defined }} |
 {% endfor %}
 
 {% set coded = collection.assets.data["table:columns"] | selectattr("classification:classes", "defined") | list %}
 {% if coded %}
 ## Coded columns
 
-The codes and their meanings are from the
-[RGI 7.0 user guide]({{ meta.user_guide }}).
+The codes and their meanings are from the RGI 7.0 user guide.
 
 {% for c in coded %}
 ### `{{ c.name }}`
+
+From the [RGI 7.0 user guide]({{ codes[c.name].source }}).
 
 | Value | Meaning |
 | --- | --- |

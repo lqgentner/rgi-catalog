@@ -246,6 +246,17 @@ class Context:
         ]
 
 
+CATEGORIES_IN_GUIDE = " For a categories description, see user guide."
+
+
+def _drop_guide_pointer(description: str) -> str:
+    """Drop RGI's pointer to the categories in the user guide.
+
+    The column carries its categories in ``classification:classes``.
+    """
+    return description.replace(CATEGORIES_IN_GUIDE, "")
+
+
 def _table_columns(ctx: Context, name: str, record: dict[str, Any]) -> list[dict[str, Any]]:
     collection = ctx.meta["versions"][record["version"]]["collections"][name]
     upstream = record["attributes_metadata"].get(collection["product"], {})
@@ -255,7 +266,7 @@ def _table_columns(ctx: Context, name: str, record: dict[str, Any]) -> list[dict
         col = column["name"]
         entry: dict[str, Any] = {"name": col, "type": column["type"]}
         if col in upstream:
-            entry["description"] = upstream[col]["description"]
+            entry["description"] = _drop_guide_pointer(upstream[col]["description"])
             if upstream[col].get("units"):
                 entry["unit"] = upstream[col]["units"]
         else:
