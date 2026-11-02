@@ -39,6 +39,8 @@ def test_convert_glaciers_on_fixture(
         write(gdf, out, **kwargs)  # type: ignore[arg-type]
 
     monkeypatch.setattr(pipeline, "source_files", fake_source_files)
+    # The fixture holds none of the real overridden names.
+    monkeypatch.setattr(pipeline, "name_overrides", dict)
     monkeypatch.setattr(pipeline, "write_geoparquet", spy)
     staging = tmp_path / "staging"
     result = pipeline.convert("7.0", ["glaciers"], staging=staging)
@@ -89,6 +91,8 @@ def test_convert_every_product_on_fixture(
         return {k: (v, f"sha-{k}") for k, v in files.items()}
 
     monkeypatch.setattr(pipeline, "source_files", fake_source_files)
+    # The fixture holds none of the real overridden names.
+    monkeypatch.setattr(pipeline, "name_overrides", dict)
     staging = tmp_path / "staging"
     result = pipeline.convert("7.0", list(pipeline.BUILDERS), staging=staging)
     assert result.row_counts == {

@@ -3,7 +3,7 @@
 [Open in data browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/) · [Source repository](https://github.com/lqgentner/rgi-catalog) · [Report a problem](https://github.com/lqgentner/rgi-catalog/issues) · [Hosting repository](https://source.coop/lqgentner/rgi)
 
 RGI 7.0, released in 2023. It holds 274,531 glacier outlines with their attributes. This is mirror revision
-`7.0-r1`, built 2026-10-30.
+`7.0-r1`, built 2026-11-02.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 

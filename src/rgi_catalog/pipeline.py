@@ -17,6 +17,7 @@ from rgi_catalog.assemble import (
     regions,
 )
 from rgi_catalog.geoparquet import ROW_GROUP_SIZE, write_geoparquet
+from rgi_catalog.names import load_overrides, override_map
 from rgi_catalog.paths import METADATA, STAGING, version_dir
 from rgi_catalog.sources import fetch, load_pins
 
@@ -75,9 +76,21 @@ def catalog_metadata() -> dict[str, object]:
     return yaml.safe_load((METADATA / "catalog.yaml").read_text())
 
 
+def name_overrides() -> dict[str, str | None]:
+    """Return the display-name overrides of ``metadata/name_overrides.yaml``.
+
+    Returns
+    -------
+    dict[str, str | None]
+        Display names by ``glac_name``.
+    """
+    return override_map(load_overrides())
+
+
 def _build_glaciers(files: dict[str, tuple[Path, str]]) -> tuple[gpd.GeoDataFrame, FixReport]:
     return glaciers(
         load_glacier_sources(files["G"][0], files["C"][0], files["rgi6_links"][0]),
+        overrides=name_overrides(),
     )
 
 

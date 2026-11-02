@@ -1,0 +1,22 @@
+# Display names that replace the rules of src/rgi_catalog/names.py for one
+# glac_name. glac_name is RGI's value after the encoding repair. The override
+# changes display_name only. glac_name keeps RGI's value.
+#
+# An override uses no source outside RGI. The glac_name itself shows the fix.
+# The build fails when a glac_name here matches no glacier.
+
+- glac_name: "Previously a part of Murraybreen"
+  display_name: null
+  reason: The glac_name is a note, not a name.
+- glac_name: "Vegfonna, Previously attached to Rosenthalbreen"
+  display_name: "Vegfonna"
+  reason: The text after the comma is a note.
+- glac_name: "Group of small glaciers"
+  display_name: null
+  reason: The glac_name is a description, not a name.
+- glac_name: "FR4N01235A08 dArgentiere"
+  display_name: "Glacier d'Argentiere"
+  reason: The apostrophe of the particle d' is missing.
+- glac_name: "SHCHuchij"
+  display_name: "Shchuchij"
+  reason: The first letters are capitals by mistake.

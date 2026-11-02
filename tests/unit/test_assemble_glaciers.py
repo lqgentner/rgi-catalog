@@ -74,6 +74,24 @@ def test_glaciers_folds_side_tables(fake_rgi: FakeRGI) -> None:
     assert row["display_name"] == "Hintereisferner"
 
 
+def test_glaciers_applies_name_overrides(fake_rgi: FakeRGI) -> None:
+    gdf, _ = glaciers(
+        load_glacier_sources(fake_rgi.g_zip, fake_rgi.c_zip, fake_rgi.rgi6_links),
+        overrides={"Hintereisferner": "Hintereis Ferner"},
+    )
+    row = gdf.set_index("rgi_id").loc["RGI2000-v7.0-G-11-00001"]
+    assert row["glac_name"] == "Hintereisferner"
+    assert row["display_name"] == "Hintereis Ferner"
+
+
+def test_glaciers_rejects_an_override_that_matches_no_glacier(fake_rgi: FakeRGI) -> None:
+    with pytest.raises(UpstreamMismatchError, match="Nowhere Glacier"):
+        glaciers(
+            load_glacier_sources(fake_rgi.g_zip, fake_rgi.c_zip, fake_rgi.rgi6_links),
+            overrides={"Nowhere Glacier": None},
+        )
+
+
 def test_glaciers_repairs_names_and_reports(fake_rgi: FakeRGI) -> None:
     gdf, report = glaciers(
         load_glacier_sources(fake_rgi.g_zip, fake_rgi.c_zip, fake_rgi.rgi6_links),

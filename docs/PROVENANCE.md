@@ -477,31 +477,52 @@ and 52,855 have none.
 
 `display_name` is the glacier name drawn on the map. It is derived from
 `glac_name` after the encoding repair. `glac_name` keeps RGI's value, and
-`rgi_id` is the key, never the name. The rules run in this order
-(`src/rgi_catalog/names.py`):
+`rgi_id` is the key, never the name.
 
-1. Underscores become spaces, runs of whitespace collapse to one space, and
-   a trailing comma is dropped.
+An override in `metadata/name_overrides.yaml` replaces the rules for one
+`glac_name`. The overrides are listed below. Otherwise the rules run in this
+order (`src/rgi_catalog/names.py`):
+
+1. Underscores become spaces, and runs of whitespace collapse to one space.
+   A trailing comma is dropped. A dash that stands for an empty second name
+   is dropped too: `Austfonna, -` becomes `Austfonna`.
 2. Inventory codes are removed as whole tokens at either end of the name.
    These are GLIMS and WGI codes: two capital letters, a digit, then five or
    more letters or digits, such as `CN5Y673P0037`. A range or query suffix
    such as `-10`, `+05` or `?` is part of the code.
-3. The name is null when nothing is left, and for these: `S/N`, `NN` and
-   `Unnamed` with an optional number, names that are only digits, codes of
-   one to three capitals, and names that are only a bracket, such as
-   `(Severny Island)`.
-4. A hyphen before a compass point, a Roman numeral or `Mitte` becomes a
+3. The name is null when nothing is left. It is also null for `S/N`, `NN`,
+   `Unnamed` with an optional number, `None`, `<Null>`, `No Name`,
+   `No Name Glacier` and `Namenlos` with an optional Roman numeral. Names that
+   are only digits, codes of one to three capitals, and names that are only a
+   bracket, such as `(Severny Island)`, are null too.
+4. A Cyrillic `а`, `е` or `в` after digits becomes the Latin `a`, `e` or `v`:
+   `101а` becomes `101a`. 362 other names of this form in regions 10 and 12
+   use the Latin letter.
+5. A backtick or an acute accent used as an apostrophe becomes `'`:
+   `Shkhel`dy` becomes `Shkhel'dy`.
+6. A bracket has a space before it and no space inside it. A slash with a
+   space on one side only gets a space on both sides.
+7. A hyphen before a compass point, a Roman numeral or `Mitte` becomes a
    space, as in the Swiss Glacier Inventory: `Tälligletscher-E` becomes
-   `Tälligletscher E`.
-5. A name with no lowercase letter is re-cased. Each word starts with a
+   `Tälligletscher E`. After an apostrophe the hyphen is dropped:
+   `GLACIER DE L'-N` becomes `Glacier de l'N`.
+8. A name with no lowercase letter is re-cased. Each word starts with a
    capital and continues in lowercase. Roman numerals and compass points
    stay in capitals, and so does a Swiss canton code that ends the name
-   (`FIESCHERGLETSCHER VS` becomes `Fieschergletscher VS`). Particles such
-   as `de`, `du`, `del`, `la` and `d'` are lowercase unless they start the
-   name. Words are never reordered. In a mixed-case name only the words of
-   four or more capitals are re-cased (`TUNGELGLETSCHER09n` becomes
-   `Tungelgletscher09n`). A word that mixes cases is kept as written
-   (`MIIGAiK`).
+   (`FIESCHERGLETSCHER VS` becomes `Fieschergletscher VS`). A word that holds
+   a digit keeps its case (`HPS34`). Particles such as `de`, `du`, `del`,
+   `dal`, `dil`, `la` and `d'` are lowercase unless they start the name, and
+   the letter after `O'` is a capital. Words are never reordered. In a
+   mixed-case name only the words of four or more capitals are re-cased
+   (`TUNGELGLETSCHER09n` becomes `Tungelgletscher09n`). A word that mixes
+   cases is kept as written (`MIIGAiK`).
+9. In region 11, a name that starts with `d'`, `de`, `du` or `des` gets
+   `Glacier` in front. The French Glacier Inventory leaves the word out:
+   `FR4N01154Q12 d'Ambin` becomes `Glacier d'Ambin`.
+10. A name that starts with a lowercase letter gets a capital.
+
+A `?` at the end of a word stays. In the French Glacier Inventory it marks an
+uncertain name, such as `du Col de Sirac?`.
 
 How often each rule applies, over the 274,531 glaciers. One name can match
 more than one rule.
@@ -509,20 +530,46 @@ more than one rule.
 | Rule | Glaciers |
 | --- | ---: |
 | `empty`: no `glac_name` | 216,535 |
+| `override` | 5 |
 | `underscores` | 52 |
 | `trailing-comma` | 290 |
-| `inventory-code-stripped`, a name is left | 891 |
+| `empty-second-name` | 27 |
+| `inventory-code-stripped`, a name is left | 890 |
 | `code-only` | 23,307 |
-| `no-name-marker` | 18,414 |
+| `no-name-marker` | 18,422 |
 | `numeric-only` | 1,621 |
 | `short-code` | 4,645 |
 | `bracket-only` | 542 |
-| `suffix-hyphen` | 359 |
+| `cyrillic-suffix` | 87 |
+| `apostrophe` | 6 |
+| `spacing` | 5 |
+| `suffix-hyphen` | 358 |
 | `recased` | 1,118 |
-| `unchanged` | 6,968 |
+| `french-glacier` | 415 |
+| `initial-capital` | 9 |
+| `unchanged` | 6,825 |
 
-57,996 glaciers have a non-empty `glac_name`, and 9,467 have a
+57,996 glaciers have a non-empty `glac_name`, and 9,457 have a
 `display_name`.
+
+### Overrides
+
+| RGI's `glac_name` | `display_name` | Reason |
+| --- | --- | --- |
+| `Previously a part of Murraybreen` | null | The glac_name is a note, not a name. |
+| `Vegfonna, Previously attached to Rosenthalbreen` | Vegfonna | The text after the comma is a note. |
+| `Group of small glaciers` | null | The glac_name is a description, not a name. |
+| `FR4N01235A08 dArgentiere` | Glacier d'Argentiere | The apostrophe of the particle d' is missing. |
+| `SHCHuchij` | Shchuchij | The first letters are capitals by mistake. |
+
+### Names the rules leave as published
+
+These upstream errors stay in `display_name` as RGI publishes them:
+
+- A non-ASCII letter that the submission lost. Some names in region 11 drop
+  it (`Hallsttter Gletscher`). Some names in regions 11, 17 and 19 have `?`
+  in its place (`Gl. R?o Blanco`).
+- Spelling errors, such as `Chalresbreenn` in region 07.
 
 ## Known issues
 

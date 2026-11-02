@@ -39,6 +39,7 @@ from rgi_catalog.upstream import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from pathlib import Path
 
     from rgi_catalog.fixes import FixReport
@@ -301,19 +302,29 @@ def _left_join(left: pd.DataFrame, right: pd.DataFrame, on: list[str]) -> pd.Dat
     return out
 
 
-def glaciers(src: GlacierSources) -> tuple[gpd.GeoDataFrame, FixReport]:
+def glaciers(
+    src: GlacierSources,
+    overrides: Mapping[str, str | None] | None = None,
+) -> tuple[gpd.GeoDataFrame, FixReport]:
     """Assemble the glaciers table and apply the documented fixes.
 
     Parameters
     ----------
     src
         The upstream inputs.
+    overrides
+        Display names by ``glac_name`` that replace the name rules.
 
     Returns
     -------
     tuple[gpd.GeoDataFrame, FixReport]
         One row per glacier, columns in :data:`GLACIER_COLUMNS` order, and
         the fixes applied.
+
+    Raises
+    ------
+    UpstreamMismatchError
+        If an override matches no ``glac_name``.
     """
     outlines = src.outlines
     n = len(outlines)
@@ -327,8 +338,15 @@ def glaciers(src: GlacierSources) -> tuple[gpd.GeoDataFrame, FixReport]:
         raise UpstreamMismatchError(msg)
 
     table, report = repair_text_columns(table, "glaciers")
+    unmatched = sorted(set(overrides or {}) - set(table["glac_name"].dropna()))
+    if unmatched:
+        msg = f"name overrides match no glac_name: {unmatched}"
+        raise UpstreamMismatchError(msg)
     table["display_name"] = pd.Series(
-        [display_name(v if isinstance(v, str) else None) for v in table["glac_name"]],
+        [
+            display_name(v if isinstance(v, str) else None, region, overrides)
+            for v, region in zip(table["glac_name"], table["o1region"], strict=True)
+        ],
         dtype="str",
     )
     gdf = gpd.GeoDataFrame(table, geometry=outlines.geometry.to_numpy(), crs=outlines.crs)

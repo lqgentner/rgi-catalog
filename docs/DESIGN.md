@@ -530,7 +530,7 @@ The largest tiles cover High Mountain Asia.
 | 12 | 11,916,787 | 2667.4 | 192 | 61,220 |
 
 Decoded counts: 274,531 glaciers at z10, z11 and z12. Labels: 244 at z7,
-714 at z8, 1,462 at z9, 2,715 at z10, 4,514 at z11 and all 9,467 at z12.
+714 at z8, 1,462 at z9, 2,715 at z10, 4,514 at z11 and all 9,457 at z12.
 Each equals the number of named glaciers whose `label_minzoom` has been
 reached.
 

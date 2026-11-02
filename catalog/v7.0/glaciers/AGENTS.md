@@ -99,7 +99,7 @@ WHERE rgi_id = 'RGI2000-v7.0-G-11-01706';
 
 - `term_type` 9 means "Not assigned", not land-terminating. RGI 7.0 assigns
   only the marine-terminating class (1,561 glaciers).
-- `display_name` is null for every glacier without a usable name. 9,467
+- `display_name` is null for every glacier without a usable name. 9,457
   glaciers have one, and 57,996 have a non-empty `glac_name`.
 - `rgi6_links` is an empty list, not null, for the 52,855 glaciers without an
   RGI 6.0 overlap.
