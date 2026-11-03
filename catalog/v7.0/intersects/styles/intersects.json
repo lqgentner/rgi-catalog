@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Intersects",
   "metadata": {
-    "description": "Intersects, the divides between adjacent glaciers, from z9, over the glacier outlines. A longer divide shows from the first zoom at which it spans 32 pixels, from z4 on."
+    "description": "Glacier intersects over the glacier outlines. An intersect is a line that divides two adjacent glaciers. The intersects show from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {

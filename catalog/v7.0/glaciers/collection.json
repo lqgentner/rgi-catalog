@@ -13,7 +13,7 @@
   ],
   "id": "rgi-v7-0-glaciers",
   "title": "RGI 7.0 glaciers",
-  "description": "One row per glacier: the outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and the GLIMS submission, in one GeoParquet file. The web map archive holds the outlines and the glacier names.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "description": "The GeoParquet file has one row per glacier. Each row has the outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and the GLIMS submission. The collection also has a PMTiles archive for web maps.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "license": "CC-BY-4.0",
   "keywords": [
     "glaciers",
@@ -96,17 +96,17 @@
         {
           "name": "rgi_id",
           "type": "string",
-          "description": "Unique identifier assigned to a single outline."
+          "description": "Unique identifier assigned to a glacier outline."
         },
         {
           "name": "o1region",
           "type": "string",
-          "description": "The code of the first-order region to which the glacier belongs."
+          "description": "Code of the first-order region to which the glacier belongs."
         },
         {
           "name": "o2region",
           "type": "string",
-          "description": "The code of the second-order region to which the glacier belongs."
+          "description": "Code of the second-order region to which the glacier belongs."
         },
         {
           "name": "glims_id",
@@ -116,17 +116,17 @@
         {
           "name": "anlys_id",
           "type": "uint32",
-          "description": "The unique identifier assigned within GLIMS for a particular outline of a glacier at a particular time."
+          "description": "Unique identifier assigned by GLIMS to one outline of a glacier at one time."
         },
         {
           "name": "subm_id",
           "type": "uint16",
-          "description": "Unique identifier assigned by GLIMS to a specific data submission. Allows to obtain information about the analysts and data submitters."
+          "description": "Unique identifier assigned by GLIMS to a specific data submission. Links to the information about the analysts and data submitters."
         },
         {
           "name": "src_date",
           "type": "timestamp[us]",
-          "description": "The as-of date for the outline (usually the acquisition date of the image), in the format ISO 8601.",
+          "description": "As-of date for the outline (usually the acquisition date of the image), in the format ISO 8601.",
           "unit": "date"
         },
         {
@@ -144,7 +144,7 @@
         {
           "name": "utm_zone",
           "type": "uint8",
-          "description": "Number of the UTM zone for this glacier, based on its representative point. Note that this attribute is for information only, the geometries are all in WGS84."
+          "description": "Number of the UTM zone for this glacier, based on its representative point. Note that this attribute is for information only. The geometries are all in WGS84."
         },
         {
           "name": "area_km2",
@@ -217,7 +217,7 @@
         {
           "name": "conn_lvl",
           "type": "uint8",
-          "description": "Level of connection to the Greenland Icesheet (0: no connection; 1: weak connection).",
+          "description": "Level of connection to the Greenland ice sheet (0: no connection; 1: weak connection).",
           "classification:classes": [
             {
               "value": 0,
@@ -451,7 +451,7 @@
         {
           "name": "display_name",
           "type": "string",
-          "description": "The glacier name for map labels, cleaned from glac_name. Null when glac_name holds no usable name. The rules are in docs/PROVENANCE.md."
+          "description": "The glacier name for map labels, cleaned from glac_name. Null when glac_name contains no usable name. The rules are in docs/PROVENANCE.md."
         },
         {
           "name": "complex_id",
@@ -497,17 +497,17 @@
         {
           "name": "subm_chief_affl",
           "type": "string",
-          "description": "Affiliation of the chief of the regional center or the person(s) who submitted the data."
+          "description": "Affiliation of the chief of the regional center or of the people who submitted the data."
         },
         {
           "name": "subm_submitters",
           "type": "string",
-          "description": "Person(s) who submitted the data."
+          "description": "People who submitted the data."
         },
         {
           "name": "subm_analysts",
           "type": "string",
-          "description": "Person(s) who created the data."
+          "description": "People who created the data."
         },
         {
           "name": "subm_rc_id",
@@ -517,8 +517,8 @@
         {
           "name": "geometry",
           "type": "binary",
-          "description": "Glacier geometry (Polygon)",
-          "unit": "deg"
+          "description": "Glacier geometry (Polygon).",
+          "unit": "degrees"
         },
         {
           "name": "bbox",

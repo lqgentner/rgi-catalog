@@ -1,7 +1,7 @@
 # AGENTS.md: RGI 7.0 glaciers
 
-**One rule survives every edit to this file.** Every claim here is either
-quoted from a source or measured from the data.
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -12,7 +12,11 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 The RGI 7.0 user guide describes the
 [glacier product](https://rgidata.org/user_guide/products/glacier_product.html):
 
+<!-- human-written -->
+
 > This product includes the glacier outlines as extracted from GLIMS together with additional data for each individual glacier.
+
+<!-- /human-written -->
 
 ## The file
 
@@ -95,7 +99,7 @@ WHERE rgi_id = 'RGI2000-v7.0-G-11-01706';
 - `subm_id` identifies a GLIMS submission. The `subm_*` columns are its
   attributes, from the glacier's first-order region.
 
-## Quirks that produce silently wrong answers
+## Usage notes
 
 - `term_type` 9 means "Not assigned", not land-terminating. RGI 7.0 assigns
   only the marine-terminating class (1,561 glaciers).
@@ -108,4 +112,4 @@ WHERE rgi_id = 'RGI2000-v7.0-G-11-01706';
 - `hypso_permille` leaves out empty bands below the lowest and above the
   highest glacierized band. Its values sum to 1000.
 - No outline crosses the antimeridian. Region 10 has glaciers near ±180°, so
-  a box from 170° to -170° must be split in two.
+  a box from 170°E to 170°W must be split in two.

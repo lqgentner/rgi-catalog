@@ -1,7 +1,6 @@
 # Design decisions
 
-This file records the measured decisions behind the build. The design itself
-is in `docs/superpowers/specs/2026-10-22-rgi-mirror-design.md`.
+This file records the measured decisions behind the build.
 
 ## The catalog is generated
 
@@ -12,13 +11,19 @@ render. Edit `metadata/`, never `catalog/`.
 
 `render --version 7.0` first measures the staged files into
 `metadata/builds/v7.0.json`: sizes, checksums, extents, row counts, schemas,
-the archive's layers, and RGI's `attributes_metadata.json` of each product
-used. The record keeps its `updated` time when nothing else changed, so a
-second render changes nothing. `render --no-record` renders from the
+and the archive's layers. The record keeps its `updated` time when nothing
+else changed, so a second render changes nothing. `render --no-record` renders from the
 committed record alone, which is how CI and the drift test run.
 
-The data lives in `staging/`, not beside `catalog/`. The `gates` task
-therefore sets `CI_LIGHT=1` as CI does, and `tests/test_links.py` exempts
+`metadata/columns.yaml` describes each column of each collection. The
+entries of the RGI columns started as a copy of the text in RGI's
+`attributes_metadata.json` of each product. Those files are the same in
+every region. A description can be reworded in `columns.yaml`.
+`pixi run python -m rgi_catalog columns --version 7.0` lists each
+description that differs from RGI's text.
+
+The data is in `staging/`, not beside `catalog/`, so the `gates` task
+sets `CI_LIGHT=1` as CI does, and `tests/test_links.py` exempts
 data hrefs of links as well as of assets, because the `rel: pmtiles` link
 points at data. The preview tree checks every href with the data present.
 
@@ -60,7 +65,7 @@ writer refuses a file with a row group above 150,000 rows, the Portolan cap
 
 gpio can also write through pyarrow (its `in-memory` strategy). pyarrow keeps
 the row group size exactly, but its file was 9.6% larger: 322.3 MB against
-294.2 MB from DuckDB at zstd 15 and the same row group size. Two causes:
+294.2 MB from DuckDB at zstd 15 and the same row group size. The causes:
 
 - pyarrow tries dictionary encoding on every column. On columns of mostly
   unique values (`rgi_id`, coordinates, the measured floats) it writes the
@@ -86,14 +91,14 @@ group:
 | 19 | 258.1 | 245 | 0.22 |
 | 22 | 258.2 | 282 | 0.22 |
 
-The size falls up to level 18 and stays flat after it. The build uses level
+The size falls up to level 18 and does not change after it. The build uses level
 19, the highest standard level. Level 22 gives the same size and only takes
 longer. A local full read decompresses about 30% slower than at level 15.
 Remote reads depend on the bytes fetched, which are 12% fewer.
 
 ### Byte stability
 
-Two writes of the same table give identical bytes.
+Repeated writes of the same table give identical bytes.
 `tests/unit/test_geoparquet.py::test_write_geoparquet_is_deterministic`
 checks this on a 5,000-row table with list and struct columns.
 
@@ -149,8 +154,8 @@ The cost is about 20 more requests per full scan. The size is below the
 against the data in Task 11.
 
 The glaciers file was 258.0 MB in 24 row groups of 10,269 to 12,122 rows.
-The build took 5 min 28 s and peaked at 5.9 GB of memory. Two builds from the
-same inputs gave identical bytes. The next section replaces this layout for
+The build took 5 min 28 s and peaked at 5.9 GB of memory. A second build from
+the same inputs gave identical bytes. The next section replaces this layout for
 the glaciers. The other products keep it.
 
 ### Row order (measured 2026-10-29)
@@ -214,8 +219,8 @@ Findings:
 - **`rgi_id` order gives each row group a separate range of `rgi_id`.** A
   filter on one `rgi_id` selects one row group. RGI numbers the glaciers by
   second-order region and then by neighbour. The median step between
-  consecutive glaciers is 0.006° in longitude in region 13. The order is
-  therefore spatial, and the bbox reads also improve.
+  consecutive glaciers is 0.006° in longitude in region 13. So the order is
+  spatial, and the bbox reads also improve.
 - **geopandas fetches about twice the projected column chunks of a row
   group.** pyarrow reads each column chunk through fsspec, which reads ahead
   by 5 MB, and the ranges overlap. The row group size sets the remaining
@@ -294,11 +299,12 @@ schema and the rows of each file equal those of its Hilbert version.
   (`dtypes.CENTERLINE_DTYPES`). The I table keeps float64.
 - **Fixes.** The text repair, the Z drop and the validity repair run on every
   product (`assemble._apply_fixes`). 7 complex outlines are invalid and are
-  repaired. No glacier outline is invalid under the GEOS in the environment.
+  repaired. All glacier outlines are valid under the GEOS in the environment.
 - **Links.** Each of the 274,531 glaciers is in exactly one complex. Each
   has exactly one main centerline, and its `length_m` equals the glacier's
-  `lmax_m`. Every intersect and centerline names a glacier that exists.
-- **Regions.** The summary CSVs hold only the codes and names of the
+  `lmax_m`. Each intersect and each centerline refers to a glacier in the glaciers
+  file.
+- **Regions.** The summary CSVs contain only the codes and names of the
   shapefiles, and no statistics. The build uses them as a witness and fails
   when they differ. The file stacks both levels with a `level` column.
   RGI splits regions 10 and 19-15 at the antimeridian into two polygons.
@@ -309,7 +315,7 @@ schema and the rows of each file equal those of its Hilbert version.
   not a column of the GeoParquet file.
 - **Region boundaries.** Neighbouring polygons store a shared border once
   each, and a dash pattern drawn twice looks solid. The `region-boundaries`
-  layer holds each border once (`tiles.write_region_boundaries`). Its only
+  layer stores each border once (`tiles.write_region_boundaries`). Its only
   column is `level`: 1 where the line bounds a first-order region, else 2.
   Neighbours often split a border at different vertices, so the outlines are
   snapped to a grid of 1e-5 degrees (about 1.1 m) and noded. The grid is
@@ -337,8 +343,8 @@ Each lists it as a `visual` asset and a `rel: pmtiles` link at
 The PyPI wheel of tylertoo 0.8.0 has only the Python API. That API writes one
 layer per archive and has no `pyramid`, `--entry-zoom` or
 `--include-property`. The build uses the release binary instead
-(`tylertoo-0.8.0-x86_64-unknown-linux-musl.tar.gz`). `tiles.TYLERTOO` pins it
-by sha256, and `sources.fetch` verifies it into `.cache/`.
+(`tylertoo-0.8.0-x86_64-unknown-linux-musl.tar.gz`). The constant `TYLERTOO` in
+`src/rgi_catalog/tiles.py` pins it by sha256, and `sources.fetch` verifies it into `.cache/`.
 
 The 0.8.0 binary lacks two flags that the online documentation lists:
 `--size-valve` and `--name`/`--attribution`/`--description` on `tiles` and
@@ -346,7 +352,7 @@ The 0.8.0 binary lacks two flags that the online documentation lists:
 (`tiles.set_metadata`). It copies the header, directories and tile data byte
 for byte and replaces only the metadata block.
 
-### How the archive is built
+### The archive build
 
 1. `write_labels` writes one point per glacier with a `display_name`, at
    RGI's own `cenlon`/`cenlat`, to `staging/v7.0/.tiles/labels.parquet`.
@@ -414,19 +420,18 @@ Measured on the full glaciers table:
 
 tylertoo 0.8.0 simplifies lon/lat input with its tolerance in degrees. On
 the map a degree of latitude is 1/cos(lat) times as long as a degree of
-longitude. At 78°N the tolerance is therefore five times too large in the
+longitude. So at 78°N the tolerance is five times too large in the
 north-south direction. On Barents Island (Svalbard) the overview outlines
 moved up to 2.5 pixels at z7–9 and 1.2 pixels at z10, instead of 0.5 and
 0.25. The outlines looked jagged one zoom before the full outline arrived.
 
 The same glaciers as Web Mercator input moved at most 0.55 pixels at z9 and
-kept 5,155 instead of 3,434 vertices. `tiles.write_web_mercator` therefore
+kept 5,155 instead of 3,434 vertices. So `tiles.write_web_mercator`
 gives the tiler each band's input in EPSG:3857. Web Mercator ends at
-85.05°. The region polygons reach -90°, and the input cuts them off there.
-No other product reaches beyond 84°.
+85.05°. The region polygons reach 90°S, and the input cuts them off there.
+The extents of the other products are within 84° of the equator.
 
-A tiling does not simplify its finest zoom. A unit test pads its band for
-that reason.
+A tiling does not simplify its finest zoom, so a unit test pads its band.
 
 The overview points are thinned on a grid of 4 GSD. In map units that grid
 is square, so high latitudes keep more points than before. The z0 tile grew
@@ -457,10 +462,10 @@ Lines that span 32 pixels, worldwide:
 ### Zoom range
 
 The first build went to z14 and was 2.4 GB. z14 alone was 2.2 million tiles,
-mostly about 1 KB each: tiles inside ice caps that carry one clipped polygon
+mostly about 1 KB each: tiles inside ice caps that contain one clipped polygon
 and its 39 properties. A z12 tile resolves about 2.4 m at the equator, finer
-than the imagery behind the outlines, and clients overzoom above it. Every
-layer therefore stops at z12, because a client overzooms one source as a
+than the imagery behind the outlines, and clients overzoom above it. So the archive
+ends at z12 for each layer, because a client overzooms one source as a
 whole.
 
 Leaving the four long submission text columns out of the tiles saves 12% of
@@ -471,17 +476,18 @@ extent. z9 keeps all 274,531 glaciers.
 
 ### Low zooms
 
-With tylertoo defaults z0 held 117 of 274,531 glaciers. The visibility gate
-drops polygons smaller than 2 GSD, and the density budget thins the rest. The
+With tylertoo defaults z0 held 117 of 274,531 glaciers. Polygons
+smaller than 2 GSD fail the visibility gate, and the density budget thins the
+rest. The
 Alps and High Mountain Asia were almost empty at world scale.
 
 Below z10 the glaciers and the complexes are an overview built per zoom
 (`tiles.write_overview`). At each zoom a feature that spans 3 pixels of a
 512-pixel tile is its outline. A smaller feature is RGI's point (`cenlon`,
-`cenlat`). Large glaciers therefore keep their shape at low zooms, as in
+`cenlat`). So large glaciers keep their shape at low zooms, as in
 Google Earth Engine, and a small one is a dot. The points keep one per grid
-cell of 4 GSD, about a pixel, and the largest feature wins the cell
-(`--sort-key area_km2`). Every outline is kept.
+cell of 4 GSD, about a pixel, and each cell keeps the point of the largest feature
+(`--sort-key area_km2`). The density limit thins only the points.
 
 Each zoom is its own band. The finest zoom of a tiling keeps every source
 feature, so each band is tiled one zoom further (`pad_zoom`) and `pyramid`
@@ -508,7 +514,7 @@ The region polygons cover the oceans and the Antarctic, so z12 addresses
 11.9 million tiles. Most are the same small tile inside a region. "MB
 addressed" counts each addressed tile, so it repeats the shared ones.
 
-The overview bands (z0–9) of the glaciers and the complexes carry only the
+The overview bands (z0–9) of the glaciers and the complexes contain only the
 key and the columns the styles read (`tiles.GLACIER_OVERVIEW_COLUMNS`,
 `tiles.COMPLEX_OVERVIEW_COLUMNS`). Every column is in the tiles from z10.
 The largest tiles cover High Mountain Asia.
@@ -552,25 +558,25 @@ builds the styles of the glaciers collection.
 | `same-as-rgi6` | `is_rgi6` | `match` on the flag | 2 classes |
 
 Every style draws the region boundaries under its data and the region names
-over it. Each name sits under its number (`11`, `11-01`). The boundaries
+over it. Each name is under its number (`11`, `11-01`). The boundaries
 come from the `region-boundaries` layer, which stores each border once, so
 the dash patterns stay in step. A first-order boundary is a long dash
 (`[5, 2.5]` line widths, 1.2 px, `#757575`) and shows from z0. A
 second-order boundary is a short dash (`[2.5, 2.5]`, 0.8 px, `#9e9e9e`) and
 shows from z3.
 
-Every style draws the names on top. The names use CARTO's glyphs, which the
+The styles draw the names on top. The names use CARTO's glyphs, which the
 browser's default basemaps also use, in Open Sans Italic.
 
-The browser labels a legend entry with the `match` branch value. Each
-`match` therefore takes a nested expression that turns the code into the
+The browser labels a legend entry with the `match` branch value. So each
+`match` takes a nested expression that turns the code into the
 user guide's label, and branches on that label. The legend reads "Observed",
 not "3".
 
 RGI 7.0 assigns only the marine-terminating terminus class (1,561
 glaciers). Every other glacier is "not assigned" (9). The user guide states
-that no lake- or shelf-terminating class is available. The terminus style
-therefore has two classes.
+that no lake- or shelf-terminating class is available. So the terminus style
+has two classes.
 
 `tests/unit/test_styles.py::test_match_branches_exist_in_data` checks each
 `match` against the staged file when it exists. Measured counts:
@@ -611,7 +617,7 @@ READMEs and AGENTS files against the preview.
 
 chiitiler renders the style checks and the thumbnails. Its prebuilt
 MapLibre Native binary exists for Node 24, not for Node 26, and it links ICU
-74 and `libOpenGL.so.0`. conda-forge has no ICU 74. chiitiler therefore runs
+74 and `libOpenGL.so.0`. conda-forge has no ICU 74. So chiitiler runs
 from its Docker image (`ghcr.io/kanahiro/chiitiler`, digest
 `sha256:d3586159af69…`), with the repository bind-mounted read-only at its
 own path:
@@ -637,7 +643,7 @@ catalog carries no assets (PTL-AST-005), so a catalog lists it as a
 
 `scripts/thumbnails.sh` renders them with chiitiler.
 `scripts/thumbnail_style.py` points the published default style at the local
-archive and drops its symbol layers. No thumbnail needs a credit:
+archive and drops its symbol layers. The thumbnails need no credit:
 
 - The root, the version and the regions are world views over the land of
   Natural Earth (`scripts/naturalearth_land.py`, 1:50m, public domain).
@@ -658,7 +664,7 @@ so the old images stay.
 
 The frame holds 232 intersects, ten times the divide length of a frame of the
 Baltoro glacier at map zoom 11. At exactly map zoom 10 chiitiler draws the
-z9 tiles, which hold the glacier overview, so the frame sits at zoom 10.1.
+z9 tiles, which hold the glacier overview, so the frame is at zoom 10.1.
 
 chiitiler can answer `/clip` before every tile has loaded. A long-running
 server also dropped a whole layer from a render. The script therefore

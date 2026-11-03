@@ -246,33 +246,25 @@ class Context:
         ]
 
 
-CATEGORIES_IN_GUIDE = " For a categories description, see user guide."
-
-
-def _drop_guide_pointer(description: str) -> str:
-    """Drop RGI's pointer to the categories in the user guide.
-
-    The column carries its categories in ``classification:classes``.
-    """
-    return description.replace(CATEGORIES_IN_GUIDE, "")
+class UndescribedColumnError(KeyError):
+    """A column of the data has no entry in ``metadata/columns.yaml``."""
 
 
 def _table_columns(ctx: Context, name: str, record: dict[str, Any]) -> list[dict[str, Any]]:
-    collection = ctx.meta["versions"][record["version"]]["collections"][name]
-    upstream = record["attributes_metadata"].get(collection["product"], {})
-    derived = ctx.columns.get(name, {})
+    described = ctx.columns.get(name, {})
     out = []
     for column in record["collections"][name]["columns"]:
         col = column["name"]
-        entry: dict[str, Any] = {"name": col, "type": column["type"]}
-        if col in upstream:
-            entry["description"] = _drop_guide_pointer(upstream[col]["description"])
-            if upstream[col].get("units"):
-                entry["unit"] = upstream[col]["units"]
-        else:
-            entry["description"] = " ".join(derived[col]["description"].split())
-            if derived[col].get("unit"):
-                entry["unit"] = derived[col]["unit"]
+        if col not in described:
+            msg = f"{name}.{col}: no entry in metadata/columns.yaml"
+            raise UndescribedColumnError(msg)
+        entry: dict[str, Any] = {
+            "name": col,
+            "type": column["type"],
+            "description": " ".join(described[col]["description"].split()),
+        }
+        if described[col].get("unit"):
+            entry["unit"] = described[col]["unit"]
         if col in ctx.codes:
             entry["classification:classes"] = [
                 {"value": value, "name": _slug(str(label)), "description": label}
@@ -534,14 +526,9 @@ def render(out: Path = CATALOG) -> list[Path]:
                     c["type"].startswith("timestamp")
                     for c in record["collections"][name]["columns"]
                 ),
-                # The columns vector tiles cannot store.
                 # The columns of the overview zooms, if the layer has an overview.
                 "overview": list(OVERVIEW_COLUMNS.get(name, ())),
-                "untiled": [
-                    c["name"]
-                    for c in record["collections"][name]["columns"]
-                    if c["type"].startswith(("list", "struct"))
-                ],
+                "untiled": _untiled(record, name),
             }
             for doc_name in ("README.md", "AGENTS.md"):
                 text = ctx.env.get_template(f"collection.{doc_name}.j2").render(scope)
@@ -585,11 +572,38 @@ def render(out: Path = CATALOG) -> list[Path]:
         "versions": meta["versions"],
         "records": ctx.records,
         "path": "catalog.json",
+        "untiled": _untiled_names(ctx),
     }
     for doc_name in ("README.md", "AGENTS.md"):
         text = ctx.env.get_template(f"root.{doc_name}.j2").render(scope)
         _write(out, doc_name, text, written)
     return sorted(written)
+
+
+def _untiled(record: dict[str, Any], name: str) -> list[str]:
+    """Return the list and struct columns of a collection, which vector tiles cannot store."""
+    return [
+        c["name"]
+        for c in record["collections"][name]["columns"]
+        if c["type"].startswith(("list", "struct"))
+    ]
+
+
+def _untiled_names(ctx: Context) -> str:
+    """Name the columns of all collections that the tiles leave out, for the root README.
+
+    Returns
+    -------
+    str
+        The names in code spans, such as ``"`hypso_permille`, `rgi6_links` and `bbox`"``.
+    """
+    names: list[str] = []
+    for version in ctx.meta["versions"]:
+        record = ctx.records[version]
+        for name in ctx.meta["versions"][version]["collections"]:
+            names += [c for c in _untiled(record, name) if c not in names]
+    spans = [f"`{c}`" for c in names]
+    return spans[0] if len(spans) == 1 else ", ".join(spans[:-1]) + " and " + spans[-1]
 
 
 def _render(args: argparse.Namespace) -> None:

@@ -45,18 +45,18 @@ WHERE ST_Contains(geometry, ST_Point(8.0, 46.5));
   `level = 1`, and `o2region` is unique where `level = 2`.
 - `glaciers.o1region` joins `o1region` where `level = 1`, and
   `glaciers.o2region` joins `o2region` where `level = 2`. Every glacier and
-  every complex has an `o2region` that this file holds.
-- `long_code` names the region files of RGI, for example
+  every complex has an `o2region` that is in this file.
+- `long_code` is the name of RGI's region files, such as
   `11_central_europe`.
 
-## Quirks that produce silently wrong answers
+## Usage notes
 
 - "the region outlines of `10` and `19-15` appear in the accompanying
   shapefiles as two polygons, eastern and western." Here each is one row,
   a MultiPolygon of both parts. Its bounding box spans almost every
   longitude, so a bbox filter always reads it.
 - The `regions` layer of the web map archive draws each shared border
-  twice, once per polygon. The `region-boundaries` layer holds each border
+  twice, once per polygon. The `region-boundaries` layer stores each border
   once, as lines with one column, `level`: 1 where the line bounds a
   first-order region, else 2. Its lines are snapped to 1e-5 degrees, so
   they are not exact copies of the polygon outlines. It leaves out the

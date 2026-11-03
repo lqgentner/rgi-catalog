@@ -22,7 +22,7 @@ In QGIS, use the
 [Portolan Registry plugin](https://github.com/portolan-sdi/portolan-registry-qgis).
 **View on map** adds the PMTiles and **Load full data** adds the GeoParquet.
 
-## Three kinds of file
+## Kinds of file
 
 | Kind | Where | Example |
 |---|---|---|
@@ -35,7 +35,7 @@ when `catalog/` differs from a fresh render.
 
 ## Build
 
-Every command runs in the [pixi](https://pixi.sh) environment.
+Run the commands in the [pixi](https://pixi.sh) environment.
 
 ```bash
 pixi install
@@ -52,7 +52,7 @@ staged files.
 | Path | What it is |
 |---|---|
 | `metadata/catalog.yaml` | Titles, prose, providers, citations, links, versions |
-| `metadata/columns.yaml`, `codes.yaml` | Descriptions of derived columns and coded values |
+| `metadata/columns.yaml`, `codes.yaml` | Descriptions of all columns and of the coded values |
 | `metadata/sources.yaml` | The upstream files, pinned by URL, sha256 and size |
 | `metadata/builds/v7.0.json` | Sizes, checksums, extents and schemas, written by the build |
 | `metadata/templates/` | The README and AGENTS templates |
@@ -71,7 +71,7 @@ pixi run python tools/publish.py                 # catalog/ to s3://lqgentner/rg
 pixi run python tools/publish.py --confirm
 ```
 
-Neither script deletes. Never use `portolan push`.
+Both scripts only add and replace objects. Never use `portolan push`.
 
 ## Gates
 

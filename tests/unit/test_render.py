@@ -9,11 +9,11 @@ from typing import Any
 
 import pyarrow.parquet as pq
 import pytest
+import yaml
 
 from rgi_catalog import render
 from rgi_catalog.paths import CATALOG, METADATA, STAGING
 from rgi_catalog.pipeline import output_path
-from rgi_catalog.render import CATEGORIES_IN_GUIDE
 
 DISCLAIMER = (
     "unofficial mirror",
@@ -109,17 +109,14 @@ def test_citations_in_apa7(rendered: Path) -> None:
     assert f"> {USER_GUIDE}\n" in readme
 
 
-def test_upstream_columns_described_from_rgi(rendered: Path) -> None:
+def test_columns_yaml_matches_the_data() -> None:
     rec = json.loads((METADATA / "builds" / "v7.0.json").read_text())
-    upstream = rec["attributes_metadata"]["G"]
-    glaciers = json.loads((rendered / "v7.0" / "glaciers" / "collection.json").read_text())
-    columns = {c["name"]: c for c in glaciers["assets"]["data"]["table:columns"]}
-    for name, meta in upstream.items():
-        # RGI's pointer to the user guide is dropped from a coded column.
-        if CATEGORIES_IN_GUIDE in meta["description"]:
-            assert "classification:classes" in columns[name]
-        expected = meta["description"].replace(CATEGORIES_IN_GUIDE, "")
-        assert columns[name]["description"] == expected
+    described = yaml.safe_load((METADATA / "columns.yaml").read_text())
+    assert set(described) == set(rec["collections"])
+    for name, collection in rec["collections"].items():
+        # Each column of the data has an entry, in the column order of the data.
+        assert list(described[name]) == [c["name"] for c in collection["columns"]]
+        assert all(entry["description"] and entry["source"] for entry in described[name].values())
 
 
 def test_every_column_documented(rendered: Path) -> None:

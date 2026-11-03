@@ -1,7 +1,7 @@
 # AGENTS.md: RGI 7.0
 
-**One rule survives every edit to this file.** Every claim here is either
-quoted from a source or measured from the data.
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -27,9 +27,11 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 ## Join keys
 
-`rgi_id` is unique in every collection that has it. The regions have none.
-Each glacier ID has the form `RGI2000-v7.0-G-<o1region>-<number>`.
-The letter after the version names the product: `G`, `C`, `L` or `I`.
+`rgi_id` is unique in the glacier, complex, intersect and centerline
+products. The region product has no `rgi_id`.
+Each ID has the form `RGI2000-v7.0-<X>-<o1region>-<number>`.
+The letter `X` identifies the product: `G` for glaciers, `C` for complexes,
+`I` for intersects and `L` for centerlines.
 
 - `glaciers.complex_id` joins `complexes.rgi_id`.
   `complexes.glacier_ids` lists the same links from the other side.
@@ -38,7 +40,7 @@ The letter after the version names the product: `G`, `C`, `L` or `I`.
   `glaciers.rgi_id`.
 - `glaciers.o1region` joins `regions.o1region` where `level = 1`, and
   `glaciers.o2region` joins `regions.o2region` where `level = 2`. The
-  complexes carry the same two codes.
+  complexes have the same two codes.
 
 ## Versions
 

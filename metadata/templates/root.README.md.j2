@@ -1,4 +1,6 @@
+<!-- vale Portolan-Mechanics.Headings = NO -->
 # {{ meta.title }}
+<!-- vale Portolan-Mechanics.Headings = YES -->
 
 {% include "_nav.md.j2" %}
 
@@ -6,17 +8,32 @@
 
 {{ disclaimer }}
 
-## What is here
+## Files
 
-| Version | Mirror revision | Collections | Guides |
-| --- | --- | --- | --- |
+- **GeoParquet, for analysis.** Each product is one GeoParquet file with all
+  of its rows and columns. The side files of RGI's glacier product are
+  columns of the glaciers file: the hypsometry, the submission information,
+  the glacier complex of each glacier and the links to RGI 6.0.
+- **PMTiles, for web maps only.** One archive contains the vector tiles of
+  all collections, with overviews for rendering at low zooms. Each
+  collection provides a map style (`styles/*.json`). The tiles leave out the
+  columns that vector tiles cannot store ({{ untiled }}). Read those from the
+  GeoParquet files instead.
+
+{% include "_changes.md.j2" %}
+
+## Versions
+
 {% for version, vspec in versions.items() %}
-| [RGI {{ version }}]({{ browser("v" ~ version ~ "/catalog.json") }}) | {{ records[version].mirror_revision }} | {{ vspec.collections | join(", ") }} | [README](v{{ version }}/README.md) · [Agents guide](v{{ version }}/AGENTS.md) |
+- [RGI {{ version }}]({{ browser("v" ~ version ~ "/catalog.json") }}), mirror
+  revision `{{ records[version].mirror_revision }}`: the {{ (vspec.collections | list)[:-1] | join(", ") }} and {{ (vspec.collections | list)[-1] }}.
+  Read the [README](v{{ version }}/README.md) or the
+  [agents guide](v{{ version }}/AGENTS.md).
 {% endfor %}
 
 ## Access
 
-Every file is public over HTTPS and S3. No account is needed. Install
+Every file is public over HTTPS and S3, so readers need no account. Install
 `geopandas`, `pyarrow`, `fsspec`, and `aiohttp`. This geopandas code reads the
 glaciers in a box. The `bbox` argument filters on the bbox column:
 
@@ -43,11 +60,13 @@ ORDER BY o1region;
 
 ## QGIS
 
+> **Coming soon.** This mirror is not in the Portolan registry yet, so the
+> plugin does not list its collections.
+
 Install the [Portolan Registry plugin](https://github.com/portolan-sdi/portolan-registry-qgis).
 Open it from the Web menu and select a collection.
 
 - **View on map** adds the PMTiles web map with the collection's style. Use it to look at the glaciers at any zoom.
 - **Load full data** adds the GeoParquet file for an area of interest that you draw. Use it for analysis.
-  The plugin reads the file with DuckDB 1.5.0 or newer in the Python of QGIS.
 
 {% include "_mirror.md.j2" %}

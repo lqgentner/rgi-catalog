@@ -33,6 +33,8 @@ via:
   href: https://nsidc.org/data/nsidc-0770/versions/7
   title: RGI 7.0 at NSIDC (authoritative source)
 nsidc_files: https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files
+# The server that the build downloads from. metadata/sources.yaml pins each file.
+download_server: https://cluster.klima.uni-bremen.de/~fmaussion/misc/rgi7_data/
 
 user_guide: https://rgidata.org/user_guide/
 
@@ -69,18 +71,28 @@ disclaimer: >-
 
 issue_tracker: https://github.com/GLIMS-RGI/rgi_issue_tracker/issues
 
+# Examples of display_name in the README, as glac_name and the display_name
+# of the same row. A test checks each one against the rules and the data.
+display_name_examples:
+  - glac_name: FIESCHERGLETSCHER VS
+    display_name: Fieschergletscher VS
+  - glac_name: CN5J319J0001 Nianbaoyeze Glacier
+    display_name: Nianbaoyeze Glacier
+  - glac_name: S/N
+    display_name: null
+
 # The fixes of the convert report, as the processing notes of the collection
 # READMEs state them. The counts come from the build record.
 fixes:
   text-encoding:
     text: >-
-      Repaired text that an encoding error garbled, such as `AbbÃ© Glacier` for
+      Encoding errors in the text are repaired, so `AbbÃ© Glacier` becomes
       `Abbé Glacier`.
   drop-z:
-    text: Dropped the Z coordinate, which is 0 in every vertex.
+    text: The Z coordinate is dropped. It is 0 in every vertex.
     issue: 43
   polygon-validity:
-    text: Made the invalid outlines valid. Each repaired outline is one polygon.
+    text: Invalid outlines are made valid. Each repaired outline is still one polygon.
     issue: 48
 
 # The description of every thumbnail. The images live in metadata/thumbnails/
@@ -116,9 +128,10 @@ versions:
         product: G
         title: RGI 7.0 glaciers
         description: >-
-          One row per glacier: the outline, RGI's attributes, the hypsometry,
-          the links to RGI 6.0 and the GLIMS submission, in one GeoParquet
-          file. The web map archive holds the outlines and the glacier names.
+          The GeoParquet file has one row per glacier. Each row has the
+          outline, RGI's attributes, the hypsometry, the links to RGI 6.0 and
+          the GLIMS submission. The collection also has a PMTiles archive for
+          web maps.
         keywords: [glacier outlines, hypsometry]
         pmtiles_layers: [glaciers, glacier-labels]
         # The row order and the rows per row group of the GeoParquet file. In
@@ -167,9 +180,10 @@ versions:
         title: RGI 7.0 glacier complexes
         row_noun: glacier complex
         description: >-
-          One row per glacier complex: the glaciers that touch, merged into one
-          outline, with RGI's attributes and the IDs of the member glaciers, in
-          one GeoParquet file. The web map archive holds the outlines.
+          The GeoParquet file has one row per glacier complex. A complex
+          merges the glaciers that touch into one outline. Each row has RGI's
+          attributes and the IDs of the member glaciers. The collection also
+          has a PMTiles archive for web maps.
         keywords: [glacier complexes]
         pmtiles_layers: [complexes]
         layout:
@@ -203,10 +217,10 @@ versions:
         title: RGI 7.0 glacier intersects
         row_noun: intersect
         description: >-
-          One row per intersect: a line that divides two adjacent glaciers,
-          with the IDs of both glaciers, in one GeoParquet file. The web map
-          archive holds the lines from z9. A longer line enters at the first
-          zoom at which it spans 32 pixels, from z4 on.
+          The GeoParquet file has one row per intersect. An intersect is a
+          line that divides two adjacent glaciers, and its row has the IDs of
+          both glaciers. The collection also has a PMTiles archive for web
+          maps.
         keywords: [glacier divides]
         pmtiles_layers: [intersects]
         layout:
@@ -234,11 +248,9 @@ versions:
         title: RGI 7.0 glacier centerlines
         row_noun: centerline
         description: >-
-          One row per centerline: the main centerline and the tributary
-          centerlines of every glacier, with RGI's attributes, in one
-          GeoParquet file. The web map archive holds the main centerlines
-          from z8 and the others from z9. A longer line enters at the first
-          zoom at which it spans 32 pixels, from z4 on.
+          The GeoParquet file has one row per centerline. Each glacier has a
+          main centerline and tributary centerlines, and each row has RGI's
+          attributes. The collection also has a PMTiles archive for web maps.
         keywords: [glacier centerlines, glacier length]
         pmtiles_layers: [centerlines]
         layout:
@@ -284,9 +296,9 @@ versions:
         row_noun: region
         key: long_code
         description: >-
-          The 20 first-order and 90 second-order glacier regions of RGI 7.0, in
-          one GeoParquet file, one row per region. The web map archive holds
-          the boundaries and the names.
+          The 20 first-order and 90 second-order glacier regions of RGI 7.0,
+          in one GeoParquet file, one row per region. The collection also has
+          a PMTiles archive for web maps.
         keywords: [glacier regions, GTN-G]
         pmtiles_layers: [regions, region-boundaries, region-labels]
         # The regions are GTN-G's, with their own citation and terms.

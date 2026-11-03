@@ -2,8 +2,8 @@
 {% set data_rel = name ~ "/" ~ stats.href %}
 # AGENTS.md: {{ spec.title }}
 
-**One rule survives every edit to this file.** Every claim here is either
-quoted from a source or measured from the data.
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
 
 {{ disclaimer }}
 
@@ -12,7 +12,11 @@ quoted from a source or measured from the data.
 The RGI 7.0 user guide describes the
 [{{ spec.user_guide.title | lower }}]({{ spec.user_guide.url }}):
 
+<!-- human-written -->
+
 > {{ spec.user_guide.quote.split() | join(" ") }}
+
+<!-- /human-written -->
 
 ## The file
 

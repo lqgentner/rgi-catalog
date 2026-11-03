@@ -13,7 +13,7 @@
   ],
   "id": "rgi-v7-0-intersects",
   "title": "RGI 7.0 glacier intersects",
-  "description": "One row per intersect: a line that divides two adjacent glaciers, with the IDs of both glaciers, in one GeoParquet file. The web map archive holds the lines from z9. A longer line enters at the first zoom at which it spans 32 pixels, from z4 on.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "description": "The GeoParquet file has one row per intersect. An intersect is a line that divides two adjacent glaciers, and its row has the IDs of both glaciers. The collection also has a PMTiles archive for web maps.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "license": "CC-BY-4.0",
   "keywords": [
     "glaciers",
@@ -95,29 +95,29 @@
         {
           "name": "rgi_id",
           "type": "string",
-          "description": "Unique identifier assigned to a single intersect line by the RGI"
+          "description": "Unique identifier assigned to an intersect."
         },
         {
           "name": "rgi_g_id_1",
           "type": "string",
-          "description": "Glacier ID of one side of the intersect (arbitrary)"
+          "description": "Glacier ID of one side of the intersect (arbitrary)."
         },
         {
           "name": "rgi_g_id_2",
           "type": "string",
-          "description": "Glacier ID of the other side of the intersect (arbitrary)"
+          "description": "Glacier ID of the other side of the intersect (arbitrary)."
         },
         {
           "name": "length_m",
           "type": "double",
-          "description": "Length of the intersect in meters",
+          "description": "Length of the intersect.",
           "unit": "m"
         },
         {
           "name": "geometry",
           "type": "binary",
-          "description": "Intersect geometry (LineString)",
-          "unit": "deg"
+          "description": "Intersect geometry (LineString).",
+          "unit": "degrees"
         },
         {
           "name": "bbox",
@@ -130,13 +130,13 @@
       "href": "./styles/intersects.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Intersects",
-      "description": "Intersects, the divides between adjacent glaciers, from z9, over the glacier outlines. A longer divide shows from the first zoom at which it spans 32 pixels, from z4 on.",
+      "description": "Glacier intersects over the glacier outlines. An intersect is a line that divides two adjacent glaciers. The intersects show from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 4916,
-      "file:checksum": "1220ff7dcca1161bd09f14411296dd00e869afdc6cda7e3c2f698deacc2495f17db9"
+      "file:size": 4961,
+      "file:checksum": "1220246f7030a08ce9fd83f1d6928a3160f2c210e9d7b750380b64a04a7dc5550f68"
     },
     "style-glaciers": {
       "href": "./styles/glaciers.json",

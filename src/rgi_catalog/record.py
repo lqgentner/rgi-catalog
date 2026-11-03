@@ -14,21 +14,17 @@ from pmtiles.reader import MmapSource, Reader
 import pyarrow.parquet as pq
 
 from rgi_catalog.paths import METADATA, STAGING, version_dir
-from rgi_catalog.pipeline import PRODUCT_SOURCES, catalog_metadata, output_path
-from rgi_catalog.sources import fetch, load_pins, sha256_file
+from rgi_catalog.pipeline import catalog_metadata, output_path
+from rgi_catalog.sources import load_pins, sha256_file
 from rgi_catalog.tiles import archive_path
-from rgi_catalog.upstream import read_attribute_metadata
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from pathlib import Path
 
-    from rgi_catalog.upstream import Product
 
 # The temporal extent of a collection comes from this column, if it has it.
 DATE_COLUMN = "src_date"
-# The products that ship an attributes_metadata.json file.
-DESCRIBED_PRODUCTS = ("G", "C", "I", "L")
 
 
 def checksum(path: Path) -> str:
@@ -138,8 +134,8 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
     -------
     dict[str, Any]
         Sizes, checksums, extents, row counts and schemas of the staged files,
-        the archive's layers, the upstream pins, the fix counts of the
-        convert report, and RGI's column metadata of each product used.
+        the archive's layers, the upstream pins, and the fix counts of the
+        convert report.
     """
     meta = catalog_metadata()
     versions = cast("dict[str, Any]", meta["versions"])
@@ -148,12 +144,10 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
     vdir = staging / version_dir(version)
     files: dict[str, Any] = {}
     collections: dict[str, Any] = {}
-    products: set[str] = set()
-    for name, collection in spec["collections"].items():
+    for name in spec["collections"]:
         path = output_path(staging, version, name)
         files[path.relative_to(vdir).as_posix()] = _file_entry(path)
         collections[name] = _collection(path)
-        products.update((collection["product"], *PRODUCT_SOURCES[name]))
     archive = archive_path(staging, version)
     files[archive.relative_to(vdir).as_posix()] = _file_entry(archive)
     return {
@@ -165,10 +159,6 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
         "collections": collections,
         "archive": {"href": archive.relative_to(vdir).as_posix(), **_archive(archive)},
         "fixes": fix_counts(vdir / ".reports" / "fixes.json", spec["collections"]),
-        "attributes_metadata": {
-            product: read_attribute_metadata(fetch(pins[product]), cast("Product", product))
-            for product in sorted(products & set(DESCRIBED_PRODUCTS))
-        },
     }
 
 

@@ -1,15 +1,17 @@
+<!-- vale Portolan-Mechanics.Headings = NO -->
 # AGENTS.md: Randolph Glacier Inventory Mirror
+<!-- vale Portolan-Mechanics.Headings = YES -->
 
 Guidance for AI agents and automated clients working with this catalog.
 
-**One rule survives every edit to this file.** Every claim here is either
-quoted from a source or measured from the data.
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
 > RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
-## What this catalog holds
+## Contents of the catalog
 
 The public root is `https://data.source.coop/lqgentner/rgi/catalog.json`. Each RGI version is a
 sub-catalog. Each RGI product is a collection with one GeoParquet file and no
@@ -29,9 +31,9 @@ SELECT count(*) AS glaciers
 FROM 'https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet';
 ```
 
-## Quirks that produce silently wrong answers
+## Usage notes
 
 - `rgi_id` is the only stable key. Never derive an ID from a name.
-- This is a mirror. The values are RGI's. For a value that looks wrong,
+- The mirror keeps RGI's values. For a value that looks wrong,
   check [docs/PROVENANCE.md](https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md)
   and the RGI user guide before you correct it.

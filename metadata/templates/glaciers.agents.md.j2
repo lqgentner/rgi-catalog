@@ -71,7 +71,7 @@ WHERE rgi_id = 'RGI2000-v7.0-G-11-01706';
 - `subm_id` identifies a GLIMS submission. The `subm_*` columns are its
   attributes, from the glacier's first-order region.
 
-## Quirks that produce silently wrong answers
+## Usage notes
 
 - `term_type` 9 means "Not assigned", not land-terminating. RGI 7.0 assigns
   only the marine-terminating class (1,561 glaciers).
@@ -84,4 +84,4 @@ WHERE rgi_id = 'RGI2000-v7.0-G-11-01706';
 - `hypso_permille` leaves out empty bands below the lowest and above the
   highest glacierized band. Its values sum to 1000.
 - No outline crosses the antimeridian. Region 10 has glaciers near ±180°, so
-  a box from 170° to -170° must be split in two.
+  a box from 170°E to 170°W must be split in two.

@@ -1,25 +1,35 @@
-## Citation
+## License and citation
 
-{% if spec is defined and spec.citation is defined %}
+{% if spec is defined and spec.license is defined %}
+The glacier regions come from the Global Terrestrial Network for Glaciers
+(GTN-G). Their DataCite record states the terms as: "Open access for
+scientific and educational purposes under requirement of correct citation".
+See [GTN-G Glacier Regions]({{ spec.license_url }}).
+{% if spec.citation is defined %}
 Cite the source of this collection:
 
 > {{ spec.citation.split() | join(" ") }}
+{% endif %}
 
-It is part of the RGI 7.0 release. Cite the RGI Consortium as well:
+The rest of the RGI 7.0 release is under
+[{{ meta.license }}]({{ meta.license_url }}). The regions are part of the
+release, so cite the RGI Consortium as well:
 {% else %}
-Cite the RGI Consortium:
+RGI 7.0 is under [{{ meta.license }}]({{ meta.license_url }}). Anyone may use
+it with due acknowledgement. Cite the RGI Consortium:
 {% endif %}
 
 > {{ citation }}
 
-The user guide describes every file and attribute:
+Read the [user guide]({{ meta.user_guide }}) for a detailed description of RGI 7.0:
 
 {% for p in meta.publications %}
 > {{ p.citation.split() | join(" ") }}
 {% endfor %}
 {% if spec is defined and spec.publications is defined %}
 
-The user guide asks to cite these for this collection as well:
+For this collection, the user guide also asks to cite the papers of the
+method:
 
 {% for p in spec.publications %}
 > {{ p.citation.split() | join(" ") }}
@@ -29,32 +39,18 @@ The user guide asks to cite these for this collection as well:
 {% endfor %}
 {% endif %}
 
-This mirror asks for no citation of its own. You may add "accessed via
+For regional studies, the user guide also invites users to cite the analysts
+who provided the outlines. The `subm_analysts` column of the glaciers names
+them.
+
+A citation of this mirror is optional. You may add "accessed via
 {{ meta.about }}".
-
-## License
-
-{% if spec is defined and spec.license is defined %}
-The regions are those of the Global Terrestrial Network for Glaciers. Their
-DataCite record states the terms as: "Open access for scientific and
-educational purposes under requirement of correct citation". See
-[GTN-G Glacier Regions]({{ spec.license_url }}).
-
-The rest of the RGI 7.0 release is under
-{% endif %}
-[{{ meta.license }}]({{ meta.license_url }}). The RGI user guide states: "The
-RGI may be used freely under the Creative Commons Attribution 4.0
-International License with due acknowledgement (by proper referencing, see
-below). Where appropriate (for example for regional studies), users are
-invited to cite the analysts who provided the RGI outlines."
 
 ## Provenance
 
-- The authoritative distribution is [RGI 7.0 at NSIDC]({{ meta.via.href }}),
-  https://doi.org/{{ meta.doi | upper }}. It needs an Earthdata login.
-- The build downloads the same release without a login from the RGI
-  server of Fabien Maussion at the University of Bremen. Its four global zips are
-  byte-identical to NSIDC's.
-- The values are those of the RGI release. The build restructures the files
-  and fixes documented upstream errors. Each fix, with counts and IDs, is in
-  [docs/PROVENANCE.md]({{ meta.repository }}/blob/main/docs/PROVENANCE.md).
+NSIDC distributes the authoritative copy of the release,
+[RGI 7.0 at NSIDC]({{ meta.via.href }}) (https://doi.org/{{ meta.doi | upper }}),
+to users with an Earthdata login. The build downloads the same release from
+[the RGI server at the University of Bremen]({{ meta.download_server }}),
+which needs no login. Its four global zips are byte-identical to the zips at
+NSIDC.

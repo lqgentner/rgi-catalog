@@ -1,15 +1,144 @@
-# Descriptions of the columns that RGI's attributes_metadata.json does not
-# describe: derived columns and columns folded in from side files. The
-# upstream columns take RGI's own text from that file.
+# The description of each column of each collection, in the column order of
+# the data. The render reads every column description from this file. A test
+# fails when a column of the data has no entry or an entry has no column.
 #
-# Every description follows the wording of the cited source or is measured
-# from the data.
+# The columns of the RGI files take RGI's own text from the
+# attributes_metadata.json of the product, unless a description is reworded
+# here. `python -m rgi_catalog columns --version 7.0` lists the descriptions
+# that differ from RGI's text.
 
 glaciers:
+  rgi_id:
+    description: Unique identifier assigned to a glacier outline.
+    source: &g_metadata RGI2000-v7.0-G-global.zip, attributes_metadata.json
+  o1region:
+    description: >-
+      Code of the first-order region to which the glacier belongs.
+    source: *g_metadata
+  o2region:
+    description: >-
+      Code of the second-order region to which the glacier belongs.
+    source: *g_metadata
+  glims_id:
+    description: >-
+      Non-unique identifier assigned to glaciers by the Global Land Ice
+      Measurements from Space service at NSIDC.
+    source: *g_metadata
+  anlys_id:
+    description: >-
+      Unique identifier assigned by GLIMS to one outline of a glacier at one
+      time.
+    source: *g_metadata
+  subm_id:
+    description: >-
+      Unique identifier assigned by GLIMS to a specific data submission.
+      Links to the information about the analysts and data submitters.
+    source: *g_metadata
+  src_date:
+    description: >-
+      As-of date for the outline (usually the acquisition date of the
+      image), in the format ISO 8601.
+    unit: date
+    source: *g_metadata
+  cenlon:
+    description: >-
+      Longitude of an approximately central point within the glacier outlines
+      (not the centroid).
+    unit: degrees
+    source: *g_metadata
+  cenlat:
+    description: >-
+      Latitude of an approximately central point within the glacier outlines
+      (not the centroid).
+    unit: degrees
+    source: *g_metadata
+  utm_zone:
+    description: >-
+      Number of the UTM zone for this glacier, based on its representative
+      point. Note that this attribute is for information only. The geometries
+      are all in WGS84.
+    source: *g_metadata
+  area_km2:
+    description: Area of the glacier.
+    unit: km2
+    source: *g_metadata
+  primeclass:
+    description: WGMS primary classification of the glacier.
+    source: *g_metadata
+  conn_lvl:
+    description: >-
+      Level of connection to the Greenland ice sheet (0: no connection; 1: weak
+      connection).
+    source: *g_metadata
+  surge_type:
+    description: >-
+      Flag indicating if surging behavior has been documented for this
+      glacier.
+    source: *g_metadata
+  term_type:
+    description: Flag indicating the terminus type of the glacier.
+    source: *g_metadata
+  glac_name:
+    description: Glacier name (when available).
+    source: *g_metadata
+  is_rgi6:
+    description: >-
+      Flag indicating if the outline is the same as in RGI 6.0 (1) or was
+      remapped (0). Note that it does not guarantee strict equivalence of the
+      polygon (in most of the cases it does).
+    source: *g_metadata
+  termlon:
+    description: >-
+      Longitude of the lowest elevation point on the glacier outline.
+    unit: degrees
+    source: *g_metadata
+  termlat:
+    description: Latitude of the lowest elevation point on the glacier outline.
+    unit: degrees
+    source: *g_metadata
+  zmin_m:
+    description: Minimum elevation (m above sea level) of the glacier.
+    unit: m
+    source: *g_metadata
+  zmax_m:
+    description: Maximum elevation (m above sea level) of the glacier.
+    unit: m
+    source: *g_metadata
+  zmed_m:
+    description: Median elevation (m above sea level) of the glacier.
+    unit: m
+    source: *g_metadata
+  zmean_m:
+    description: Mean elevation (m above sea level) of the glacier.
+    unit: m
+    source: *g_metadata
+  slope_deg:
+    description: Mean slope of the glacier surface.
+    unit: degrees
+    source: *g_metadata
+  aspect_deg:
+    description: >-
+      The aspect (orientation) of the glacier surface presented as an azimuth
+      relative to 0° at due north.
+    unit: degrees
+    source: *g_metadata
+  aspect_sec:
+    description: >-
+      The aspect (orientation) of the glacier surface presented as a category.
+    source: *g_metadata
+  dem_source:
+    description: >-
+      The name of the dataset that was used to compute the topography
+      attributes.
+    source: *g_metadata
+  lmax_m:
+    description: Length (m) of the longest surface centerline of the glacier.
+    unit: m
+    source: *g_metadata
   display_name:
     description: >-
       The glacier name for map labels, cleaned from glac_name. Null when
-      glac_name holds no usable name. The rules are in docs/PROVENANCE.md.
+      glac_name contains no usable name. The rules are in docs/PROVENANCE.md.
     source: https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md
   complex_id:
     description: The identifier of the glacier complex to which the glacier belongs.
@@ -51,18 +180,22 @@ glaciers:
     source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_chief_affl:
     description: >-
-      Affiliation of the chief of the regional center or the person(s) who
+      Affiliation of the chief of the regional center or of the people who
       submitted the data.
     source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_submitters:
-    description: Person(s) who submitted the data.
+    description: People who submitted the data.
     source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_analysts:
-    description: Person(s) who created the data.
+    description: People who created the data.
     source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
   subm_rc_id:
     description: GLIMS ID for the regional center.
     source: https://rgidata.org/user_guide/products/glacier_product.html#submission-info-table
+  geometry:
+    description: Glacier geometry (Polygon).
+    unit: degrees
+    source: *g_metadata
   bbox: &bbox
     description: >-
       The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet
@@ -70,25 +203,117 @@ glaciers:
     source: https://geoparquet.org/releases/v1.1.0/
 
 complexes:
+  rgi_id:
+    description: Unique identifier assigned to a glacier complex.
+    source: &c_metadata RGI2000-v7.0-C-global.zip, attributes_metadata.json
+  o1region:
+    description: >-
+      Code of the first-order region to which the glacier complex belongs.
+    source: *c_metadata
+  o2region:
+    description: >-
+      Code of the second-order region to which the glacier complex belongs.
+    source: *c_metadata
+  cenlon:
+    description: >-
+      Longitude of the representative point of the glacier complex, guaranteed
+      to be located within the glacier outlines and approximately central
+      (not the centroid).
+    unit: degrees
+    source: *c_metadata
+  cenlat:
+    description: >-
+      Latitude of the representative point of the glacier complex, guaranteed
+      to be located within the glacier outlines and approximately central
+      (not the centroid).
+    unit: degrees
+    source: *c_metadata
+  utm_zone:
+    description: >-
+      Number of the UTM zone for this glacier complex, based on its
+      representative point. Note that this attribute is for information only.
+      The geometries are all in WGS84.
+    source: *c_metadata
+  area_km2:
+    description: Area of the glacier complex.
+    unit: km2
+    source: *c_metadata
   glacier_ids:
     description: >-
       The identifiers of the glaciers in the glacier complex, sorted (one or
       more depending on the size of the cluster).
     source: https://rgidata.org/user_guide/products/glacier_complex_product.html
-  bbox: *bbox
-
-centerlines:
+  geometry:
+    description: Glacier complex geometry (Polygon).
+    unit: degrees
+    source: *c_metadata
   bbox: *bbox
 
 intersects:
+  rgi_id:
+    description: Unique identifier assigned to an intersect.
+    source: &i_metadata RGI2000-v7.0-I-global.zip, attributes_metadata.json
+  rgi_g_id_1:
+    description: Glacier ID of one side of the intersect (arbitrary).
+    source: *i_metadata
+  rgi_g_id_2:
+    description: Glacier ID of the other side of the intersect (arbitrary).
+    source: *i_metadata
+  length_m:
+    description: Length of the intersect.
+    unit: m
+    source: *i_metadata
+  geometry:
+    description: Intersect geometry (LineString).
+    unit: degrees
+    source: *i_metadata
+  bbox: *bbox
+
+centerlines:
+  rgi_id:
+    # RGI's text names an intersect line, a copy of the intersects text.
+    description: Unique identifier assigned to a centerline.
+    source: &l_metadata RGI2000-v7.0-L-global.zip, attributes_metadata.json
+  rgi_g_id:
+    description: Glacier ID to which the centerline belongs.
+    source: *l_metadata
+  segment_id:
+    description: >-
+      Integer number uniquely identifying this centerline within the glacier.
+      The main centerline is always last.
+    source: *l_metadata
+  is_main:
+    description: >-
+      Integer number indicating whether the centerline is the main centerline
+      (1) or not (0). There is only one main centerline per glacier.
+    source: *l_metadata
+  outflow_id:
+    description: >-
+      Each secondary centerline flows into another centerline. This identifier
+      points to the `segment_id` into which this centerline flows.
+    source: *l_metadata
+  strahler_n:
+    description: >-
+      Strahler number (hydrological order) of the centerline, from lowest (1,
+      line without tributaries but with possible descendants) to highest (the
+      main centerline).
+    source: *l_metadata
+  length_m:
+    description: Length of the centerline.
+    unit: m
+    source: *l_metadata
+  geometry:
+    description: Centerline geometry (LineString).
+    unit: degrees
+    source: *l_metadata
   bbox: *bbox
 
 # The regions files ship no attributes metadata.
 regions:
   level:
     description: >-
-      1 for a first-order region, 2 for a second-order region. RGI ships the
-      two levels as two shapefiles. This file holds both, one row per
+      1 for a first-order region, 2 for a second-order region. RGI distributes
+      the two levels as two shapefiles. This file contains both, one row per
       polygon.
     source: https://rgidata.org/user_guide/02_regions_definition.html
   o1region:

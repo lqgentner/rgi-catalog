@@ -13,7 +13,7 @@
   ],
   "id": "rgi-v7-0-regions",
   "title": "RGI 7.0 glacier regions",
-  "description": "The 20 first-order and 90 second-order glacier regions of RGI 7.0, in one GeoParquet file, one row per region. The web map archive holds the boundaries and the names.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "description": "The 20 first-order and 90 second-order glacier regions of RGI 7.0, in one GeoParquet file, one row per region. The collection also has a PMTiles archive for web maps.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "license": "other",
   "keywords": [
     "glaciers",
@@ -96,7 +96,7 @@
         {
           "name": "level",
           "type": "uint8",
-          "description": "1 for a first-order region, 2 for a second-order region. RGI ships the two levels as two shapefiles. This file holds both, one row per polygon."
+          "description": "1 for a first-order region, 2 for a second-order region. RGI distributes the two levels as two shapefiles. This file contains both, one row per polygon."
         },
         {
           "name": "o1region",

@@ -1,7 +1,7 @@
 # AGENTS.md: RGI 7.0 glacier complexes
 
-**One rule survives every edit to this file.** Every claim here is either
-quoted from a source or measured from the data.
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -12,7 +12,11 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 The RGI 7.0 user guide describes the
 [glacier complex product](https://rgidata.org/user_guide/products/glacier_complex_product.html):
 
+<!-- human-written -->
+
 > The glacier complex product is the result of a spatial merge operation of the glacier product (dissolve in the GIS jargon). The operation is realized on geometries only, which means that any cluster of connected glaciers (however small the connection) will be merged into one entity in the glacier complex product. The resulting inventory has the same area but a smaller or equal number of entities as the glacier product. Only a few attributes from the original glacier product remain after the merge.
+
+<!-- /human-written -->
 
 ## The file
 
@@ -66,7 +70,7 @@ ORDER BY g.area_km2 DESC;
   glacier is in exactly one complex: the lists hold 274,531 distinct glacier
   IDs, and `glaciers.complex_id` names the same complex.
 
-## Quirks that produce silently wrong answers
+## Usage notes
 
 - A complex is "the result of a spatial merge operation of the glacier
   product": "any cluster of connected glaciers (however small the

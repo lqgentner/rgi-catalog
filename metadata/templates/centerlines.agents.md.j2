@@ -41,16 +41,16 @@ LIMIT 10;
 
 - `rgi_id` is unique: {{ "{:,}".format(record.collections.centerlines.row_count) }}
   distinct values.
-- `rgi_g_id` joins `glaciers.rgi_id`. Every glacier has exactly one row with
+- `rgi_g_id` joins `glaciers.rgi_id`. Each glacier has exactly one row with
   `is_main` true, so a join on the main centerline keeps one row per glacier.
 - `outflow_id` "points to the `segment_id` to which this centerline flows
   to", within the same glacier. Join on `rgi_g_id` and `segment_id`, never
   on `segment_id` alone.
 
-## Quirks that produce silently wrong answers
+## Usage notes
 
 - The main centerline is "always last": it has the highest `segment_id` of
-  its glacier. Its `outflow_id` is -1. The other centerlines have an
+  its glacier. Its `outflow_id` is `-1`. The other centerlines have an
   `outflow_id` from 1 to 107.
 - `length_m` of the main centerline equals the glacier's `lmax_m` for all
   274,531 glaciers. "The main (i.e.longest) centerline is used to compute

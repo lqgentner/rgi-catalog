@@ -1,7 +1,7 @@
 # AGENTS.md: RGI 7.0 glacier intersects
 
-**One rule survives every edit to this file.** Every claim here is either
-quoted from a source or measured from the data.
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -12,7 +12,11 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 The RGI 7.0 user guide describes the
 [glacier intersects product](https://rgidata.org/user_guide/products/intersects_product.html):
 
+<!-- human-written -->
+
 > The glacier intersects products includes only the “divides” or “borders” between adjacent glaciers rather than the complete outlines. The resulting geometries are single lines (each with their own id), with attributes rgi_g_id_1 and rgi_g_id_2 indicating which glacier entities are adjacent. This product is useful for describing the connection between two glaciers (for example by the length of a common boundary) or for glacier models able to use this kind of information.
+
+<!-- /human-written -->
 
 ## The file
 
@@ -64,7 +68,7 @@ LIMIT 10;
   which glacier is listed as 1 is arbitrary", so match a glacier on both
   columns.
 
-## Quirks that produce silently wrong answers
+## Usage notes
 
 - 14,035 glacier pairs share more than one intersect line. Count the pairs
   with `least`/`greatest`, not the rows.

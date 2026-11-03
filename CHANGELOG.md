@@ -15,7 +15,7 @@ PMTiles web map archive.
 The values are those of the RGI 7.0 release. The build changes a value only
 to fix one of these documented upstream errors:
 
-- Garbled text in `glac_name` is repaired.
+- Encoding errors in `glac_name` are repaired.
 - The Z coordinate, which is 0 in every vertex, is dropped
   (GLIMS-RGI/rgi_issue_tracker#43).
 - Invalid outlines are made valid (GLIMS-RGI/rgi_issue_tracker#48).

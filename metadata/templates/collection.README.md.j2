@@ -13,13 +13,17 @@
 The RGI 7.0 user guide describes the
 [{{ spec.user_guide.title | lower }}]({{ spec.user_guide.url }}):
 
+<!-- human-written -->
+
 > {{ spec.user_guide.quote.split() | join(" ") }}
+
+<!-- /human-written -->
 
 ## Files
 
 {% set archive_name = record.archive.href.split("/")[-1] %}
-- [`{{ stats.href }}`]({{ public("v" ~ version ~ "/" ~ data_rel) }}): {{ "{:,}".format(stats.row_count) }} rows, {{ "%.1f" | format(record.files[data_rel].size / 1e6) }} MB. GeoParquet {{ stats.geoparquet_version }} in {{ stats.row_groups }} row groups of up to {{ "{:,}".format(stats.row_group_size) }} rows, zstd-compressed and {% if spec.layout is defined %}ordered by `{{ spec.layout.order_by }}`. Each row group holds a separate range of `{{ spec.layout.order_by }}` values, so a filter on one value reads one row group.{% else %}ordered along a Hilbert curve.{% endif %} A `bbox` column lets readers skip row groups in a spatial filter.
-- [`{{ archive_name }}`]({{ public("v" ~ version ~ "/" ~ record.archive.href) }}): the web map archive (PMTiles, vector tiles, z{{ record.archive.minzoom }} to z{{ record.archive.maxzoom }}), with the layers `{{ spec.pmtiles_layers | join("`, `") }}`. {% if overview %}Below z{{ complete_zoom }} the layer is an overview. A feature that spans {{ shape_min_px }} pixels at a zoom is its simplified outline. A smaller feature is a point at RGI's `cenlon` and `cenlat`, one per grid cell of about a pixel, and the largest feature wins the cell. Overview features carry only `{{ overview | join("`, `") }}`. From z{{ complete_zoom }} the tiles{% else %}The tiles{% endif %} carry every column except the list and struct columns, which vector tiles cannot store: `{{ untiled | join("`, `") }}`. Fetch those from the GeoParquet file by `{{ spec.key | default("rgi_id") }}`.{% if has_timestamps %} Timestamps are strings in the tiles.{% endif %}
+- [`{{ stats.href }}`]({{ public("v" ~ version ~ "/" ~ data_rel) }}): {{ "{:,}".format(stats.row_count) }} rows, {{ "%.1f" | format(record.files[data_rel].size / 1e6) }} MB. GeoParquet {{ stats.geoparquet_version }} in {{ stats.row_groups }} row groups of up to {{ "{:,}".format(stats.row_group_size) }} rows, zstd-compressed and {% if spec.layout is defined %}ordered by `{{ spec.layout.order_by }}`. Each row group contains a separate range of `{{ spec.layout.order_by }}` values, so a filter on one value reads one row group.{% else %}ordered along a Hilbert curve.{% endif %} A `bbox` column lets readers skip row groups in a spatial filter.
+- [`{{ archive_name }}`]({{ public("v" ~ version ~ "/" ~ record.archive.href) }}): the PMTiles web map archive from z{{ record.archive.minzoom }} to z{{ record.archive.maxzoom }}, with the layers `{{ spec.pmtiles_layers | join("`, `") }}`. {% if overview %}Below z{{ complete_zoom }} the layer is an overview. Features that span {{ shape_min_px }} pixels at a zoom show as simplified outlines. Smaller features show as points at RGI's `cenlon` and `cenlat`, and each grid cell of about a pixel keeps the point of the largest feature. Overview features contain only `{{ overview | join("`, `") }}`. From z{{ complete_zoom }} the tiles{% else %}The tiles{% endif %} contain every column except the list and struct columns, which vector tiles cannot store: `{{ untiled | join("`, `") }}`. Fetch those from the GeoParquet file by `{{ spec.key | default("rgi_id") }}`.{% if has_timestamps %} Timestamps are strings in the tiles.{% endif %}
 
 ## Map styles
 
@@ -29,7 +33,7 @@ The RGI 7.0 user guide describes the
 
 ## Access
 
-No account and no download are needed. This geopandas code reads {{ spec.example.what }}.
+The file is public over HTTPS, so readers need no account. The data can be streamed directly without downloading. This geopandas code reads {{ spec.example.what }}.
 Install `geopandas`, `pyarrow`, `fsspec`, and `aiohttp`.
 
 ```python
@@ -59,19 +63,21 @@ anonymous S3 at `{{ meta.public_s3_base }}/v{{ version }}/{{ data_rel }}`.
 
 ## QGIS
 
+> **Coming soon.** This mirror is not in the Portolan registry yet, so the
+> plugin does not list its collections.
+
 Install the [Portolan Registry plugin](https://github.com/portolan-sdi/portolan-registry-qgis).
 Open it from the Web menu and select this collection.
 
 - **View on map** adds the PMTiles web map with the collection's style.
 - **Load full data** adds the GeoParquet file for an area of interest that you draw.
-  The plugin reads the file with DuckDB 1.5.0 or newer in the Python of QGIS.
 
 ## Columns
 
 | Column | Type | Description |
 | --- | --- | --- |
 {% for c in collection.assets.data["table:columns"] %}
-| `{{ c.name }}` | `{{ c.type if c.type | length < 40 else c.type.split("<")[0] }}` | {{ c.description | replace("|", "\\|") }}{{ " See [Coded columns](#coded-columns)." if c["classification:classes"] is defined }}{{ " (" ~ c.unit ~ ")" if c.unit is defined }} |
+| `{{ c.name }}` | `{{ c.type if c.type | length < 40 else c.type.split("<")[0] }}` | {{ c.description | replace("|", "\\|") }}{{ " See [Coded columns](#coded-columns)." if c["classification:classes"] is defined }}{{ " Unit: " ~ c.unit ~ "." if c.unit is defined }} |
 {% endfor %}
 
 {% set coded = collection.assets.data["table:columns"] | selectattr("classification:classes", "defined") | list %}
@@ -92,7 +98,12 @@ From the [RGI 7.0 user guide]({{ codes[c.name].source }}).
 {% endfor %}
 {% if codes[c.name].note is defined %}
 
+<!-- human-written -->
+
 {{ codes[c.name].note.split() | join(" ") }}
+
+<!-- /human-written -->
+
 {% endif %}
 
 {% endfor %}
@@ -116,7 +127,7 @@ the IDs of the changed rows.
 
 {% endfor %}
 {% else %}
-The values are RGI's. The build fixed no upstream error in this collection.
+The values in this collection are those of the RGI release.
 [docs/PROVENANCE.md]({{ meta.repository }}/blob/main/docs/PROVENANCE.md) lists
 every fix.
 {% endif %}

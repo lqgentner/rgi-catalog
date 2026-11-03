@@ -1,15 +1,15 @@
 # Provenance
 
 This file records where the mirror's bytes come from, and every change the
-build makes to RGI's values. The mirror is unofficial. It is not endorsed by
-the RGI Consortium.
+build makes to RGI's values. The RGI Consortium has not endorsed
+this unofficial mirror.
 
 ## Source verification
 
 The build downloads RGI 7.0 from Fabien Maussion's server at the University of
 Bremen
 (`https://cluster.klima.uni-bremen.de/~fmaussion/misc/rgi7_data/`). That
-server holds the same release tree as NSIDC (`nsidc0770_rgi_v7`,
+server has the same release tree as NSIDC (`nsidc0770_rgi_v7`,
 doi:10.5067/f6jmovy5navz), without a login. `metadata/sources.yaml` pins each
 input by URL, sha256 and size. The build refuses a file that does not match.
 
@@ -23,17 +23,18 @@ downloaded from NSIDC through Earthdata. All four are byte-identical.
 | `RGI2000-v7.0-I-global.zip` | `9a002a5b2cdffcf07893f5d446321ace4ed2c16f8400ff5fd9d5143887d27690` | `9a002a5b2cdffcf07893f5d446321ace4ed2c16f8400ff5fd9d5143887d27690` | yes |
 | `RGI2000-v7.0-L-global.zip` | `6929554c360f6b68a5fdd4ea97879108b094d5a4913abb54d1d8506fb864ba23` | `6929554c360f6b68a5fdd4ea97879108b094d5a4913abb54d1d8506fb864ba23` | yes |
 
-Two inputs have no NSIDC counterpart to compare with:
+These inputs have no NSIDC counterpart to compare with:
 
 - `RGI2000-v7.0-regions.zip` comes from the same Bremen release tree.
 - `RGI2000-v7.0-G-global-rgi6_links.csv` holds the corrected RGI 6 links
-  (GLIMS-RGI/rgi_issue_tracker#41). NSIDC ships the uncorrected links.
+  (GLIMS-RGI/rgi_issue_tracker#41). NSIDC distributes the uncorrected links.
 
-## What the build changes
+## Changes to the release
 
 The values are those of the RGI release. The build changes the layout of
 the files, fixes the documented upstream errors listed below, and adds one
-derived column, `display_name`. No other value changes. `area_km2` and the
+derived column, `display_name`. It keeps the other values as RGI publishes
+them. `area_km2` and the
 other computed attributes are kept as published, never recomputed.
 
 The layout changes:
@@ -77,7 +78,9 @@ them. A test checks this table against the build record.
 | regions | `drop-z` | `geometry` | 0 |
 | regions | `polygon-validity` | `geometry` | 0 |
 
+<!-- vale Portolan-Mechanics.Headings = NO -->
 ### `drop-z`: the Z coordinate
+<!-- vale Portolan-Mechanics.Headings = YES -->
 
 The glacier, complex and intersect shapefiles store 3D geometries
 ([rgi_issue_tracker#43](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/43)).
@@ -91,7 +94,7 @@ reports 6 invalid geometries: "3 in region 13, 1 in region 14, 15, 18". The
 build checks every outline of the glaciers, complexes and regions with
 shapely 2.2.0 (GEOS 3.14.1).
 
-- No glacier outline and no region outline is invalid.
+- All glacier outlines and region outlines are valid.
 - 7 complex outlines are invalid. Each is a MultiPolygon with a second part
   of less than 2e-18 square degrees inside the first part (GEOS: "Nested
   shells"). `shapely.make_valid` drops that part. Each repaired outline is
@@ -111,7 +114,7 @@ The repaired complexes:
 
 The build fails if a repair gives anything other than one valid Polygon.
 
-### `text-encoding`: garbled text
+### `text-encoding`: encoding errors
 
 Some GLIMS submissions stored text with one of two encoding errors:
 
@@ -556,9 +559,9 @@ more than one rule.
 
 | RGI's `glac_name` | `display_name` | Reason |
 | --- | --- | --- |
-| `Previously a part of Murraybreen` | null | The glac_name is a note, not a name. |
+| `Previously a part of Murraybreen` | null | The glac_name is a note. |
 | `Vegfonna, Previously attached to Rosenthalbreen` | Vegfonna | The text after the comma is a note. |
-| `Group of small glaciers` | null | The glac_name is a description, not a name. |
+| `Group of small glaciers` | null | The glac_name is a description. |
 | `FR4N01235A08 dArgentiere` | Glacier d'Argentiere | The apostrophe of the particle d' is missing. |
 | `SHCHuchij` | Shchuchij | The first letters are capitals by mistake. |
 
@@ -583,7 +586,7 @@ tracker.
   "ANLYS_IDs are not truly unique". In the glaciers file, 148 `anlys_id`
   values are shared by 353 glaciers. Do not join on `anlys_id`.
 - [rgi_issue_tracker#58](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/58),
-  "Missing glaciers in Greenland". The issue names two glaciers, at 81.929°N,
+  "Missing glaciers in Greenland". The issue gives two glaciers, at 81.929°N,
   27.270°W and 77.626°N, 67.376°W.
 - [rgi_issue_tracker#63](https://github.com/GLIMS-RGI/rgi_issue_tracker/issues/63),
   "Missing glaciers in the Aleutian Islands". The issue names glaciers on

@@ -2,7 +2,7 @@
   "version": 8,
   "name": "Centerlines",
   "metadata": {
-    "description": "Glacier centerlines over the glacier outlines: the main centerlines, drawn wider, from z8, the others from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on."
+    "description": "Glacier centerlines over the glacier outlines. The main centerlines are drawn wider and show from z8, the others from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on."
   },
   "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
   "sources": {

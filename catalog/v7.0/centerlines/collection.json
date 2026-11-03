@@ -13,7 +13,7 @@
   ],
   "id": "rgi-v7-0-centerlines",
   "title": "RGI 7.0 glacier centerlines",
-  "description": "One row per centerline: the main centerline and the tributary centerlines of every glacier, with RGI's attributes, in one GeoParquet file. The web map archive holds the main centerlines from z8 and the others from z9. A longer line enters at the first zoom at which it spans 32 pixels, from z4 on.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "description": "The GeoParquet file has one row per centerline. Each glacier has a main centerline and tributary centerlines, and each row has RGI's attributes. The collection also has a PMTiles archive for web maps.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "license": "CC-BY-4.0",
   "keywords": [
     "glaciers",
@@ -104,7 +104,7 @@
         {
           "name": "rgi_id",
           "type": "string",
-          "description": "Unique identifier assigned to a single intersect line."
+          "description": "Unique identifier assigned to a centerline."
         },
         {
           "name": "rgi_g_id",
@@ -119,12 +119,12 @@
         {
           "name": "is_main",
           "type": "bool",
-          "description": "Integer number indicating whether the centerline in the main centerline (1) or not (0). There is only one main centerline per glacier."
+          "description": "Integer number indicating whether the centerline is the main centerline (1) or not (0). There is only one main centerline per glacier."
         },
         {
           "name": "outflow_id",
           "type": "int8",
-          "description": "Each secondary centerline flows into another centerline. This identifier points to the `segment_id` to which this centerline flows to."
+          "description": "Each secondary centerline flows into another centerline. This identifier points to the `segment_id` into which this centerline flows."
         },
         {
           "name": "strahler_n",
@@ -134,14 +134,14 @@
         {
           "name": "length_m",
           "type": "uint32",
-          "description": "Length of the centerline in meters.",
+          "description": "Length of the centerline.",
           "unit": "m"
         },
         {
           "name": "geometry",
           "type": "binary",
           "description": "Centerline geometry (LineString).",
-          "unit": "deg"
+          "unit": "degrees"
         },
         {
           "name": "bbox",
@@ -154,13 +154,13 @@
       "href": "./styles/centerlines.json",
       "type": "application/vnd.mapbox.style+json",
       "title": "Centerlines",
-      "description": "Glacier centerlines over the glacier outlines: the main centerlines, drawn wider, from z8, the others from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on.",
+      "description": "Glacier centerlines over the glacier outlines. The main centerlines are drawn wider and show from z8, the others from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on.",
       "roles": [
         "style",
         "default"
       ],
-      "file:size": 5394,
-      "file:checksum": "122028b3048848ef7a8e62e045f040dd75c100ec8a9e807f006d4f1107df0d1c5138"
+      "file:size": 5405,
+      "file:checksum": "12209f9954fb09c5da2e60379ddcbb38fe5e67060d9f2e05a8c69d343a2654c970d0"
     },
     "style-glaciers": {
       "href": "./styles/glaciers.json",

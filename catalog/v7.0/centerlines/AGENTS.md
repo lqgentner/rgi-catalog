@@ -1,7 +1,7 @@
 # AGENTS.md: RGI 7.0 glacier centerlines
 
-**One rule survives every edit to this file.** Every claim here is either
-quoted from a source or measured from the data.
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -12,7 +12,11 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 The RGI 7.0 user guide describes the
 [glacier centerlines product](https://rgidata.org/user_guide/products/centerlines_product.html):
 
+<!-- human-written -->
+
 > The glacier centerlines product contains geometrical centerlines for the main branches and major tributaries of all glaciers in the RGI 7.0 glacier product. The centerlines are computed using a geometrical flow routing algorithm first described by Kienholz et al. [2014] and implemented and executed by the Open Global Glacier Model (OGGM) [Maussion et al., 2019].
+
+<!-- /human-written -->
 
 ## The file
 
@@ -64,16 +68,16 @@ LIMIT 10;
 
 - `rgi_id` is unique: 367,724
   distinct values.
-- `rgi_g_id` joins `glaciers.rgi_id`. Every glacier has exactly one row with
+- `rgi_g_id` joins `glaciers.rgi_id`. Each glacier has exactly one row with
   `is_main` true, so a join on the main centerline keeps one row per glacier.
 - `outflow_id` "points to the `segment_id` to which this centerline flows
   to", within the same glacier. Join on `rgi_g_id` and `segment_id`, never
   on `segment_id` alone.
 
-## Quirks that produce silently wrong answers
+## Usage notes
 
 - The main centerline is "always last": it has the highest `segment_id` of
-  its glacier. Its `outflow_id` is -1. The other centerlines have an
+  its glacier. Its `outflow_id` is `-1`. The other centerlines have an
   `outflow_id` from 1 to 107.
 - `length_m` of the main centerline equals the glacier's `lmax_m` for all
   274,531 glaciers. "The main (i.e.longest) centerline is used to compute

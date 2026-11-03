@@ -7,13 +7,13 @@
 
 - glac_name: "Previously a part of Murraybreen"
   display_name: null
-  reason: The glac_name is a note, not a name.
+  reason: The glac_name is a note.
 - glac_name: "Vegfonna, Previously attached to Rosenthalbreen"
   display_name: "Vegfonna"
   reason: The text after the comma is a note.
 - glac_name: "Group of small glaciers"
   display_name: null
-  reason: The glac_name is a description, not a name.
+  reason: The glac_name is a description.
 - glac_name: "FR4N01235A08 dArgentiere"
   display_name: "Glacier d'Argentiere"
   reason: The apostrophe of the particle d' is missing.

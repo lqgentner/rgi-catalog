@@ -3,9 +3,20 @@
 from __future__ import annotations
 
 import pandas as pd
+import pyarrow.parquet as pq
 import pytest
+import yaml
 
-from rgi_catalog.names import RULES, apply_rules, display_name, load_overrides, rule_report
+from rgi_catalog.names import (
+    RULES,
+    apply_rules,
+    display_name,
+    load_overrides,
+    override_map,
+    rule_report,
+)
+from rgi_catalog.paths import METADATA, STAGING
+from rgi_catalog.pipeline import output_path
 
 CASES = [
     ("GROSSER ALETSCH GLETSCHER", "Grosser Aletsch Gletscher"),
@@ -179,3 +190,22 @@ def test_rule_report_counts_and_sample() -> None:
     assert len(sample) == 2
     # The sample draws only from names that a rule changed.
     assert (sample["glac_name"] != sample["display_name"]).all()
+
+
+def _readme_examples() -> list[dict[str, str | None]]:
+    return yaml.safe_load((METADATA / "catalog.yaml").read_text())["display_name_examples"]
+
+
+@pytest.mark.parametrize("example", _readme_examples(), ids=lambda e: str(e["glac_name"]))
+def test_readme_display_name_examples(example: dict[str, str | None]) -> None:
+    overrides = override_map(load_overrides())
+    assert display_name(example["glac_name"], None, overrides) == example["display_name"]
+    staged = output_path(STAGING, "7.0", "glaciers")
+    if staged.exists():
+        # The example is a row of the data, with the same display_name.
+        rows = pq.read_table(
+            staged,
+            columns=["display_name"],
+            filters=[("glac_name", "==", example["glac_name"])],
+        ).column(0)
+        assert set(rows.to_pylist()) == {example["display_name"]}
