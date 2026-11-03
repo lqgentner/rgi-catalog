@@ -1,0 +1,289 @@
+{
+  "version": 8,
+  "name": "Same as RGI 6.0",
+  "metadata": {
+    "description": "Glaciers by whether the outline is the same as in RGI 6.0 (is_rgi6), as in the map of the RGI 7.0 user guide."
+  },
+  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "data": {
+      "type": "vector",
+      "url": "pmtiles://../../rgi7.0.pmtiles"
+    }
+  },
+  "layers": [
+    {
+      "source-layer": "region-boundaries",
+      "id": "region-boundaries-2",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        2
+      ],
+      "minzoom": 3,
+      "paint": {
+        "line-color": "#9e9e9e",
+        "line-width": 0.8,
+        "line-dasharray": [
+          2.5,
+          2.5
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-boundaries",
+      "id": "region-boundaries-1",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "paint": {
+        "line-color": "#757575",
+        "line-width": 1.2,
+        "line-dasharray": [
+          5,
+          2.5
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-same-as-rgi6",
+      "type": "fill",
+      "source-layer": "glaciers",
+      "paint": {
+        "fill-color": [
+          "match",
+          [
+            "case",
+            [
+              "get",
+              "is_rgi6"
+            ],
+            "Same as RGI 6.0",
+            "New in RGI 7.0"
+          ],
+          "Same as RGI 6.0",
+          "#0072b2",
+          "New in RGI 7.0",
+          "#d55e00",
+          "#9e9e9e"
+        ],
+        "fill-opacity": 0.8
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-outline",
+      "type": "line",
+      "source-layer": "glaciers",
+      "paint": {
+        "line-color": [
+          "match",
+          [
+            "case",
+            [
+              "get",
+              "is_rgi6"
+            ],
+            "Same as RGI 6.0",
+            "New in RGI 7.0"
+          ],
+          "Same as RGI 6.0",
+          "#0072b2",
+          "New in RGI 7.0",
+          "#d55e00",
+          "#9e9e9e"
+        ],
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.2,
+          8,
+          0.6,
+          12,
+          1.0
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-dots",
+      "type": "circle",
+      "source-layer": "glaciers",
+      "filter": [
+        "in",
+        [
+          "geometry-type"
+        ],
+        [
+          "literal",
+          [
+            "Point",
+            "MultiPoint"
+          ]
+        ]
+      ],
+      "paint": {
+        "circle-color": [
+          "match",
+          [
+            "case",
+            [
+              "get",
+              "is_rgi6"
+            ],
+            "Same as RGI 6.0",
+            "New in RGI 7.0"
+          ],
+          "Same as RGI 6.0",
+          "#0072b2",
+          "New in RGI 7.0",
+          "#d55e00",
+          "#9e9e9e"
+        ],
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.5,
+          6,
+          2.5
+        ],
+        "circle-opacity": 0.85
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-labels",
+      "id": "region-labels-1",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "minzoom": 1,
+      "maxzoom": 6,
+      "layout": {
+        "text-field": [
+          "concat",
+          [
+            "get",
+            "o1region"
+          ],
+          "\n",
+          [
+            "get",
+            "full_name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Bold"
+        ],
+        "text-size": 12,
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.08
+      },
+      "paint": {
+        "text-color": "#37474f",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-labels",
+      "id": "region-labels-2",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        2
+      ],
+      "minzoom": 4,
+      "maxzoom": 9,
+      "layout": {
+        "text-field": [
+          "concat",
+          [
+            "get",
+            "o2region"
+          ],
+          "\n",
+          [
+            "get",
+            "full_name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 11,
+        "text-transform": "none",
+        "text-letter-spacing": 0
+      },
+      "paint": {
+        "text-color": "#37474f",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    },
+    {
+      "id": "glacier-labels",
+      "type": "symbol",
+      "layout": {
+        "text-field": [
+          "get",
+          "display_name"
+        ],
+        "text-font": [
+          "Open Sans Italic"
+        ],
+        "text-size": 12,
+        "symbol-sort-key": [
+          "-",
+          [
+            "get",
+            "area_km2"
+          ]
+        ]
+      },
+      "paint": {
+        "text-color": "#0d2a5c",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source-layer": "glacier-labels",
+      "source": "data"
+    }
+  ]
+}

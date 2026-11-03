@@ -1,0 +1,252 @@
+{
+  "version": 8,
+  "name": "Intersects",
+  "metadata": {
+    "description": "Glacier intersects over the glacier outlines. An intersect is a line that divides two adjacent glaciers. The intersects show from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on."
+  },
+  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "data": {
+      "type": "vector",
+      "url": "pmtiles://../../rgi7.0.pmtiles"
+    }
+  },
+  "layers": [
+    {
+      "source-layer": "region-boundaries",
+      "id": "region-boundaries-2",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        2
+      ],
+      "minzoom": 3,
+      "paint": {
+        "line-color": "#9e9e9e",
+        "line-width": 0.8,
+        "line-dasharray": [
+          2.5,
+          2.5
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-boundaries",
+      "id": "region-boundaries-1",
+      "type": "line",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "paint": {
+        "line-color": "#757575",
+        "line-width": 1.2,
+        "line-dasharray": [
+          5,
+          2.5
+        ]
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-fill",
+      "type": "fill",
+      "source-layer": "glaciers",
+      "paint": {
+        "fill-color": "#1e88e5",
+        "fill-opacity": 0.2
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-outline",
+      "type": "line",
+      "source-layer": "glaciers",
+      "paint": {
+        "line-color": "#0d47a1",
+        "line-width": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.2,
+          8,
+          0.6,
+          12,
+          1.0
+        ],
+        "line-opacity": 0.35
+      },
+      "source": "data"
+    },
+    {
+      "id": "glaciers-dots",
+      "type": "circle",
+      "source-layer": "glaciers",
+      "filter": [
+        "in",
+        [
+          "geometry-type"
+        ],
+        [
+          "literal",
+          [
+            "Point",
+            "MultiPoint"
+          ]
+        ]
+      ],
+      "paint": {
+        "circle-color": "#1e88e5",
+        "circle-radius": [
+          "interpolate",
+          [
+            "linear"
+          ],
+          [
+            "zoom"
+          ],
+          0,
+          1.5,
+          6,
+          2.5
+        ],
+        "circle-opacity": 0.35
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "intersects",
+      "id": "intersects",
+      "type": "line",
+      "paint": {
+        "line-color": "#00897b",
+        "line-width": 2.0
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-labels",
+      "id": "region-labels-1",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        1
+      ],
+      "minzoom": 1,
+      "maxzoom": 6,
+      "layout": {
+        "text-field": [
+          "concat",
+          [
+            "get",
+            "o1region"
+          ],
+          "\n",
+          [
+            "get",
+            "full_name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Bold"
+        ],
+        "text-size": 12,
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.08
+      },
+      "paint": {
+        "text-color": "#37474f",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "region-labels",
+      "id": "region-labels-2",
+      "type": "symbol",
+      "filter": [
+        "==",
+        [
+          "get",
+          "level"
+        ],
+        2
+      ],
+      "minzoom": 4,
+      "maxzoom": 9,
+      "layout": {
+        "text-field": [
+          "concat",
+          [
+            "get",
+            "o2region"
+          ],
+          "\n",
+          [
+            "get",
+            "full_name"
+          ]
+        ],
+        "text-font": [
+          "Open Sans Regular"
+        ],
+        "text-size": 11,
+        "text-transform": "none",
+        "text-letter-spacing": 0
+      },
+      "paint": {
+        "text-color": "#37474f",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    },
+    {
+      "source-layer": "glacier-labels",
+      "id": "glacier-labels",
+      "type": "symbol",
+      "layout": {
+        "text-field": [
+          "get",
+          "display_name"
+        ],
+        "text-font": [
+          "Open Sans Italic"
+        ],
+        "text-size": 12,
+        "symbol-sort-key": [
+          "-",
+          [
+            "get",
+            "area_km2"
+          ]
+        ]
+      },
+      "paint": {
+        "text-color": "#0d2a5c",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 1.2
+      },
+      "source": "data"
+    }
+  ]
+}

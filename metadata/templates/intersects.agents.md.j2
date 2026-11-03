@@ -1,0 +1,51 @@
+{% set url = public("v" ~ version ~ "/intersects/" ~ record.collections.intersects.href) %}
+{% set glaciers = public("v" ~ version ~ "/glaciers/" ~ record.collections.glaciers.href) %}
+## Recipes
+
+Each recipe runs as written in DuckDB. Load the extensions once:
+
+```sql
+INSTALL httpfs; LOAD httpfs; INSTALL spatial; LOAD spatial;
+SELECT 1;
+```
+
+The divides of the Rhone glacier and the glacier on the other side:
+
+```sql
+SELECT rgi_id,
+       CASE WHEN rgi_g_id_1 = 'RGI2000-v7.0-G-11-01706' THEN rgi_g_id_2 ELSE rgi_g_id_1 END
+         AS neighbour,
+       length_m
+FROM '{{ url }}'
+WHERE 'RGI2000-v7.0-G-11-01706' IN (rgi_g_id_1, rgi_g_id_2);
+```
+
+The total divide length between each pair of glaciers. A pair can share
+more than one line:
+
+```sql
+SELECT least(rgi_g_id_1, rgi_g_id_2) AS glacier_a,
+       greatest(rgi_g_id_1, rgi_g_id_2) AS glacier_b,
+       count(*) AS n_lines, sum(length_m) AS length_m
+FROM '{{ url }}'
+GROUP BY ALL
+ORDER BY length_m DESC
+LIMIT 10;
+```
+
+## Join keys
+
+- `rgi_id` is unique: {{ "{:,}".format(record.collections.intersects.row_count) }}
+  distinct values.
+- `rgi_g_id_1` and `rgi_g_id_2` each join `glaciers.rgi_id`. "the choice of
+  which glacier is listed as 1 is arbitrary", so match a glacier on both
+  columns.
+
+## Usage notes
+
+- 14,035 glacier pairs share more than one intersect line. Count the pairs
+  with `least`/`greatest`, not the rows.
+- 103,528 glaciers have an intersect. A glacier without one touches no
+  other glacier.
+- `length_m` is a float, in m, from 0.0066 to 61,211. The centerlines'
+  `length_m` is an integer.

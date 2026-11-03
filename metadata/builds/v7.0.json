@@ -1,0 +1,510 @@
+{
+  "archive": {
+    "href": "rgi7.0.pmtiles",
+    "layers": [
+      "regions",
+      "region-boundaries",
+      "region-labels",
+      "complexes",
+      "glaciers",
+      "glacier-labels",
+      "centerlines",
+      "intersects"
+    ],
+    "maxzoom": 12,
+    "minzoom": 0
+  },
+  "collections": {
+    "centerlines": {
+      "bbox": [
+        -179.9341957186323,
+        -78.26937594803918,
+        179.75077112799727,
+        83.65102002711347
+      ],
+      "columns": [
+        {
+          "name": "rgi_id",
+          "type": "string"
+        },
+        {
+          "name": "rgi_g_id",
+          "type": "string"
+        },
+        {
+          "name": "segment_id",
+          "type": "uint8"
+        },
+        {
+          "name": "is_main",
+          "type": "bool"
+        },
+        {
+          "name": "outflow_id",
+          "type": "int8"
+        },
+        {
+          "name": "strahler_n",
+          "type": "uint8"
+        },
+        {
+          "name": "length_m",
+          "type": "uint32"
+        },
+        {
+          "name": "geometry",
+          "type": "binary"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>"
+        }
+      ],
+      "geoparquet_version": "2.0.0",
+      "href": "rgi7.0-centerlines.parquet",
+      "row_count": 367724,
+      "row_group_size": 4096,
+      "row_groups": 90
+    },
+    "complexes": {
+      "bbox": [
+        -179.934832,
+        -78.308328,
+        179.751191,
+        83.651107
+      ],
+      "columns": [
+        {
+          "name": "rgi_id",
+          "type": "string"
+        },
+        {
+          "name": "o1region",
+          "type": "string"
+        },
+        {
+          "name": "o2region",
+          "type": "string"
+        },
+        {
+          "name": "cenlon",
+          "type": "double"
+        },
+        {
+          "name": "cenlat",
+          "type": "double"
+        },
+        {
+          "name": "utm_zone",
+          "type": "uint8"
+        },
+        {
+          "name": "area_km2",
+          "type": "double"
+        },
+        {
+          "name": "glacier_ids",
+          "type": "list<element: string>"
+        },
+        {
+          "name": "geometry",
+          "type": "binary"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>"
+        }
+      ],
+      "geoparquet_version": "2.0.0",
+      "href": "rgi7.0-complexes.parquet",
+      "row_count": 192869,
+      "row_group_size": 4096,
+      "row_groups": 48
+    },
+    "glaciers": {
+      "bbox": [
+        -179.934832,
+        -78.308328,
+        179.751191,
+        83.651107
+      ],
+      "columns": [
+        {
+          "name": "rgi_id",
+          "type": "string"
+        },
+        {
+          "name": "o1region",
+          "type": "string"
+        },
+        {
+          "name": "o2region",
+          "type": "string"
+        },
+        {
+          "name": "glims_id",
+          "type": "string"
+        },
+        {
+          "name": "anlys_id",
+          "type": "uint32"
+        },
+        {
+          "name": "subm_id",
+          "type": "uint16"
+        },
+        {
+          "name": "src_date",
+          "type": "timestamp[us]"
+        },
+        {
+          "name": "cenlon",
+          "type": "double"
+        },
+        {
+          "name": "cenlat",
+          "type": "double"
+        },
+        {
+          "name": "utm_zone",
+          "type": "uint8"
+        },
+        {
+          "name": "area_km2",
+          "type": "double"
+        },
+        {
+          "name": "primeclass",
+          "type": "uint8"
+        },
+        {
+          "name": "conn_lvl",
+          "type": "uint8"
+        },
+        {
+          "name": "surge_type",
+          "type": "uint8"
+        },
+        {
+          "name": "term_type",
+          "type": "uint8"
+        },
+        {
+          "name": "glac_name",
+          "type": "string"
+        },
+        {
+          "name": "is_rgi6",
+          "type": "bool"
+        },
+        {
+          "name": "termlon",
+          "type": "double"
+        },
+        {
+          "name": "termlat",
+          "type": "double"
+        },
+        {
+          "name": "zmin_m",
+          "type": "double"
+        },
+        {
+          "name": "zmax_m",
+          "type": "double"
+        },
+        {
+          "name": "zmed_m",
+          "type": "double"
+        },
+        {
+          "name": "zmean_m",
+          "type": "double"
+        },
+        {
+          "name": "slope_deg",
+          "type": "double"
+        },
+        {
+          "name": "aspect_deg",
+          "type": "double"
+        },
+        {
+          "name": "aspect_sec",
+          "type": "uint8"
+        },
+        {
+          "name": "dem_source",
+          "type": "string"
+        },
+        {
+          "name": "lmax_m",
+          "type": "uint32"
+        },
+        {
+          "name": "display_name",
+          "type": "string"
+        },
+        {
+          "name": "complex_id",
+          "type": "string"
+        },
+        {
+          "name": "hypso_z0_m",
+          "type": "int32"
+        },
+        {
+          "name": "hypso_permille",
+          "type": "list<element: int16>"
+        },
+        {
+          "name": "rgi6_links",
+          "type": "list<element: struct<rgi6_id: string, rgi7_reg: string, rgi6_reg: string, overlap_area_km2: double, rgi7_area_fraction: double, rgi6_area_fraction: double, cluster_id: int32, n_rgi7: int32, n_rgi6: int32>>"
+        },
+        {
+          "name": "subm_n_outlines",
+          "type": "uint32"
+        },
+        {
+          "name": "subm_anlys_time",
+          "type": "timestamp[us]"
+        },
+        {
+          "name": "subm_release_dt",
+          "type": "timestamp[us]"
+        },
+        {
+          "name": "subm_proc_desc",
+          "type": "string"
+        },
+        {
+          "name": "subm_chief_affl",
+          "type": "string"
+        },
+        {
+          "name": "subm_submitters",
+          "type": "string"
+        },
+        {
+          "name": "subm_analysts",
+          "type": "string"
+        },
+        {
+          "name": "subm_rc_id",
+          "type": "uint16"
+        },
+        {
+          "name": "geometry",
+          "type": "binary"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>"
+        }
+      ],
+      "geoparquet_version": "2.0.0",
+      "href": "rgi7.0-glaciers.parquet",
+      "row_count": 274531,
+      "row_group_size": 4096,
+      "row_groups": 68,
+      "temporal": [
+        "1943-09-09T00:00:00Z",
+        "2021-02-26T00:00:00Z"
+      ]
+    },
+    "intersects": {
+      "bbox": [
+        -176.13439300000002,
+        -77.762788,
+        171.501396,
+        83.598757
+      ],
+      "columns": [
+        {
+          "name": "rgi_id",
+          "type": "string"
+        },
+        {
+          "name": "rgi_g_id_1",
+          "type": "string"
+        },
+        {
+          "name": "rgi_g_id_2",
+          "type": "string"
+        },
+        {
+          "name": "length_m",
+          "type": "double"
+        },
+        {
+          "name": "geometry",
+          "type": "binary"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>"
+        }
+      ],
+      "geoparquet_version": "2.0.0",
+      "href": "rgi7.0-intersects.parquet",
+      "row_count": 130429,
+      "row_group_size": 10240,
+      "row_groups": 13
+    },
+    "regions": {
+      "bbox": [
+        -180.0,
+        -90.0,
+        180.0,
+        85.0
+      ],
+      "columns": [
+        {
+          "name": "level",
+          "type": "uint8"
+        },
+        {
+          "name": "o1region",
+          "type": "string"
+        },
+        {
+          "name": "o2region",
+          "type": "string"
+        },
+        {
+          "name": "full_name",
+          "type": "string"
+        },
+        {
+          "name": "long_code",
+          "type": "string"
+        },
+        {
+          "name": "geometry",
+          "type": "binary"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>"
+        }
+      ],
+      "geoparquet_version": "2.0.0",
+      "href": "rgi7.0-regions.parquet",
+      "row_count": 110,
+      "row_group_size": 110,
+      "row_groups": 1
+    }
+  },
+  "files": {
+    "centerlines/rgi7.0-centerlines.parquet": {
+      "file:checksum": "1220888ffa7a5876613494167423c64ec83af3ad6e289891daa92e6af6e80f6fb9f4",
+      "size": 210294494
+    },
+    "complexes/rgi7.0-complexes.parquet": {
+      "file:checksum": "12203caa2e1b01628b7272d2e9a845a02a2996be31d71251c2e952ad3271647799ac",
+      "size": 214686136
+    },
+    "glaciers/rgi7.0-glaciers.parquet": {
+      "file:checksum": "12201cd5ba2e126c44d928278dea48cb4e2d06283821eee59dc732eb0ed7ea47c8f5",
+      "size": 261370113
+    },
+    "intersects/rgi7.0-intersects.parquet": {
+      "file:checksum": "1220a10e70936f5d6f869fb67dc4dbed97a0d7990fb326544115eca4c81f00525220",
+      "size": 16791243
+    },
+    "regions/rgi7.0-regions.parquet": {
+      "file:checksum": "1220cf0f42d89e502e4fd1550275e73f4a3f84cb37de44131703f222fe3cf41771db",
+      "size": 955336
+    },
+    "rgi7.0.pmtiles": {
+      "file:checksum": "1220f0beab50a1a5f3a8b7c901046f11233f30a869d91400e9e6d98411fe208067e9",
+      "size": 1098840073
+    }
+  },
+  "fixes": {
+    "centerlines": [
+      {
+        "column": "geometry",
+        "count": 0,
+        "fix": "drop-z"
+      }
+    ],
+    "complexes": [
+      {
+        "column": "geometry",
+        "count": 192869,
+        "fix": "drop-z"
+      },
+      {
+        "column": "geometry",
+        "count": 7,
+        "fix": "polygon-validity"
+      }
+    ],
+    "glaciers": [
+      {
+        "column": "glac_name",
+        "count": 328,
+        "fix": "text-encoding"
+      },
+      {
+        "column": "geometry",
+        "count": 274531,
+        "fix": "drop-z"
+      },
+      {
+        "column": "geometry",
+        "count": 0,
+        "fix": "polygon-validity"
+      }
+    ],
+    "intersects": [
+      {
+        "column": "geometry",
+        "count": 130429,
+        "fix": "drop-z"
+      }
+    ],
+    "regions": [
+      {
+        "column": "geometry",
+        "count": 0,
+        "fix": "drop-z"
+      },
+      {
+        "column": "geometry",
+        "count": 0,
+        "fix": "polygon-validity"
+      }
+    ]
+  },
+  "mirror_revision": "7.0-r1",
+  "sources": {
+    "C": {
+      "filename": "RGI2000-v7.0-C-global.zip",
+      "sha256": "2c312585097ec1c11350f4abaa050d8574b36acd5bbcbd1d1fe5024abdb0d026"
+    },
+    "G": {
+      "filename": "RGI2000-v7.0-G-global.zip",
+      "sha256": "33573533f17de6f1b39bafc807002cdda44a150bb8ed94329387de11751b8a85"
+    },
+    "I": {
+      "filename": "RGI2000-v7.0-I-global.zip",
+      "sha256": "9a002a5b2cdffcf07893f5d446321ace4ed2c16f8400ff5fd9d5143887d27690"
+    },
+    "L": {
+      "filename": "RGI2000-v7.0-L-global.zip",
+      "sha256": "6929554c360f6b68a5fdd4ea97879108b094d5a4913abb54d1d8506fb864ba23"
+    },
+    "regions": {
+      "filename": "RGI2000-v7.0-regions.zip",
+      "sha256": "1cfb55d19c5ff2cfaf8373f2ec2f7f4da54b00c8ff72d7a885da25a380885c43"
+    },
+    "rgi6_links": {
+      "filename": "RGI2000-v7.0-G-global-rgi6_links.csv",
+      "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
+    }
+  },
+  "updated": "2026-11-02T10:49:31Z",
+  "version": "7.0"
+}

@@ -1,0 +1,22 @@
+# {{ vspec.title }}
+
+{% include "_nav.md.j2" %}
+
+{{ vspec.description.split() | join(" ") }} This is mirror revision
+`{{ record.mirror_revision }}`, built {{ record.updated[:10] }}.
+
+{{ disclaimer }}
+
+{% include "_changes.md.j2" %}
+
+## Collections
+
+| Collection | Rows | GeoParquet | Guides |
+| --- | ---: | ---: | --- |
+{% for name, cspec, doc in collections %}
+| [{{ name }}]({{ browser("v" ~ version ~ "/" ~ name ~ "/collection.json") }}) | {{ "{:,}".format(record.collections[name].row_count) }} | {{ "%.1f" | format(record.files[name ~ "/" ~ record.collections[name].href].size / 1e6) }} MB | [README]({{ name }}/README.md) · [Agents guide]({{ name }}/AGENTS.md) |
+{% endfor %}
+
+The web map archive `{{ record.archive.href }}` ({{ "%.1f" | format(record.files[record.archive.href].size / 1e6) }} MB) holds the layers `{{ record.archive.layers | join("`, `") }}`, z{{ record.archive.minzoom }} to z{{ record.archive.maxzoom }}.
+
+{% include "_mirror.md.j2" %}

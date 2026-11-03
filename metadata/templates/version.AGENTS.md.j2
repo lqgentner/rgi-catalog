@@ -1,0 +1,45 @@
+# AGENTS.md: {{ vspec.title }}
+
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
+
+{{ disclaimer }}
+
+## Collections
+
+{% for name, cspec, doc in collections %}
+- `{{ name }}/`: {{ "{:,}".format(record.collections[name].row_count) }} rows in
+  `{{ public("v" ~ version ~ "/" ~ name ~ "/" ~ record.collections[name].href) }}`.
+  Read `{{ name }}/AGENTS.md` for its columns, join keys and recipes.
+{% endfor %}
+
+## Join keys
+
+`rgi_id` is unique in the glacier, complex, intersect and centerline
+products. The region product has no `rgi_id`.
+Each ID has the form `RGI2000-v{{ version }}-<X>-<o1region>-<number>`.
+The letter `X` identifies the product: `G` for glaciers, `C` for complexes,
+`I` for intersects and `L` for centerlines.
+
+{% if "complexes" in vspec.collections %}
+- `glaciers.complex_id` joins `complexes.rgi_id`.
+  `complexes.glacier_ids` lists the same links from the other side.
+{% endif %}
+{% if "centerlines" in vspec.collections %}
+- `centerlines.rgi_g_id` joins `glaciers.rgi_id`.
+{% endif %}
+{% if "intersects" in vspec.collections %}
+- `intersects.rgi_g_id_1` and `intersects.rgi_g_id_2` each join
+  `glaciers.rgi_id`.
+{% endif %}
+{% if "regions" in vspec.collections %}
+- `glaciers.o1region` joins `regions.o1region` where `level = 1`, and
+  `glaciers.o2region` joins `regions.o2region` where `level = 2`. The
+  complexes have the same two codes.
+{% endif %}
+
+## Versions
+
+The mirror revision (`{{ record.mirror_revision }}`) counts rebuilds of this
+mirror. It is not an RGI version. The collection field `version` and the
+footer key `rgi:mirror_revision` of each file carry it.

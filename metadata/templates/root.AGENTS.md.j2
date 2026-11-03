@@ -1,0 +1,39 @@
+<!-- vale Portolan-Mechanics.Headings = NO -->
+# AGENTS.md: {{ meta.title }}
+<!-- vale Portolan-Mechanics.Headings = YES -->
+
+Guidance for AI agents and automated clients working with this catalog.
+
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
+
+{{ disclaimer }}
+
+## Contents of the catalog
+
+The public root is `{{ public("catalog.json") }}`. Each RGI version is a
+sub-catalog. Each RGI product is a collection with one GeoParquet file and no
+items.
+
+{% for version, vspec in versions.items() %}
+- `v{{ version }}/`: {{ vspec.title }}, mirror revision `{{ records[version].mirror_revision }}`. Collections: `{{ vspec.collections | join("`, `") }}`. Read `v{{ version }}/AGENTS.md` next.
+{% endfor %}
+
+## How to read it
+
+Query the GeoParquet files in place with DuckDB. Each collection's
+`AGENTS.md` has tested recipes. Read the column descriptions from
+`assets.data["table:columns"]` in the collection JSON.
+
+```sql
+INSTALL httpfs; LOAD httpfs;
+SELECT count(*) AS glaciers
+FROM '{{ public("v7.0/glaciers/rgi7.0-glaciers.parquet") }}';
+```
+
+## Usage notes
+
+- `rgi_id` is the only stable key. Never derive an ID from a name.
+- The mirror keeps RGI's values. For a value that looks wrong,
+  check [docs/PROVENANCE.md]({{ meta.repository }}/blob/main/docs/PROVENANCE.md)
+  and the RGI user guide before you correct it.

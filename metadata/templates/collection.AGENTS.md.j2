@@ -1,0 +1,30 @@
+{% set stats = record.collections[name] %}
+{% set data_rel = name ~ "/" ~ stats.href %}
+# AGENTS.md: {{ spec.title }}
+
+**Each claim here is quoted from a source or measured from the data.** Keep
+this rule when you edit the file.
+
+{{ disclaimer }}
+
+## About the product
+
+The RGI 7.0 user guide describes the
+[{{ spec.user_guide.title | lower }}]({{ spec.user_guide.url }}):
+
+<!-- human-written -->
+
+> {{ spec.user_guide.quote.split() | join(" ") }}
+
+<!-- /human-written -->
+
+## The file
+
+`{{ public("v" ~ version ~ "/" ~ data_rel) }}`: {{ "{:,}".format(stats.row_count) }}
+rows, one per {{ spec.row_noun | default(name[:-1]) }}. The column descriptions are in
+`assets.data["table:columns"]` of `collection.json`, with RGI's own text for
+the upstream columns. Coded columns carry their meanings in
+`classification:classes`. Their descriptions leave out RGI's pointer to the
+user guide.
+
+{% include name ~ ".agents.md.j2" %}

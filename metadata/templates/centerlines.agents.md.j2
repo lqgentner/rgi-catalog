@@ -1,0 +1,61 @@
+{% set url = public("v" ~ version ~ "/centerlines/" ~ record.collections.centerlines.href) %}
+{% set glaciers = public("v" ~ version ~ "/glaciers/" ~ record.collections.glaciers.href) %}
+## Recipes
+
+Each recipe runs as written in DuckDB. Load the extensions once:
+
+```sql
+INSTALL httpfs; LOAD httpfs; INSTALL spatial; LOAD spatial;
+SELECT 1;
+```
+
+The main centerline of the Rhone glacier:
+
+```sql
+SELECT rgi_id, segment_id, length_m, ST_AsText(geometry) AS wkt
+FROM '{{ url }}'
+WHERE rgi_g_id = 'RGI2000-v7.0-G-11-01706' AND is_main;
+```
+
+The centerlines of one glacier, tributaries first:
+
+```sql
+SELECT rgi_id, segment_id, is_main, outflow_id, strahler_n, length_m
+FROM '{{ url }}'
+WHERE rgi_g_id = 'RGI2000-v7.0-G-11-01706'
+ORDER BY segment_id;
+```
+
+The longest main centerlines, with the glacier names:
+
+```sql
+SELECT l.rgi_g_id, g.display_name, l.length_m
+FROM '{{ url }}' AS l
+JOIN '{{ glaciers }}' AS g ON g.rgi_id = l.rgi_g_id
+WHERE l.is_main
+ORDER BY l.length_m DESC
+LIMIT 10;
+```
+
+## Join keys
+
+- `rgi_id` is unique: {{ "{:,}".format(record.collections.centerlines.row_count) }}
+  distinct values.
+- `rgi_g_id` joins `glaciers.rgi_id`. Each glacier has exactly one row with
+  `is_main` true, so a join on the main centerline keeps one row per glacier.
+- `outflow_id` "points to the `segment_id` to which this centerline flows
+  to", within the same glacier. Join on `rgi_g_id` and `segment_id`, never
+  on `segment_id` alone.
+
+## Usage notes
+
+- The main centerline is "always last": it has the highest `segment_id` of
+  its glacier. Its `outflow_id` is `-1`. The other centerlines have an
+  `outflow_id` from 1 to 107.
+- `length_m` of the main centerline equals the glacier's `lmax_m` for all
+  274,531 glaciers. "The main (i.e.longest) centerline is used to compute
+  the glacier product's maximum length attribute `lmax_m`."
+- RGI's description of `rgi_id` reads "Unique identifier assigned to a
+  single intersect line". It identifies a centerline.
+- "it is likely that centerlines on individual glaciers would be drawn
+  differently by a human or other algorithms."

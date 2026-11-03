@@ -1,0 +1,112 @@
+{
+  "type": "Catalog",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json"
+  ],
+  "id": "rgi-v7-0",
+  "title": "RGI 7.0",
+  "description": "RGI 7.0, released in 2023. It holds 274,531 glacier outlines with their attributes.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "updated": "2026-11-02T10:49:31Z",
+  "links": [
+    {
+      "rel": "root",
+      "href": "../catalog.json",
+      "type": "application/json",
+      "title": "Randolph Glacier Inventory Mirror"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json",
+      "title": "Randolph Glacier Inventory Mirror"
+    },
+    {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "Catalog README"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "Catalog agents guide"
+    },
+    {
+      "rel": "describedby",
+      "href": "https://rgidata.org/user_guide/",
+      "type": "text/html",
+      "title": "RGI 7.0 user guide (official documentation)"
+    },
+    {
+      "rel": "preview",
+      "href": "./thumbnail.webp",
+      "type": "image/webp",
+      "title": "Thumbnail",
+      "description": "The default style of the data, drawn by chiitiler. The world views show the land of Natural Earth, which is in the public domain. The glacier products share one frame, the Garibaldi and Marinelli glaciers in the Cordillera Darwin, on white.",
+      "file:size": 66992,
+      "file:checksum": "122025e9fbd2fab1c1dd2070d73af963ad39db07613ef13724fee97226181f0a1187"
+    },
+    {
+      "rel": "child",
+      "href": "./glaciers/collection.json",
+      "type": "application/json",
+      "title": "RGI 7.0 glaciers"
+    },
+    {
+      "rel": "child",
+      "href": "./complexes/collection.json",
+      "type": "application/json",
+      "title": "RGI 7.0 glacier complexes"
+    },
+    {
+      "rel": "child",
+      "href": "./intersects/collection.json",
+      "type": "application/json",
+      "title": "RGI 7.0 glacier intersects"
+    },
+    {
+      "rel": "child",
+      "href": "./centerlines/collection.json",
+      "type": "application/json",
+      "title": "RGI 7.0 glacier centerlines"
+    },
+    {
+      "rel": "child",
+      "href": "./regions/collection.json",
+      "type": "application/json",
+      "title": "RGI 7.0 glacier regions"
+    },
+    {
+      "rel": "via",
+      "href": "https://nsidc.org/data/nsidc-0770/versions/7",
+      "type": "text/html",
+      "title": "RGI 7.0 at NSIDC (authoritative source)"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "vcs",
+      "href": "https://github.com/lqgentner/rgi-catalog",
+      "type": "text/html",
+      "title": "Source repository"
+    },
+    {
+      "rel": "issues",
+      "href": "https://github.com/lqgentner/rgi-catalog/issues",
+      "type": "text/html",
+      "title": "Issue tracker"
+    },
+    {
+      "rel": "about",
+      "href": "https://source.coop/lqgentner/rgi",
+      "type": "text/html",
+      "title": "Hosting page on Source Cooperative"
+    }
+  ]
+}

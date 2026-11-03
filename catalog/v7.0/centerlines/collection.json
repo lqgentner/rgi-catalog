@@ -1,0 +1,277 @@
+{
+  "type": "Collection",
+  "stac_version": "1.1.0",
+  "stac_extensions": [
+    "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json",
+    "https://stac-extensions.github.io/table/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/version/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/file/v2.1.0/schema.json",
+    "https://stac-extensions.github.io/web-map-links/v1.3.0/schema.json",
+    "https://stac-extensions.github.io/alternate-assets/v1.2.0/schema.json",
+    "https://stac-extensions.github.io/classification/v2.0.0/schema.json"
+  ],
+  "id": "rgi-v7-0-centerlines",
+  "title": "RGI 7.0 glacier centerlines",
+  "description": "The GeoParquet file has one row per centerline. Each glacier has a main centerline and tributary centerlines, and each row has RGI's attributes. The collection also has a PMTiles archive for web maps.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "license": "CC-BY-4.0",
+  "keywords": [
+    "glaciers",
+    "glacier outlines",
+    "glacier inventory",
+    "cryosphere",
+    "RGI",
+    "GLIMS",
+    "glacier centerlines",
+    "glacier length"
+  ],
+  "version": "7.0-r1",
+  "updated": "2026-11-02T10:49:31Z",
+  "sci:doi": "10.5067/f6jmovy5navz",
+  "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
+  "sci:publications": [
+    {
+      "doi": "10.5281/zenodo.8362857",
+      "citation": "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). The Randolph Glacier Inventory version 7.0 user guide. Zenodo. https://doi.org/10.5281/zenodo.8362857"
+    },
+    {
+      "doi": "10.5194/tc-8-503-2014",
+      "citation": "Kienholz, C., Rich, J. L., Arendt, A. A., & Hock, R. (2014). A new method for deriving glacier centerlines applied to glaciers in Alaska and northwest Canada. The Cryosphere, 8(2), 503–519. https://doi.org/10.5194/tc-8-503-2014"
+    },
+    {
+      "doi": "10.5194/gmd-12-909-2019",
+      "citation": "Maussion, F., Butenko, A., Champollion, N., Dusch, M., Eis, J., Fourteau, K., Gregor, P., Jarosch, A. H., Landmann, J., Oesterle, F., Recinos, B., Rothenpieler, T., Vlug, A., Wild, C. T., & Marzeion, B. (2019). The Open Global Glacier Model (OGGM) v1.1. Geoscientific Model Development, 12(3), 909–931. https://doi.org/10.5194/gmd-12-909-2019"
+    }
+  ],
+  "providers": [
+    {
+      "name": "RGI Consortium",
+      "description": "Produces the Randolph Glacier Inventory, a globally complete inventory of glacier outlines.",
+      "roles": [
+        "producer",
+        "licensor"
+      ],
+      "url": "https://rgidata.org"
+    },
+    {
+      "name": "Luis Q. Gentner",
+      "description": "Hosts this unofficial mirror. Converts the RGI files to cloud-native formats and maintains this catalog.",
+      "roles": [
+        "host"
+      ],
+      "url": "https://orcid.org/0009-0006-4453-0881"
+    }
+  ],
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -179.9341957186323,
+          -78.26937594803918,
+          179.75077112799727,
+          83.65102002711347
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "1943-09-09T00:00:00Z",
+          "2021-02-26T00:00:00Z"
+        ]
+      ]
+    }
+  },
+  "assets": {
+    "data": {
+      "href": "./rgi7.0-centerlines.parquet",
+      "type": "application/vnd.apache.parquet",
+      "title": "RGI 7.0 glacier centerlines, GeoParquet",
+      "roles": [
+        "data"
+      ],
+      "file:size": 210294494,
+      "file:checksum": "1220888ffa7a5876613494167423c64ec83af3ad6e289891daa92e6af6e80f6fb9f4",
+      "alternate": {
+        "s3": {
+          "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/centerlines/rgi7.0-centerlines.parquet",
+          "title": "Anonymous S3 access"
+        }
+      },
+      "table:primary_geometry": "geometry",
+      "table:row_count": 367724,
+      "table:columns": [
+        {
+          "name": "rgi_id",
+          "type": "string",
+          "description": "Unique identifier assigned to a centerline."
+        },
+        {
+          "name": "rgi_g_id",
+          "type": "string",
+          "description": "Glacier ID to which the centerline belongs."
+        },
+        {
+          "name": "segment_id",
+          "type": "uint8",
+          "description": "Integer number uniquely identifying this centerline within the glacier. The main centerline is always last."
+        },
+        {
+          "name": "is_main",
+          "type": "bool",
+          "description": "Integer number indicating whether the centerline is the main centerline (1) or not (0). There is only one main centerline per glacier."
+        },
+        {
+          "name": "outflow_id",
+          "type": "int8",
+          "description": "Each secondary centerline flows into another centerline. This identifier points to the `segment_id` into which this centerline flows."
+        },
+        {
+          "name": "strahler_n",
+          "type": "uint8",
+          "description": "Strahler number (hydrological order) of the centerline, from lowest (1, line without tributaries but with possible descendants) to highest (the main centerline)."
+        },
+        {
+          "name": "length_m",
+          "type": "uint32",
+          "description": "Length of the centerline.",
+          "unit": "m"
+        },
+        {
+          "name": "geometry",
+          "type": "binary",
+          "description": "Centerline geometry (LineString).",
+          "unit": "degrees"
+        },
+        {
+          "name": "bbox",
+          "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>",
+          "description": "The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter."
+        }
+      ]
+    },
+    "style-centerlines": {
+      "href": "./styles/centerlines.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Centerlines",
+      "description": "Glacier centerlines over the glacier outlines. The main centerlines are drawn wider and show from z8, the others from z9. A longer line shows from the first zoom at which it spans 32 pixels, from z4 on.",
+      "roles": [
+        "style",
+        "default"
+      ],
+      "file:size": 5405,
+      "file:checksum": "12209f9954fb09c5da2e60379ddcbb38fe5e67060d9f2e05a8c69d343a2654c970d0"
+    },
+    "style-glaciers": {
+      "href": "./styles/glaciers.json",
+      "type": "application/vnd.mapbox.style+json",
+      "title": "Glaciers",
+      "description": "Glacier outlines and names.",
+      "roles": [
+        "style"
+      ],
+      "file:size": 4537,
+      "file:checksum": "1220b0ab0dc2cee44398c2220ed7392f2df0a7b40f36248d7e82a8467305bb57fc41"
+    },
+    "pmtiles": {
+      "href": "../rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "roles": [
+        "visual"
+      ],
+      "file:size": 1098840073,
+      "file:checksum": "1220f0beab50a1a5f3a8b7c901046f11233f30a869d91400e9e6d98411fe208067e9"
+    },
+    "thumbnail": {
+      "href": "./thumbnail.webp",
+      "type": "image/webp",
+      "title": "Thumbnail",
+      "description": "The default style of the data, drawn by chiitiler. The world views show the land of Natural Earth, which is in the public domain. The glacier products share one frame, the Garibaldi and Marinelli glaciers in the Cordillera Darwin, on white.",
+      "roles": [
+        "thumbnail"
+      ],
+      "file:size": 137740,
+      "file:checksum": "1220d5d480095e00812eda6cbb1e187bf9a96ff05cef309c12c1d8816a8ba3ffe07f"
+    }
+  },
+  "links": [
+    {
+      "rel": "root",
+      "href": "../../catalog.json",
+      "type": "application/json",
+      "title": "Randolph Glacier Inventory Mirror"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json",
+      "type": "application/json",
+      "title": "RGI 7.0"
+    },
+    {
+      "rel": "describedby",
+      "href": "./README.md",
+      "type": "text/markdown",
+      "title": "Collection README"
+    },
+    {
+      "rel": "agents",
+      "href": "./AGENTS.md",
+      "type": "text/markdown",
+      "title": "Collection agents guide"
+    },
+    {
+      "rel": "describedby",
+      "href": "https://rgidata.org/user_guide/products/centerlines_product.html",
+      "type": "text/html",
+      "title": "RGI 7.0 user guide, Glacier centerlines product (official documentation)"
+    },
+    {
+      "rel": "via",
+      "href": "https://nsidc.org/data/nsidc-0770/versions/7",
+      "type": "text/html",
+      "title": "RGI 7.0 at NSIDC (authoritative source)"
+    },
+    {
+      "rel": "license",
+      "href": "https://creativecommons.org/licenses/by/4.0/",
+      "type": "text/html",
+      "title": "CC-BY-4.0"
+    },
+    {
+      "rel": "vcs",
+      "href": "https://github.com/lqgentner/rgi-catalog",
+      "type": "text/html",
+      "title": "Source repository"
+    },
+    {
+      "rel": "issues",
+      "href": "https://github.com/lqgentner/rgi-catalog/issues",
+      "type": "text/html",
+      "title": "Issue tracker"
+    },
+    {
+      "rel": "about",
+      "href": "https://source.coop/lqgentner/rgi",
+      "type": "text/html",
+      "title": "Hosting page on Source Cooperative"
+    },
+    {
+      "rel": "related",
+      "href": "https://daacdata.apps.nsidc.org/pub/DATASETS/nsidc0770_rgi_v7/global_files/RGI2000-v7.0-L-global.zip",
+      "type": "application/zip",
+      "title": "Source: RGI 7.0 glacier centerlines product, global zip at NSIDC (Earthdata login required)"
+    },
+    {
+      "rel": "pmtiles",
+      "href": "../rgi7.0.pmtiles",
+      "type": "application/vnd.pmtiles",
+      "title": "Web map archive (vector tiles)",
+      "pmtiles:layers": [
+        "centerlines"
+      ],
+      "file:size": 1098840073,
+      "file:checksum": "1220f0beab50a1a5f3a8b7c901046f11233f30a869d91400e9e6d98411fe208067e9"
+    }
+  ]
+}

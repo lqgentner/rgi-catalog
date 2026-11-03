@@ -1,0 +1,29 @@
+## Changes to RGI
+
+The mirror keeps RGI's values, apart from these fixes of documented upstream
+errors:
+
+{% for key, fix in meta.fixes.items() %}
+- {{ fix.text.split() | join(" ") }}{% if fix.issue is defined %} See [rgi_issue_tracker#{{ fix.issue }}]({{ meta.issue_tracker }}/{{ fix.issue }}).{% endif %}
+
+{% endfor %}
+{% for vspec_ in meta.versions.values() %}
+{% for cspec in vspec_.collections.values() %}
+{% for note in cspec.processing_notes | default([]) %}
+- {{ note.text.split() | join(" ") }}{% if note.issue is defined %} See [rgi_issue_tracker#{{ note.issue }}]({{ meta.issue_tracker }}/{{ note.issue }}).{% endif %}
+
+{% endfor %}
+{% endfor %}
+{% endfor %}
+
+The glaciers have one new column, `display_name`. It contains the names of
+`glac_name`, cleaned for map labels. `glac_name` is unchanged, apart from the
+encoding repair. The rules recase names in capitals, remove inventory codes,
+and set placeholders to null:
+
+{% for e in meta.display_name_examples %}
+- `{{ e.glac_name }}` becomes {{ "`" ~ e.display_name ~ "`" if e.display_name else "null" }}.
+{% endfor %}
+
+[docs/PROVENANCE.md]({{ meta.repository }}/blob/main/docs/PROVENANCE.md) lists
+every changed row and the rules of `display_name`.
