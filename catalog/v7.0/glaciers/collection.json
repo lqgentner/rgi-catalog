@@ -536,8 +536,8 @@
         "style",
         "default"
       ],
-      "file:size": 4736,
-      "file:checksum": "122034546cff227503dd75d9063c3e2e23b5b679ec6905a973d3a7d8c861d27c111d"
+      "file:size": 4819,
+      "file:checksum": "1220c39ffe7b002f7822696ad1319ea4e21d993c314c43bc2b18bc29e771607b74af"
     },
     "style-median-elevation": {
       "href": "./styles/median-elevation.json",
@@ -547,8 +547,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 5657,
-      "file:checksum": "1220fa07e8b8b21524b0238cd5ad69d61052229c96e0d02a94efb6050a086298b2e7"
+      "file:size": 5740,
+      "file:checksum": "12200091e7d49746a42f310632b9c2a7d765596bf90064f93e8765bb14eebd718f55"
     },
     "style-surge-evidence": {
       "href": "./styles/surge-evidence.json",
@@ -558,8 +558,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 6310,
-      "file:checksum": "1220ea07e358df60e70ef7ddabe7f82bd4f5c0077c493a22a6a8c373dd0c0565132f"
+      "file:size": 6393,
+      "file:checksum": "1220b334712bb0523b29d1403860d4b1e36adf4627fd31fa33c3923b79704b410b83"
     },
     "style-terminus-type": {
       "href": "./styles/terminus-type.json",
@@ -569,8 +569,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 5922,
-      "file:checksum": "1220b8c9a4267614d3dc15e1864dcdd30c14006a784fa52980525e7403834904f234"
+      "file:size": 6005,
+      "file:checksum": "122092bdada0f8f24aa9e401b71cd6bf0265b3881fea1d6be387c1daedef9b708592"
     },
     "style-same-as-rgi6": {
       "href": "./styles/same-as-rgi6.json",
@@ -580,8 +580,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 5790,
-      "file:checksum": "1220164eaa304d236ea039acfa1aa03d380e67b8a98392639784e9308c3421c2763d"
+      "file:size": 5873,
+      "file:checksum": "1220e80c7e7cf3f2aea31966a5750bdc3b8e6c77988482f0a575029fc346a16d084f"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",

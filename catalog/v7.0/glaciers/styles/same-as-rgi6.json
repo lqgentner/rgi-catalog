@@ -4,7 +4,7 @@
   "metadata": {
     "description": "Glaciers by whether the outline is the same as in RGI 6.0 (is_rgi6), as in the map of the RGI 7.0 user guide."
   },
-  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   "sources": {
     "data": {
       "type": "vector",
@@ -203,7 +203,7 @@
           ]
         ],
         "text-font": [
-          "Open Sans Bold"
+          "Noto Sans Bold"
         ],
         "text-size": 12,
         "text-transform": "uppercase",
@@ -244,7 +244,7 @@
           ]
         ],
         "text-font": [
-          "Open Sans Regular"
+          "Noto Sans Regular"
         ],
         "text-size": 11,
         "text-transform": "none",
@@ -268,8 +268,8 @@
         [
           "literal",
           [
-            "Point",
-            "MultiPoint"
+            "LineString",
+            "MultiLineString"
           ]
         ]
       ],
@@ -279,9 +279,11 @@
           "display_name"
         ],
         "text-font": [
-          "Open Sans Italic"
+          "Noto Sans Italic"
         ],
-        "text-size": 12,
+        "text-size": 14,
+        "text-letter-spacing": 0.2,
+        "symbol-placement": "line-center",
         "symbol-sort-key": [
           "-",
           [

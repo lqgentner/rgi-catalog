@@ -159,8 +159,8 @@
         "style",
         "default"
       ],
-      "file:size": 5604,
-      "file:checksum": "1220dc78a916d636060d07e2db9d67b4df4df62ac754cbb9254ccb03d95eee630da9"
+      "file:size": 5687,
+      "file:checksum": "12201b5843b7c1a9e58b13b0c15175cb49ec73d1148328f9b7eebc08dc74cc8b2178"
     },
     "style-glaciers": {
       "href": "./styles/glaciers.json",
@@ -170,8 +170,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 4736,
-      "file:checksum": "122034546cff227503dd75d9063c3e2e23b5b679ec6905a973d3a7d8c861d27c111d"
+      "file:size": 4819,
+      "file:checksum": "1220c39ffe7b002f7822696ad1319ea4e21d993c314c43bc2b18bc29e771607b74af"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",

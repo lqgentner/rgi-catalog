@@ -565,8 +565,13 @@ the dash patterns stay in step. A first-order boundary is a long dash
 second-order boundary is a short dash (`[2.5, 2.5]`, 0.8 px, `#9e9e9e`) and
 shows from z3.
 
-The styles draw the names on top. The names use CARTO's glyphs, which the
-browser's default basemaps also use, in Open Sans Italic.
+The styles draw the names on top. The glyphs come from OpenFreeMap. A
+region name is in Noto Sans Bold or Noto Sans Regular. A glacier name
+follows the label line of its glacier in the `glacier-labels` layer. It
+uses Noto Sans Italic at 14 px with a letter spacing of 0.2 em, placed at
+the line center. The `tiles` step fits each label line to that text with
+the glyph advances in `metadata/glyph_advances.yaml`. A glacier without a
+label line has no name in the styles.
 
 The browser labels a legend entry with the `match` branch value. So each
 `match` takes a nested expression that turns the code into the

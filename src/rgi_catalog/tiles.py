@@ -22,7 +22,7 @@ import pyarrow.parquet as pq
 import shapely
 from shapely.affinity import translate
 
-from rgi_catalog.glyphs import GLYPH_PX, load_advances
+from rgi_catalog.glyphs import GLYPH_PX, LABEL_LETTER_SPACING, LABEL_TEXT_SIZE, load_advances
 from rgi_catalog.paths import CACHE, STAGING, version_dir
 from rgi_catalog.pipeline import output_path
 from rgi_catalog.sources import SourcePin, fetch
@@ -73,11 +73,8 @@ TILE_EXTENT = 4096
 LABEL_MINZOOM = 7
 # A glacier of this area gets its label at GLACIERS_COMPLETE_ZOOM + 1.
 LABEL_REFERENCE_KM2 = 1.0
-# A name follows its centerline once the line is long enough. The fit assumes
-# a line-center label in the font of glyphs.FONT at this size and letter
-# spacing, in em.
-LABEL_TEXT_SIZE = 14
-LABEL_LETTER_SPACING = 0.2
+# A name follows its centerline once the line is long enough. The fit
+# assumes a line-center label in glyphs.FONT at glyphs.LABEL_TEXT_SIZE.
 # The standard deviation of the smoothing, in pixels at the line's zoom.
 LABEL_SMOOTH_PX = 4.0
 # The line is the middle of the centerline, this many padded names long but

@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import cache
 import hashlib
 from typing import TYPE_CHECKING
+import urllib.parse
 import urllib.request
 
 import yaml
@@ -16,9 +17,15 @@ if TYPE_CHECKING:
     from collections.abc import Iterator
     from pathlib import Path
 
+# The glyphs of OpenFreeMap, which the styles load.
+GLYPHS = "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf"
+# The styles draw glacier names along the label lines in this text, and the
+# tiles step fits each label line to it. The letter spacing is in em.
 FONT = "Noto Sans Italic"
+LABEL_TEXT_SIZE = 14
+LABEL_LETTER_SPACING = 0.2
 # Every glacier name uses code points 0 to 255 only.
-GLYPHS_URL = "https://tiles.openfreemap.org/fonts/Noto%20Sans%20Italic/0-255.pbf"
+GLYPHS_URL = GLYPHS.format(fontstack=urllib.parse.quote(FONT), range="0-255")
 ADVANCES = METADATA / "glyph_advances.yaml"
 # MapLibre's glyphs are drawn at 24 px. A glyph's advance scales with the text size.
 GLYPH_PX = 24
