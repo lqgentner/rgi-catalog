@@ -7,7 +7,7 @@
   "id": "rgi-v7-0",
   "title": "RGI 7.0",
   "description": "RGI 7.0, released in 2023. It holds 274,531 glacier outlines with their attributes.\n\nThis is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:\n\n> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
-  "updated": "2026-11-05T19:52:50Z",
+  "updated": "2026-11-05T20:19:50Z",
   "links": [
     {
       "rel": "root",
