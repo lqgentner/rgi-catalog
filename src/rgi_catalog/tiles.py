@@ -67,6 +67,8 @@ HALF_WORLD_DEG = 180
 MERCATOR_MAX_LAT = math.degrees(math.atan(math.sinh(math.pi)))
 # MapLibre draws a vector tile 512 pixels wide.
 TILE_PX = 512
+# The coordinate units across a vector tile.
+TILE_EXTENT = 4096
 LABEL_MINZOOM = 7
 # A glacier of this area gets its label at GLACIERS_COMPLETE_ZOOM + 1.
 LABEL_REFERENCE_KM2 = 1.0
@@ -80,9 +82,11 @@ LABEL_SMOOTH_PX = 4.0
 # The line is the middle of the centerline, this many padded names long.
 LABEL_STRETCH = 1.5
 # MapLibre's text-max-angle rule: the corners in a window of 3/5 of the text
-# size may turn by at most 45° (the default) in total.
+# size may turn by at most 45° (the default) in total. The tiler moves each
+# vertex by up to 1/16 pixel, which changes a short segment's turn by about
+# 2°. The check keeps 5° of the 45° in reserve.
 LABEL_WINDOW_PX = 7.2
-LABEL_MAX_ANGLE = math.radians(45)
+LABEL_MAX_ANGLE = math.radians(45 - 5)
 
 # Arrow types a vector tile cannot store as a property.
 _NESTED = (pa.types.is_list, pa.types.is_large_list, pa.types.is_struct, pa.types.is_map)
@@ -400,38 +404,92 @@ def middle_stretch(coords: np.ndarray, length: float) -> np.ndarray:
     return np.vstack([ends[:2], inner, ends[2:]])
 
 
-def bends_fit(coords: np.ndarray, label_px: float) -> bool:
-    """Return whether a label at the midpoint of a line passes MapLibre's angle rule.
+def _turn(coords: np.ndarray, vertex: int) -> float:
+    """Return the angle by which a line turns at an inner vertex, in radians."""
+    before = coords[vertex] - coords[vertex - 1]
+    after = coords[vertex + 1] - coords[vertex]
+    delta = math.atan2(before[1], before[0]) - math.atan2(after[1], after[0])
+    return abs((delta + math.pi) % (2 * math.pi) - math.pi)
 
-    MapLibre drops a line label when the corners in any window of
-    :data:`LABEL_WINDOW_PX` along the label turn by more than
-    :data:`LABEL_MAX_ANGLE` in total. The window is 3/5 of the text size.
+
+def center_label_fits(coords: np.ndarray, label_px: float) -> bool:
+    """Return whether MapLibre places a ``line-center`` label on a line.
+
+    This ports MapLibre's ``getCenterAnchor`` and ``checkMaxAngle``. The
+    label sits at the midpoint of the line. MapLibre drops it when the line
+    ends under the label, or when the corners under the label turn by more
+    than 45° within :data:`LABEL_WINDOW_PX`, 3/5 of the text size. The check
+    uses :data:`LABEL_MAX_ANGLE`, which is stricter.
 
     Parameters
     ----------
     coords
-        The vertices, in pixels.
+        The vertices, in pixels, without repeated vertices.
     label_px
         The width of the label, in pixels.
 
     Returns
     -------
     bool
-        True if the line is at least ``label_px`` long and no window turns
-        too far.
+        True if MapLibre keeps the label.
     """
     distance = _arc_length(coords)
-    if distance[-1] < label_px:
+    center = distance[-1] / 2
+    segment = int(np.searchsorted(distance, center, side="right")) - 1
+    if segment >= len(coords) - 1:
         return False
-    heading = np.arctan2(np.diff(coords[:, 1]), np.diff(coords[:, 0]))
-    turn = np.abs((np.diff(heading) + math.pi) % (2 * math.pi) - math.pi)
-    corner = distance[1:-1]
-    mid = distance[-1] / 2
-    under = (corner >= mid - label_px / 2) & (corner <= mid + label_px / 2)
-    corner, turn = corner[under], turn[under]
-    total = np.concatenate([[0.0], np.cumsum(turn)])
-    first = np.searchsorted(corner, corner - LABEL_WINDOW_PX, side="left")
-    return not bool(((total[1:] - total[first]) > LABEL_MAX_ANGLE).any())
+    ratio = (center - distance[segment]) / (distance[segment + 1] - distance[segment])
+    point = coords[segment] + ratio * (coords[segment + 1] - coords[segment])
+    # Walk back to the first vertex under the label.
+    index = segment + 1
+    along = 0.0
+    while along > -label_px / 2:
+        index -= 1
+        if index < 0:
+            return False
+        along -= float(np.hypot(*(coords[index] - point)))
+        point = coords[index]
+    along += distance[index + 1] - distance[index]
+    index += 1
+    # Sum the corners in a sliding window up to the end of the label.
+    corners: list[tuple[float, float]] = []
+    turned = 0.0
+    while along < label_px / 2:
+        if index + 1 >= len(coords):
+            return False
+        turn = _turn(coords, index)
+        corners.append((along, turn))
+        turned += turn
+        while along - corners[0][0] > LABEL_WINDOW_PX:
+            turned -= corners.pop(0)[1]
+        if turned > LABEL_MAX_ANGLE:
+            return False
+        along += distance[index + 1] - distance[index]
+        index += 1
+    return True
+
+
+def tile_grid(coords: np.ndarray) -> np.ndarray:
+    """Return a line as a vector tile stores it, in pixels.
+
+    A tile of :data:`TILE_PX` pixels has an extent of 4096 units, so a
+    vertex moves to the nearest 1/8 pixel. A vertex that lands on the one
+    before it is left out.
+
+    Parameters
+    ----------
+    coords
+        The vertices, in pixels.
+
+    Returns
+    -------
+    np.ndarray
+        The vertices on the tile grid.
+    """
+    units = TILE_EXTENT / TILE_PX
+    grid = np.round(coords * units) / units
+    moved = np.concatenate([[True], (np.diff(grid, axis=0) != 0).any(axis=1)])
+    return grid[moved]
 
 
 def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.ndarray] | None:
@@ -440,8 +498,9 @@ def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.n
     At each zoom from ``minzoom`` to :data:`MAXZOOM` the line is smoothed by
     :data:`LABEL_SMOOTH_PX` and cut to its middle :data:`LABEL_STRETCH` label
     widths. The first zoom at which the name and :data:`LABEL_PAD_PX` on
-    each side fit along the stretch, and its bends pass :func:`bends_fit`,
-    wins.
+    each side fit along the stretch on the tile grid, and MapLibre keeps a
+    label of that width there (:func:`center_label_fits`), wins. The label
+    band does not simplify, so the tile holds this line.
 
     Parameters
     ----------
@@ -470,7 +529,8 @@ def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.n
             continue
         stretch = middle_stretch(smoothed, min(smoothed_px, LABEL_STRETCH * needed_px))
         stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
-        if bends_fit(stretch, needed_px):
+        stretch = tile_grid(stretch)
+        if center_label_fits(stretch, needed_px):
             return zoom, stretch * pixel_m(zoom)
     return None
 
@@ -719,6 +779,11 @@ def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> l
             (
                 *entry_zoom_args("label_minzoom", LABEL_MINZOOM, MAXZOOM),
                 *LINE_COMPLETE,
+                # The tiler's simplification merges the smoothed bends of a
+                # label line into sharper corners, and MapLibre then drops
+                # the label. label_line checks the line as written.
+                "--simplify-factor",
+                "0",
                 # The tiler counts the buffer in pixels of a 256-pixel tile,
                 # so this is one tile on each side. A label line then lies
                 # whole in each tile it touches at its line_zoom, and each

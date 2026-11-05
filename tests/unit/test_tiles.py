@@ -186,21 +186,39 @@ def test_write_labels_adds_line_along_longest_main_centerline(labels_parquet: Pa
     assert line["label_minzoom"] >= point["label_minzoom"]
     assert line["display_name"] == point["display_name"]
     # The middle of the longer main line, not the shorter one at 61.1.
-    assert line["geometry"].bounds[1] == pytest.approx(61.0)
+    assert line["geometry"].bounds[1] == pytest.approx(61.0, abs=0.001)
     assert line["geometry"].centroid.x == pytest.approx(-147.0, abs=0.01)
     short = labels.loc[labels["rgi_id"] == "RGI2000-v7.0-G-11-00001"]
     assert list(short.geom_type) == ["Point"]
     assert pd.isna(short["line_zoom"].iloc[0])
 
 
-def test_bends_fit_refuses_sharp_corner() -> None:
+def test_center_label_fits_refuses_sharp_corner() -> None:
     straight = np.array([[0.0, 0.0], [200.0, 0.0]])
     corner = np.array([[0.0, 0.0], [100.0, 0.0], [100.0, 100.0]])
     arc = np.array([[100 * np.cos(t), 100 * np.sin(t)] for t in np.linspace(0, 1, 50)])
-    assert tiles.bends_fit(straight, 100)
-    assert not tiles.bends_fit(corner, 100)
-    assert tiles.bends_fit(arc, 80)
-    assert not tiles.bends_fit(straight, 300)
+    assert tiles.center_label_fits(straight, 100)
+    assert not tiles.center_label_fits(corner, 100)
+    assert tiles.center_label_fits(arc, 80)
+    assert not tiles.center_label_fits(straight, 300)
+
+
+def test_center_label_fits_sums_corners_in_window() -> None:
+    # Three corners of 20° within 6 px turn 60° in one window of 7.2 px.
+    # Spread 10 px apart, each window holds one corner.
+    def zigzag(step: float) -> np.ndarray:
+        heading = np.radians([0, 20, 40, 60, 60])
+        lengths = [100, step, step, step, 100]
+        moves = np.column_stack([np.cos(heading), np.sin(heading)]) * np.array(lengths)[:, None]
+        return np.vstack([[0, 0], np.cumsum(moves, axis=0)])
+
+    assert not tiles.center_label_fits(zigzag(3.0), 100)
+    assert tiles.center_label_fits(zigzag(10.0), 100)
+
+
+def test_tile_grid_rounds_to_eighth_pixel_and_drops_repeats() -> None:
+    line = np.array([[0.01, 0.0], [0.02, 0.0], [10.06, 5.0]])
+    assert tiles.tile_grid(line).tolist() == [[0.0, 0.0], [10.0, 5.0]]
 
 
 def test_smooth_line_keeps_ends_and_rounds_corners() -> None:
@@ -209,8 +227,8 @@ def test_smooth_line_keeps_ends_and_rounds_corners() -> None:
     smoothed = tiles.smooth_line(corner, tiles.LABEL_SMOOTH_PX)
     assert smoothed[0] == pytest.approx([0, 0], abs=1e-6)
     assert smoothed[-1] == pytest.approx(corner[-1], abs=1e-6)
-    assert not tiles.bends_fit(corner, 100)
-    assert tiles.bends_fit(smoothed, 100)
+    assert not tiles.center_label_fits(corner, 100)
+    assert tiles.center_label_fits(smoothed, 100)
 
 
 def test_tile_properties_leaves_out_list_columns(glaciers_parquet: Path) -> None:
