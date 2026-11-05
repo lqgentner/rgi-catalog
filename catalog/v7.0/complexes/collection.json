@@ -25,7 +25,7 @@
     "glacier complexes"
   ],
   "version": "7.0-r1",
-  "updated": "2026-11-05T20:19:50Z",
+  "updated": "2026-11-05T21:04:16Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -178,8 +178,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1156897223,
-      "file:checksum": "12201b25dea5b491d8535760df53e8ae06e0659fe34c284e2357dc23099a26f4f283"
+      "file:size": 1158945747,
+      "file:checksum": "1220e975c2bea161d809d67084a2282fddc85986ff68428b4fc8d462bcc926cb0c66"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -268,8 +268,8 @@
       "pmtiles:layers": [
         "complexes"
       ],
-      "file:size": 1156897223,
-      "file:checksum": "12201b25dea5b491d8535760df53e8ae06e0659fe34c284e2357dc23099a26f4f283"
+      "file:size": 1158945747,
+      "file:checksum": "1220e975c2bea161d809d67084a2282fddc85986ff68428b4fc8d462bcc926cb0c66"
     }
   ]
 }

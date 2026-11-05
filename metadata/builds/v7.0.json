@@ -417,8 +417,8 @@
       "size": 955336
     },
     "rgi7.0.pmtiles": {
-      "file:checksum": "12201b25dea5b491d8535760df53e8ae06e0659fe34c284e2357dc23099a26f4f283",
-      "size": 1156897223
+      "file:checksum": "1220e975c2bea161d809d67084a2282fddc85986ff68428b4fc8d462bcc926cb0c66",
+      "size": 1158945747
     }
   },
   "fixes": {
@@ -505,6 +505,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-11-05T20:19:50Z",
+  "updated": "2026-11-05T21:04:16Z",
   "version": "7.0"
 }

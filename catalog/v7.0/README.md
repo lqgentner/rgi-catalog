@@ -41,7 +41,7 @@ every changed row and the rules of `display_name`.
 | [centerlines](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/centerlines/collection.json) | 367,724 | 210.3 MB | [README](centerlines/README.md) · [Agents guide](centerlines/AGENTS.md) |
 | [regions](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) | 110 | 1.0 MB | [README](regions/README.md) · [Agents guide](regions/AGENTS.md) |
 
-The web map archive `rgi7.0.pmtiles` (1156.9 MB) holds the layers `regions`, `region-boundaries`, `region-labels`, `complexes`, `glaciers`, `glacier-labels`, `centerlines`, `intersects`, z0 to z12.
+The web map archive `rgi7.0.pmtiles` (1158.9 MB) holds the layers `regions`, `region-boundaries`, `region-labels`, `complexes`, `glaciers`, `glacier-labels`, `centerlines`, `intersects`, z0 to z12.
 
 ## License and citation
 
