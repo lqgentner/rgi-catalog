@@ -26,7 +26,7 @@
     "GTN-G"
   ],
   "version": "7.0-r1",
-  "updated": "2026-11-05T18:33:41Z",
+  "updated": "2026-11-05T19:52:50Z",
   "sci:doi": "10.5904/gtng-glacreg-2023-07",
   "sci:citation": "World Glacier Monitoring Service. (2023). GTN-G glacier regions (GlacReg) [Data set]. Global Terrestrial Network for Glaciers. https://doi.org/10.5904/gtng-glacreg-2023-07",
   "sci:publications": [
@@ -160,8 +160,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1154966449,
-      "file:checksum": "12201e58c7fe0104704122965ce6753e46e2fa1443ab4b41be5006f80ce4ae9391ef"
+      "file:size": 1154603348,
+      "file:checksum": "1220cde06e2edeb30d6ceb5f40089349b32ebdf94f00bfed19c4b2c14d49e8be002c"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -252,8 +252,8 @@
         "region-boundaries",
         "region-labels"
       ],
-      "file:size": 1154966449,
-      "file:checksum": "12201e58c7fe0104704122965ce6753e46e2fa1443ab4b41be5006f80ce4ae9391ef"
+      "file:size": 1154603348,
+      "file:checksum": "1220cde06e2edeb30d6ceb5f40089349b32ebdf94f00bfed19c4b2c14d49e8be002c"
     }
   ]
 }
