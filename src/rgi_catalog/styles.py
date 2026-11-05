@@ -98,6 +98,9 @@ def _region_labels(level: int, minzoom: int, maxzoom: int, size: int) -> dict[st
 LABELS: dict[str, Any] = {
     "id": "glacier-labels",
     "type": "symbol",
+    # The layer also holds a line along the centerline of a glacier whose
+    # name fits one. Point placement on a line draws the name at each vertex.
+    "filter": POINTS,
     "layout": {
         "text-field": ["get", "display_name"],
         "text-font": LABEL_FONT,

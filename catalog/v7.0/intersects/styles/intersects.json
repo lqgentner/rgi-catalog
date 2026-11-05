@@ -224,6 +224,19 @@
       "source-layer": "glacier-labels",
       "id": "glacier-labels",
       "type": "symbol",
+      "filter": [
+        "in",
+        [
+          "geometry-type"
+        ],
+        [
+          "literal",
+          [
+            "Point",
+            "MultiPoint"
+          ]
+        ]
+      ],
       "layout": {
         "text-field": [
           "get",

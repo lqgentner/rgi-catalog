@@ -61,6 +61,8 @@ GLACIERS_COMPLETE_ZOOM = 10
 SHAPE_MIN_PX = 3
 # The circumference of the Web Mercator world, in metres.
 WORLD_M = 2 * math.pi * 6378137
+# A line wider than this in longitude crosses the antimeridian.
+HALF_WORLD_DEG = 180
 # The latitude at which the Web Mercator world ends.
 MERCATOR_MAX_LAT = math.degrees(math.atan(math.sinh(math.pi)))
 # MapLibre draws a vector tile 512 pixels wide.
@@ -68,6 +70,19 @@ TILE_PX = 512
 LABEL_MINZOOM = 7
 # A glacier of this area gets its label at GLACIERS_COMPLETE_ZOOM + 1.
 LABEL_REFERENCE_KM2 = 1.0
+# A name follows its centerline once the line is long enough. The styles draw
+# names in 12 px italic, about 0.6 em per character.
+LABEL_CHAR_PX = 7.2
+# The free line kept on each side of a name.
+LABEL_PAD_PX = 7.2
+# The standard deviation of the smoothing, in pixels at the line's zoom.
+LABEL_SMOOTH_PX = 4.0
+# The line is the middle of the centerline, this many padded names long.
+LABEL_STRETCH = 1.5
+# MapLibre's text-max-angle rule: the corners in a window of 3/5 of the text
+# size may turn by at most 45° (the default) in total.
+LABEL_WINDOW_PX = 7.2
+LABEL_MAX_ANGLE = math.radians(45)
 
 # Arrow types a vector tile cannot store as a property.
 _NESTED = (pa.types.is_list, pa.types.is_large_list, pa.types.is_struct, pa.types.is_map)
@@ -311,15 +326,208 @@ def write_overview(source: Path, out_dir: Path, columns: Sequence[str]) -> dict[
     return out
 
 
-def write_labels(glaciers_parquet: Path, out: Path) -> Path:
-    """Write the label points: one per named glacier, at RGI's own point.
+def label_width_px(name: str) -> float:
+    """Return the estimated width of a glacier name on the map, in pixels.
+
+    Parameters
+    ----------
+    name
+        The name.
+
+    Returns
+    -------
+    float
+        :data:`LABEL_CHAR_PX` per character.
+    """
+    return len(name) * LABEL_CHAR_PX
+
+
+def _arc_length(coords: np.ndarray) -> np.ndarray:
+    """Return the distance along a line at each vertex."""
+    return np.concatenate([[0.0], np.cumsum(np.hypot(*np.diff(coords, axis=0).T))])
+
+
+def smooth_line(coords: np.ndarray, sigma: float) -> np.ndarray:
+    """Return a line resampled at unit spacing and smoothed with a Gaussian.
+
+    Parameters
+    ----------
+    coords
+        The vertices, in pixels.
+    sigma
+        The standard deviation of the Gaussian, in pixels.
+
+    Returns
+    -------
+    np.ndarray
+        The smoothed vertices, one per pixel. The line is mirrored through
+        each end vertex before the smoothing, so it keeps its ends.
+    """
+    distance = _arc_length(coords)
+    steps = np.linspace(0, distance[-1], max(int(distance[-1]), 2) + 1)
+    radius = math.ceil(3 * sigma)
+    offsets = np.arange(-radius, radius + 1)
+    kernel = np.exp(-0.5 * (offsets / sigma) ** 2)
+    kernel /= kernel.sum()
+    axes = []
+    for axis in coords.T:
+        resampled = np.interp(steps, distance, axis)
+        padded = np.pad(resampled, radius, mode="reflect", reflect_type="odd")
+        axes.append(np.convolve(padded, kernel, mode="valid"))
+    return np.column_stack(axes)
+
+
+def middle_stretch(coords: np.ndarray, length: float) -> np.ndarray:
+    """Return the part of a line of a given length around its midpoint.
+
+    Parameters
+    ----------
+    coords
+        The vertices.
+    length
+        The length to keep, in the units of ``coords``.
+
+    Returns
+    -------
+    np.ndarray
+        The vertices of the stretch.
+    """
+    distance = _arc_length(coords)
+    total = distance[-1]
+    start, end = (total - length) / 2, (total + length) / 2
+    inner = coords[(distance > start) & (distance < end)]
+    ends = [np.interp([d], distance, axis)[0] for d in (start, end) for axis in coords.T]
+    return np.vstack([ends[:2], inner, ends[2:]])
+
+
+def bends_fit(coords: np.ndarray, label_px: float) -> bool:
+    """Return whether a label at the midpoint of a line passes MapLibre's angle rule.
+
+    MapLibre drops a line label when the corners in any window of
+    :data:`LABEL_WINDOW_PX` along the label turn by more than
+    :data:`LABEL_MAX_ANGLE` in total. The window is 3/5 of the text size.
+
+    Parameters
+    ----------
+    coords
+        The vertices, in pixels.
+    label_px
+        The width of the label, in pixels.
+
+    Returns
+    -------
+    bool
+        True if the line is at least ``label_px`` long and no window turns
+        too far.
+    """
+    distance = _arc_length(coords)
+    if distance[-1] < label_px:
+        return False
+    heading = np.arctan2(np.diff(coords[:, 1]), np.diff(coords[:, 0]))
+    turn = np.abs((np.diff(heading) + math.pi) % (2 * math.pi) - math.pi)
+    corner = distance[1:-1]
+    mid = distance[-1] / 2
+    under = (corner >= mid - label_px / 2) & (corner <= mid + label_px / 2)
+    corner, turn = corner[under], turn[under]
+    total = np.concatenate([[0.0], np.cumsum(turn)])
+    first = np.searchsorted(corner, corner - LABEL_WINDOW_PX, side="left")
+    return not bool(((total[1:] - total[first]) > LABEL_MAX_ANGLE).any())
+
+
+def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.ndarray] | None:
+    """Return the zoom and the line from which a name follows its centerline.
+
+    At each zoom from ``minzoom`` to :data:`MAXZOOM` the line is smoothed by
+    :data:`LABEL_SMOOTH_PX` and cut to its middle :data:`LABEL_STRETCH` label
+    widths. The first zoom at which the name and :data:`LABEL_PAD_PX` on
+    each side fit along the stretch, and its bends pass :func:`bends_fit`,
+    wins.
+
+    Parameters
+    ----------
+    coords_m
+        The vertices of the centerline, in Web Mercator metres.
+    name
+        The name.
+    minzoom
+        The first zoom at which the name is drawn.
+
+    Returns
+    -------
+    tuple[int, np.ndarray] | None
+        The zoom and the stretch in Web Mercator metres, or None if the name
+        never fits.
+    """
+    label_px = label_width_px(name)
+    needed_px = label_px + 2 * LABEL_PAD_PX
+    length_m = _arc_length(coords_m)[-1]
+    for zoom in range(minzoom, MAXZOOM + 1):
+        if length_m / pixel_m(zoom) < needed_px:
+            continue
+        smoothed = smooth_line(coords_m / pixel_m(zoom), LABEL_SMOOTH_PX)
+        smoothed_px = _arc_length(smoothed)[-1]
+        if smoothed_px < needed_px:
+            continue
+        stretch = middle_stretch(smoothed, min(smoothed_px, LABEL_STRETCH * needed_px))
+        stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
+        if bends_fit(stretch, needed_px):
+            return zoom, stretch * pixel_m(zoom)
+    return None
+
+
+def main_centerlines(centerlines_parquet: Path, rgi_ids: Sequence[str]) -> gpd.GeoSeries:
+    """Return the longest main centerline of each glacier, in Web Mercator.
+
+    Parameters
+    ----------
+    centerlines_parquet
+        The centerlines GeoParquet file.
+    rgi_ids
+        The glaciers.
+
+    Returns
+    -------
+    gpd.GeoSeries
+        One line per glacier that has one, indexed by the glacier's
+        ``rgi_id``. A line beyond :data:`MERCATOR_MAX_LAT` or across the
+        antimeridian is left out.
+    """
+    lines = gpd.read_parquet(
+        centerlines_parquet,
+        columns=["rgi_g_id", "is_main", "geometry"],
+        filters=[("is_main", "==", True)],
+    )
+    lines = lines.loc[lines["rgi_g_id"].isin(rgi_ids)]
+    bounds = shapely.bounds(lines.geometry.to_numpy())
+    inside = (
+        (bounds[:, 1] >= -MERCATOR_MAX_LAT)
+        & (bounds[:, 3] <= MERCATOR_MAX_LAT)
+        & (bounds[:, 2] - bounds[:, 0] < HALF_WORLD_DEG)
+        & (shapely.get_type_id(lines.geometry.to_numpy()) == 1)
+    )
+    lines = lines.loc[inside].to_crs(3857)
+    lines = lines.assign(length=lines.length).sort_values("length")
+    lines = lines.drop_duplicates("rgi_g_id", keep="last")
+    return lines.set_index("rgi_g_id").geometry
+
+
+def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -> Path:
+    """Write the labels: a point per named glacier and a line for those that fit one.
+
+    The point is RGI's own point. The line is the middle of the glacier's
+    main centerline, smoothed (:func:`label_line`). Both carry ``line_zoom``,
+    the zoom from which the line exists. It is null for a glacier without a
+    line. ``label_minzoom`` is the zoom at which a feature enters: on a line
+    it equals ``line_zoom``.
 
     Parameters
     ----------
     glaciers_parquet
         The glaciers GeoParquet file.
+    centerlines_parquet
+        The centerlines GeoParquet file.
     out
-        The label GeoParquet file to write.
+        The label GeoParquet file to write: the points, then the lines.
 
     Returns
     -------
@@ -330,17 +538,37 @@ def write_labels(glaciers_parquet: Path, out: Path) -> Path:
         glaciers_parquet,
         columns=["rgi_id", "display_name", "area_km2", "cenlon", "cenlat"],
     ).to_pandas()
-    named = table.loc[table["display_name"].notna()]
-    labels = gpd.GeoDataFrame(
+    named = table.loc[table["display_name"].notna()].reset_index(drop=True)
+    minzoom = [label_minzoom(a) for a in named["area_km2"]]
+    centerlines = main_centerlines(centerlines_parquet, named["rgi_id"].tolist())
+    line_zoom: list[int | None] = []
+    lines: list[shapely.LineString] = []
+    for rgi_id, name, zoom in zip(named["rgi_id"], named["display_name"], minzoom, strict=True):
+        placed = None
+        if rgi_id in centerlines.index:
+            placed = label_line(np.asarray(centerlines[rgi_id].coords), name, zoom)
+        line_zoom.append(None if placed is None else placed[0])
+        if placed is not None:
+            lines.append(shapely.LineString(placed[1]))
+    points = gpd.GeoDataFrame(
         {
-            "rgi_id": named["rgi_id"].to_numpy(),
-            "display_name": named["display_name"].to_numpy(),
-            "area_km2": named["area_km2"].to_numpy(),
-            "label_minzoom": [label_minzoom(a) for a in named["area_km2"]],
+            "rgi_id": named["rgi_id"],
+            "display_name": named["display_name"],
+            "area_km2": named["area_km2"],
+            "label_minzoom": minzoom,
+            "line_zoom": pd.array(line_zoom, dtype="UInt8"),
         },
         geometry=gpd.points_from_xy(named["cenlon"], named["cenlat"]),
         crs="EPSG:4326",
     ).astype({"label_minzoom": "uint8"})
+    with_line = points.loc[points["line_zoom"].notna()]
+    line_features = gpd.GeoDataFrame(
+        with_line.drop(columns="geometry").assign(
+            label_minzoom=with_line["line_zoom"].astype("uint8")
+        ),
+        geometry=gpd.GeoSeries(lines, index=with_line.index, crs=3857).to_crs(4326),
+    )
+    labels = pd.concat([points, line_features], ignore_index=True)
     out.parent.mkdir(parents=True, exist_ok=True)
     labels.to_parquet(out, index=False)
     return out
@@ -488,7 +716,16 @@ def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> l
             labels,
             LABEL_MINZOOM,
             MAXZOOM,
-            (*entry_zoom_args("label_minzoom", LABEL_MINZOOM, MAXZOOM), "--no-density-drop"),
+            (
+                *entry_zoom_args("label_minzoom", LABEL_MINZOOM, MAXZOOM),
+                *LINE_COMPLETE,
+                # The tiler counts the buffer in pixels of a 256-pixel tile,
+                # so this is one tile on each side. A label line then lies
+                # whole in each tile it touches at its line_zoom, and each
+                # tile finds the same line center.
+                "--tile-buffer",
+                "256",
+            ),
             complete=True,
             entry_zoom_column="label_minzoom",
         ),
@@ -1038,7 +1275,7 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
     """
     products = {name: output_path(staging, version, name) for name in ARCHIVE_PRODUCTS}
     work = staging / version_dir(version) / ".tiles"
-    labels = write_labels(products["glaciers"], work / "labels.parquet")
+    labels = write_labels(products["glaciers"], products["centerlines"], work / "labels.parquet")
     region_labels = write_region_labels(products["regions"], work / "region-labels.parquet")
     region_boundaries = write_region_boundaries(
         products["regions"], work / "region-boundaries.parquet"
