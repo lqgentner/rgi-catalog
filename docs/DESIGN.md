@@ -573,6 +573,17 @@ the line center. The `tiles` step fits each label line to that text with
 the glyph advances in `metadata/glyph_advances.yaml`. A glacier without a
 label line has no name in the styles.
 
+A main centerline runs from the head to the terminus. Its last vertex is
+RGI's terminus point (`termlon`, `termlat`) for each of the 9,457 named
+glaciers with a main centerline. The `tiles` step puts the label line near
+the terminus, as swisstopo's national map writes a name along the tongue.
+At the first zoom at which the name fits, a stretch of the smoothed
+centerline slides up from the terminus in steps of 2 px. The first stretch
+where MapLibre keeps the name wins. The downstream end of the name keeps a
+tenth of the centerline, and at least 8.4 px, to the terminus. The middle
+of the centerline is always a candidate. Each glacier has one label line,
+so the name keeps the place it has at that zoom when the map zooms in.
+
 The browser labels a legend entry with the `match` branch value. So each
 `match` takes a nested expression that turns the code into the
 user guide's label, and branches on that label. The legend reads "Observed",

@@ -77,10 +77,16 @@ LABEL_REFERENCE_KM2 = 1.0
 # assumes a line-center label in glyphs.FONT at glyphs.LABEL_TEXT_SIZE.
 # The standard deviation of the smoothing, in pixels at the line's zoom.
 LABEL_SMOOTH_PX = 4.0
-# The line is the middle of the centerline, this many padded names long but
+# The line is a stretch of the centerline, this many padded names long but
 # at most TILE_PX, unless the name needs more. The label tiles have a buffer
 # of TILE_PX, so each tile then holds the whole line at its line_zoom.
 LABEL_STRETCH = 1.5
+# The stretch slides up the centerline from the terminus in steps of this
+# many pixels. The downstream end of the name keeps this part of the
+# centerline's length to the terminus, and at least LABEL_PAD_PX. The
+# middle of the centerline is always a candidate.
+LABEL_SLIDE_PX = 2.0
+LABEL_TONGUE_MARGIN = 0.1
 # MapLibre's text-max-angle rule: the corners in a window of 3/5 of the text
 # size may turn by at most 45° (the default) in total. The tiler moves each
 # vertex by up to 1/16 pixel, which changes a short segment's turn by about
@@ -394,13 +400,15 @@ def smooth_line(coords: np.ndarray, sigma: float) -> np.ndarray:
     return np.column_stack(axes)
 
 
-def middle_stretch(coords: np.ndarray, length: float) -> np.ndarray:
-    """Return the part of a line of a given length around its midpoint.
+def line_stretch(coords: np.ndarray, start: float, length: float) -> np.ndarray:
+    """Return the part of a line of a given length from a given distance along it.
 
     Parameters
     ----------
     coords
         The vertices.
+    start
+        The distance along the line where the stretch starts.
     length
         The length to keep, in the units of ``coords``.
 
@@ -410,11 +418,41 @@ def middle_stretch(coords: np.ndarray, length: float) -> np.ndarray:
         The vertices of the stretch.
     """
     distance = _arc_length(coords)
-    total = distance[-1]
-    start, end = (total - length) / 2, (total + length) / 2
+    end = start + length
     inner = coords[(distance > start) & (distance < end)]
     ends = [np.interp([d], distance, axis)[0] for d in (start, end) for axis in coords.T]
     return np.vstack([ends[:2], inner, ends[2:]])
+
+
+def stretch_starts(line_px: float, label_px: float, keep_px: float) -> np.ndarray:
+    """Return the starts of the stretches to try, from the terminus up.
+
+    The centerline runs from the head to the terminus. The name sits at the
+    middle of the stretch. Its downstream end keeps :data:`LABEL_TONGUE_MARGIN`
+    of the line, at least :data:`LABEL_PAD_PX`, to the terminus. The margin
+    is at most the one of a name at the middle of the line, so the middle
+    stretch is always a candidate.
+
+    Parameters
+    ----------
+    line_px
+        The length of the centerline, in pixels.
+    label_px
+        The width of the name, in pixels.
+    keep_px
+        The length of the stretch, at most ``line_px``.
+
+    Returns
+    -------
+    np.ndarray
+        The distances from the head, in pixels, in descending order. The
+        first start is the most downstream one.
+    """
+    margin = min(max(LABEL_PAD_PX, LABEL_TONGUE_MARGIN * line_px), (line_px - label_px) / 2)
+    last = min(line_px - keep_px, line_px - margin - (keep_px + label_px) / 2)
+    middle = (line_px - keep_px) / 2
+    slide = np.arange(last, 0, -LABEL_SLIDE_PX)
+    return np.unique(np.concatenate([slide, [middle, 0.0]]))[::-1]
 
 
 def _turn(coords: np.ndarray, vertex: int) -> float:
@@ -509,11 +547,12 @@ def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.n
     """Return the zoom and the line from which a name follows its centerline.
 
     At each zoom from ``minzoom`` to :data:`MAXZOOM` the line is smoothed by
-    :data:`LABEL_SMOOTH_PX` and cut to its middle :data:`LABEL_STRETCH` label
-    widths, at most :data:`TILE_PX`. The first zoom at which the name and :data:`LABEL_PAD_PX` on
-    each side fit along the stretch on the tile grid, and MapLibre keeps a
-    label of that width there (:func:`center_label_fits`), wins. The label
-    band does not simplify, so the tile holds this line.
+    :data:`LABEL_SMOOTH_PX`. A stretch of :data:`LABEL_STRETCH` padded label
+    widths, at most :data:`TILE_PX`, slides up the line from the terminus
+    (:func:`stretch_starts`). The first stretch on the tile grid where
+    MapLibre keeps the name with :data:`LABEL_PAD_PX` on each side
+    (:func:`center_label_fits`) wins. The first zoom with such a stretch
+    wins. The label band does not simplify, so the tile holds this line.
 
     Parameters
     ----------
@@ -540,12 +579,13 @@ def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.n
         smoothed_px = _arc_length(smoothed)[-1]
         if smoothed_px < needed_px:
             continue
-        keep_px = max(needed_px, min(LABEL_STRETCH * needed_px, TILE_PX))
-        stretch = middle_stretch(smoothed, min(smoothed_px, keep_px))
-        stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
-        stretch = tile_grid(stretch)
-        if center_label_fits(stretch, needed_px):
-            return zoom, stretch * pixel_m(zoom)
+        keep_px = min(smoothed_px, max(needed_px, min(LABEL_STRETCH * needed_px, TILE_PX)))
+        for start in stretch_starts(smoothed_px, label_px, keep_px):
+            stretch = line_stretch(smoothed, start, keep_px)
+            stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
+            stretch = tile_grid(stretch)
+            if center_label_fits(stretch, needed_px):
+                return zoom, stretch * pixel_m(zoom)
     return None
 
 
@@ -588,8 +628,8 @@ def main_centerlines(centerlines_parquet: Path, rgi_ids: Sequence[str]) -> gpd.G
 def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -> Path:
     """Write the labels: a point per named glacier and a line for those that fit one.
 
-    The point is RGI's own point. The line is the middle of the glacier's
-    main centerline, smoothed (:func:`label_line`). Both carry ``line_zoom``,
+    The point is RGI's own point. The line is a stretch of the glacier's
+    main centerline near the terminus, smoothed (:func:`label_line`). Both carry ``line_zoom``,
     the zoom from which the line exists. It is null for a glacier without a
     line. ``label_minzoom`` is the zoom at which a feature enters: on a line
     it equals ``line_zoom``.

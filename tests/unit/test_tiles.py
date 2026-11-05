@@ -185,7 +185,8 @@ def test_write_labels_adds_line_along_longest_main_centerline(labels_parquet: Pa
     assert line["line_zoom"] == point["line_zoom"] == line["label_minzoom"]
     assert line["label_minzoom"] >= point["label_minzoom"]
     assert line["display_name"] == point["display_name"]
-    # The middle of the longer main line, not the shorter one at 61.1.
+    # The longer main line, not the shorter one at 61.1. At its line_zoom the
+    # line is shorter than a stretch, so the label line is all of it.
     assert line["geometry"].bounds[1] == pytest.approx(61.0, abs=0.001)
     assert line["geometry"].centroid.x == pytest.approx(-147.0, abs=0.01)
     short = labels.loc[labels["rgi_id"] == "RGI2000-v7.0-G-11-00001"]
@@ -731,3 +732,37 @@ def test_overview_columns_cover_the_styles() -> None:
     themed = {theme.column for theme in styles.THEMES.values()}
     assert themed | {"rgi_id", "display_name", "area_km2"} <= set(tiles.GLACIER_OVERVIEW_COLUMNS)
     assert set(tiles.COMPLEX_OVERVIEW_COLUMNS) == {"rgi_id", "area_km2"}
+
+
+def test_stretch_starts_slide_up_from_terminus_margin() -> None:
+    # The name ends a tenth of the line before the terminus. The slide
+    # goes up to the head and passes the middle.
+    line_px, label_px, keep_px = 1000.0, 92.0, 160.0
+    starts = tiles.stretch_starts(line_px, label_px, keep_px)
+    label_end = starts[0] + (keep_px + label_px) / 2
+    assert label_end == pytest.approx(line_px * (1 - tiles.LABEL_TONGUE_MARGIN))
+    assert np.all(np.diff(starts) < 0)
+    assert np.all(-np.diff(starts) <= tiles.LABEL_SLIDE_PX)
+    assert (line_px - keep_px) / 2 in starts
+    assert starts[-1] == 0
+    # A name that only fits at the middle keeps the middle.
+    assert tiles.stretch_starts(200.0, 150.0, 200.0).tolist() == [0.0]
+
+
+def test_label_line_sits_near_terminus_before_a_bend() -> None:
+    zoom = tiles.MAXZOOM
+    label_px = tiles.label_width_px("Big Glacier")
+    needed_px = label_px + 2 * tiles.LABEL_PAD_PX
+    # The line runs from the head at x = 0 to the terminus at x = 1000.
+    straight = np.array([[0.0, 0.0], [1000.0, 0.0]])
+    placed = tiles.label_line(straight * tiles.pixel_m(zoom), "Big Glacier", zoom)
+    assert placed is not None
+    center = shapely.LineString(placed[1] / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
+    margin = 1000 * tiles.LABEL_TONGUE_MARGIN
+    assert center.x + label_px / 2 == pytest.approx(1000 - margin, abs=0.5)
+    # A sharp bend near the terminus pushes the name up the line, past the bend.
+    bent = np.array([[0.0, 0.0], [600.0, 0.0], [600.0, -60.0]])
+    placed = tiles.label_line(bent * tiles.pixel_m(zoom), "Big Glacier", zoom)
+    assert placed is not None
+    center = shapely.LineString(placed[1] / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
+    assert 600 - needed_px / 2 - 4 * tiles.LABEL_SMOOTH_PX < center.x < 600 - needed_px / 2
