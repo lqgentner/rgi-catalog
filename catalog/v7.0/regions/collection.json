@@ -26,7 +26,7 @@
     "GTN-G"
   ],
   "version": "7.0-r1",
-  "updated": "2026-11-05T21:04:16Z",
+  "updated": "2026-11-05T22:12:36Z",
   "sci:doi": "10.5904/gtng-glacreg-2023-07",
   "sci:citation": "World Glacier Monitoring Service. (2023). GTN-G glacier regions (GlacReg) [Data set]. Global Terrestrial Network for Glaciers. https://doi.org/10.5904/gtng-glacreg-2023-07",
   "sci:publications": [
@@ -150,8 +150,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 4819,
-      "file:checksum": "1220c39ffe7b002f7822696ad1319ea4e21d993c314c43bc2b18bc29e771607b74af"
+      "file:size": 5071,
+      "file:checksum": "122015da72c3a6e213997a76cd7c5826daad679c66da314fa63d3a267ff00e809423"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
@@ -160,8 +160,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1158945747,
-      "file:checksum": "1220e975c2bea161d809d67084a2282fddc85986ff68428b4fc8d462bcc926cb0c66"
+      "file:size": 1147980293,
+      "file:checksum": "1220f393cb731ed335304f295f0b582e50d40999762dddd048bc784490623015d103"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -252,8 +252,8 @@
         "region-boundaries",
         "region-labels"
       ],
-      "file:size": 1158945747,
-      "file:checksum": "1220e975c2bea161d809d67084a2282fddc85986ff68428b4fc8d462bcc926cb0c66"
+      "file:size": 1147980293,
+      "file:checksum": "1220f393cb731ed335304f295f0b582e50d40999762dddd048bc784490623015d103"
     }
   ]
 }

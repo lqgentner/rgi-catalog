@@ -264,15 +264,31 @@
       "id": "glacier-labels",
       "type": "symbol",
       "filter": [
-        "in",
+        "all",
         [
-          "geometry-type"
-        ],
-        [
-          "literal",
+          "match",
+          [
+            "geometry-type"
+          ],
           [
             "LineString",
             "MultiLineString"
+          ],
+          true,
+          false
+        ],
+        [
+          "==",
+          [
+            "get",
+            "label_zoom"
+          ],
+          [
+            "min",
+            [
+              "zoom"
+            ],
+            12
           ]
         ]
       ],

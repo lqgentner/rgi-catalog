@@ -26,7 +26,7 @@
     "hypsometry"
   ],
   "version": "7.0-r1",
-  "updated": "2026-11-05T21:04:16Z",
+  "updated": "2026-11-05T22:12:36Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -536,8 +536,8 @@
         "style",
         "default"
       ],
-      "file:size": 4819,
-      "file:checksum": "1220c39ffe7b002f7822696ad1319ea4e21d993c314c43bc2b18bc29e771607b74af"
+      "file:size": 5071,
+      "file:checksum": "122015da72c3a6e213997a76cd7c5826daad679c66da314fa63d3a267ff00e809423"
     },
     "style-median-elevation": {
       "href": "./styles/median-elevation.json",
@@ -547,8 +547,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 5740,
-      "file:checksum": "12200091e7d49746a42f310632b9c2a7d765596bf90064f93e8765bb14eebd718f55"
+      "file:size": 5992,
+      "file:checksum": "1220f715928816f299c3a25d688a719efd72396707149c652b43ee5f390abcae3398"
     },
     "style-surge-evidence": {
       "href": "./styles/surge-evidence.json",
@@ -558,8 +558,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 6393,
-      "file:checksum": "1220b334712bb0523b29d1403860d4b1e36adf4627fd31fa33c3923b79704b410b83"
+      "file:size": 6645,
+      "file:checksum": "12208fa8343cd208be5ecde444aa394aa65a50c6465d99405a18a111a0158ca36b28"
     },
     "style-terminus-type": {
       "href": "./styles/terminus-type.json",
@@ -569,8 +569,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 6005,
-      "file:checksum": "122092bdada0f8f24aa9e401b71cd6bf0265b3881fea1d6be387c1daedef9b708592"
+      "file:size": 6257,
+      "file:checksum": "1220df76435d6b65cc0798cc287c40ad5387914d44cf45c726e7b59581dd76d9e027"
     },
     "style-same-as-rgi6": {
       "href": "./styles/same-as-rgi6.json",
@@ -580,8 +580,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 5873,
-      "file:checksum": "1220e80c7e7cf3f2aea31966a5750bdc3b8e6c77988482f0a575029fc346a16d084f"
+      "file:size": 6125,
+      "file:checksum": "1220409ca1ffa08d1a0dd9edcd45adb400c2dadbbae6c3b3fa2ea4e2fb04c35f4ce8"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
@@ -590,8 +590,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1158945747,
-      "file:checksum": "1220e975c2bea161d809d67084a2282fddc85986ff68428b4fc8d462bcc926cb0c66"
+      "file:size": 1147980293,
+      "file:checksum": "1220f393cb731ed335304f295f0b582e50d40999762dddd048bc784490623015d103"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -693,8 +693,8 @@
         "glaciers",
         "glacier-labels"
       ],
-      "file:size": 1158945747,
-      "file:checksum": "1220e975c2bea161d809d67084a2282fddc85986ff68428b4fc8d462bcc926cb0c66"
+      "file:size": 1147980293,
+      "file:checksum": "1220f393cb731ed335304f295f0b582e50d40999762dddd048bc784490623015d103"
     }
   ]
 }
