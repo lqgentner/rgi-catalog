@@ -15,7 +15,7 @@ import pytest
 import shapely
 from shapely.geometry import MultiPolygon, Polygon
 
-from rgi_catalog import assemble, styles, tiles
+from rgi_catalog import assemble, glyphs, styles, tiles
 from rgi_catalog.geoparquet import write_geoparquet
 from rgi_catalog.tiles import (
     LayerSpec,
@@ -216,14 +216,23 @@ def test_center_label_fits_sums_corners_in_window() -> None:
     assert tiles.center_label_fits(zigzag(10.0), 100)
 
 
+def test_label_width_px_shapes_like_maplibre() -> None:
+    advances = glyphs.load_advances()
+    scale = tiles.LABEL_TEXT_SIZE / glyphs.GLYPH_PX
+    spacing = tiles.LABEL_LETTER_SPACING * tiles.LABEL_TEXT_SIZE
+    expected = (advances[ord("A")] + advances[ord("b")]) * scale + spacing
+    assert tiles.label_width_px("Ab") == pytest.approx(expected)
+    assert tiles.label_width_px("") == 0
+
+
 def test_tile_grid_rounds_to_eighth_pixel_and_drops_repeats() -> None:
     line = np.array([[0.01, 0.0], [0.02, 0.0], [10.06, 5.0]])
     assert tiles.tile_grid(line).tolist() == [[0.0, 0.0], [10.0, 5.0]]
 
 
 def test_smooth_line_keeps_ends_and_rounds_corners() -> None:
-    # A corner of 50° turns too far for a label, and the smoothing spreads it.
-    corner = np.array([[0.0, 0.0], [100.0, 0.0], [164.3, 76.6]])
+    # A corner of 45° turns too far for a label, and the smoothing spreads it.
+    corner = np.array([[0.0, 0.0], [100.0, 0.0], [170.7, 70.7]])
     smoothed = tiles.smooth_line(corner, tiles.LABEL_SMOOTH_PX)
     assert smoothed[0] == pytest.approx([0, 0], abs=1e-6)
     assert smoothed[-1] == pytest.approx(corner[-1], abs=1e-6)

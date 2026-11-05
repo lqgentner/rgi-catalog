@@ -22,6 +22,7 @@ import pyarrow.parquet as pq
 import shapely
 from shapely.affinity import translate
 
+from rgi_catalog.glyphs import GLYPH_PX, load_advances
 from rgi_catalog.paths import CACHE, STAGING, version_dir
 from rgi_catalog.pipeline import output_path
 from rgi_catalog.sources import SourcePin, fetch
@@ -72,21 +73,25 @@ TILE_EXTENT = 4096
 LABEL_MINZOOM = 7
 # A glacier of this area gets its label at GLACIERS_COMPLETE_ZOOM + 1.
 LABEL_REFERENCE_KM2 = 1.0
-# A name follows its centerline once the line is long enough. The styles draw
-# names in 12 px italic, about 0.6 em per character.
-LABEL_CHAR_PX = 7.2
-# The free line kept on each side of a name.
-LABEL_PAD_PX = 7.2
+# A name follows its centerline once the line is long enough. The fit assumes
+# a line-center label in the font of glyphs.FONT at this size and letter
+# spacing, in em.
+LABEL_TEXT_SIZE = 14
+LABEL_LETTER_SPACING = 0.2
 # The standard deviation of the smoothing, in pixels at the line's zoom.
 LABEL_SMOOTH_PX = 4.0
-# The line is the middle of the centerline, this many padded names long.
+# The line is the middle of the centerline, this many padded names long but
+# at most TILE_PX, unless the name needs more. The label tiles have a buffer
+# of TILE_PX, so each tile then holds the whole line at its line_zoom.
 LABEL_STRETCH = 1.5
 # MapLibre's text-max-angle rule: the corners in a window of 3/5 of the text
 # size may turn by at most 45° (the default) in total. The tiler moves each
 # vertex by up to 1/16 pixel, which changes a short segment's turn by about
 # 2°. The check keeps 5° of the 45° in reserve.
-LABEL_WINDOW_PX = 7.2
+LABEL_WINDOW_PX = 3 / 5 * LABEL_TEXT_SIZE
 LABEL_MAX_ANGLE = math.radians(45 - 5)
+# The free line kept on each side of a name, one angle window.
+LABEL_PAD_PX = LABEL_WINDOW_PX
 
 # Arrow types a vector tile cannot store as a property.
 _NESTED = (pa.types.is_list, pa.types.is_large_list, pa.types.is_struct, pa.types.is_map)
@@ -331,7 +336,12 @@ def write_overview(source: Path, out_dir: Path, columns: Sequence[str]) -> dict[
 
 
 def label_width_px(name: str) -> float:
-    """Return the estimated width of a glacier name on the map, in pixels.
+    """Return the width of a glacier name on the map, in pixels, as MapLibre shapes it.
+
+    Each glyph advances by its advance in the font, scaled from
+    :data:`glyphs.GLYPH_PX` to :data:`LABEL_TEXT_SIZE`. The letter spacing
+    falls between the glyphs. MapLibre leaves out a glyph the font does
+    not have.
 
     Parameters
     ----------
@@ -341,9 +351,15 @@ def label_width_px(name: str) -> float:
     Returns
     -------
     float
-        :data:`LABEL_CHAR_PX` per character.
+        The width of the shaped name.
     """
-    return len(name) * LABEL_CHAR_PX
+    advances = load_advances()
+    shaped = [advances[ord(c)] for c in name if ord(c) in advances]
+    if not shaped:
+        return 0.0
+    scale = LABEL_TEXT_SIZE / GLYPH_PX
+    spacing = LABEL_LETTER_SPACING * LABEL_TEXT_SIZE
+    return sum(shaped) * scale + spacing * (len(shaped) - 1)
 
 
 def _arc_length(coords: np.ndarray) -> np.ndarray:
@@ -497,7 +513,7 @@ def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.n
 
     At each zoom from ``minzoom`` to :data:`MAXZOOM` the line is smoothed by
     :data:`LABEL_SMOOTH_PX` and cut to its middle :data:`LABEL_STRETCH` label
-    widths. The first zoom at which the name and :data:`LABEL_PAD_PX` on
+    widths, at most :data:`TILE_PX`. The first zoom at which the name and :data:`LABEL_PAD_PX` on
     each side fit along the stretch on the tile grid, and MapLibre keeps a
     label of that width there (:func:`center_label_fits`), wins. The label
     band does not simplify, so the tile holds this line.
@@ -527,7 +543,8 @@ def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.n
         smoothed_px = _arc_length(smoothed)[-1]
         if smoothed_px < needed_px:
             continue
-        stretch = middle_stretch(smoothed, min(smoothed_px, LABEL_STRETCH * needed_px))
+        keep_px = max(needed_px, min(LABEL_STRETCH * needed_px, TILE_PX))
+        stretch = middle_stretch(smoothed, min(smoothed_px, keep_px))
         stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
         stretch = tile_grid(stretch)
         if center_label_fits(stretch, needed_px):
