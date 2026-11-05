@@ -79,7 +79,7 @@ LABEL_REFERENCE_KM2 = 1.0
 LABEL_SMOOTH_PX = 4.0
 # The line is a stretch of the centerline, this many padded names long but
 # at most TILE_PX, unless the name needs more. The label tiles have a buffer
-# of TILE_PX, so each tile then holds the whole line at its line_zoom.
+# of TILE_PX, so each tile then holds the whole line at its zoom.
 LABEL_STRETCH = 1.5
 # The stretch slides up the centerline from the terminus in steps of this
 # many pixels. The downstream end of the name keeps this part of the
@@ -543,16 +543,51 @@ def tile_grid(coords: np.ndarray) -> np.ndarray:
     return grid[moved]
 
 
-def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.ndarray] | None:
-    """Return the zoom and the line from which a name follows its centerline.
+def label_window(coords_m: np.ndarray, name: str, zoom: int) -> np.ndarray | None:
+    """Return the line along which a name follows its centerline at one zoom.
 
-    At each zoom from ``minzoom`` to :data:`MAXZOOM` the line is smoothed by
-    :data:`LABEL_SMOOTH_PX`. A stretch of :data:`LABEL_STRETCH` padded label
-    widths, at most :data:`TILE_PX`, slides up the line from the terminus
-    (:func:`stretch_starts`). The first stretch on the tile grid where
-    MapLibre keeps the name with :data:`LABEL_PAD_PX` on each side
-    (:func:`center_label_fits`) wins. The first zoom with such a stretch
-    wins. The label band does not simplify, so the tile holds this line.
+    The line is smoothed by :data:`LABEL_SMOOTH_PX`. A stretch of
+    :data:`LABEL_STRETCH` padded label widths, at most :data:`TILE_PX`,
+    slides up the line from the terminus (:func:`stretch_starts`). The
+    first stretch on the tile grid where MapLibre keeps the name with
+    :data:`LABEL_PAD_PX` on each side (:func:`center_label_fits`) wins. The
+    label bands do not simplify, so the tile holds this line.
+
+    Parameters
+    ----------
+    coords_m
+        The vertices of the centerline, in Web Mercator metres.
+    name
+        The name.
+    zoom
+        The zoom.
+
+    Returns
+    -------
+    np.ndarray | None
+        The stretch in Web Mercator metres, or None if the name does not
+        fit at this zoom.
+    """
+    label_px = label_width_px(name)
+    needed_px = label_px + 2 * LABEL_PAD_PX
+    if _arc_length(coords_m)[-1] / pixel_m(zoom) < needed_px:
+        return None
+    smoothed = smooth_line(coords_m / pixel_m(zoom), LABEL_SMOOTH_PX)
+    smoothed_px = _arc_length(smoothed)[-1]
+    if smoothed_px < needed_px:
+        return None
+    keep_px = min(smoothed_px, max(needed_px, min(LABEL_STRETCH * needed_px, TILE_PX)))
+    for start in stretch_starts(smoothed_px, label_px, keep_px):
+        stretch = line_stretch(smoothed, start, keep_px)
+        stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
+        stretch = tile_grid(stretch)
+        if center_label_fits(stretch, needed_px):
+            return stretch * pixel_m(zoom)
+    return None
+
+
+def label_lines(coords_m: np.ndarray, name: str, minzoom: int) -> dict[int, np.ndarray]:
+    """Return the label line of a name at each zoom at which it fits.
 
     Parameters
     ----------
@@ -565,28 +600,16 @@ def label_line(coords_m: np.ndarray, name: str, minzoom: int) -> tuple[int, np.n
 
     Returns
     -------
-    tuple[int, np.ndarray] | None
-        The zoom and the stretch in Web Mercator metres, or None if the name
-        never fits.
+    dict[int, np.ndarray]
+        The line of :func:`label_window` by zoom, from ``minzoom`` to
+        :data:`MAXZOOM`. A zoom at which the name does not fit has no line.
     """
-    label_px = label_width_px(name)
-    needed_px = label_px + 2 * LABEL_PAD_PX
-    length_m = _arc_length(coords_m)[-1]
+    lines: dict[int, np.ndarray] = {}
     for zoom in range(minzoom, MAXZOOM + 1):
-        if length_m / pixel_m(zoom) < needed_px:
-            continue
-        smoothed = smooth_line(coords_m / pixel_m(zoom), LABEL_SMOOTH_PX)
-        smoothed_px = _arc_length(smoothed)[-1]
-        if smoothed_px < needed_px:
-            continue
-        keep_px = min(smoothed_px, max(needed_px, min(LABEL_STRETCH * needed_px, TILE_PX)))
-        for start in stretch_starts(smoothed_px, label_px, keep_px):
-            stretch = line_stretch(smoothed, start, keep_px)
-            stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
-            stretch = tile_grid(stretch)
-            if center_label_fits(stretch, needed_px):
-                return zoom, stretch * pixel_m(zoom)
-    return None
+        line = label_window(coords_m, name, zoom)
+        if line is not None:
+            lines[zoom] = line
+    return lines
 
 
 def main_centerlines(centerlines_parquet: Path, rgi_ids: Sequence[str]) -> gpd.GeoSeries:
@@ -626,13 +649,15 @@ def main_centerlines(centerlines_parquet: Path, rgi_ids: Sequence[str]) -> gpd.G
 
 
 def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -> Path:
-    """Write the labels: a point per named glacier and a line for those that fit one.
+    """Write the labels: a point per named glacier and a line per zoom at which it fits.
 
-    The point is RGI's own point. The line is a stretch of the glacier's
-    main centerline near the terminus, smoothed (:func:`label_line`). Both carry ``line_zoom``,
-    the zoom from which the line exists. It is null for a glacier without a
-    line. ``label_minzoom`` is the zoom at which a feature enters: on a line
-    it equals ``line_zoom``.
+    The point is RGI's own point. Each line is a stretch of the glacier's
+    main centerline near the terminus, smoothed (:func:`label_lines`).
+    ``label_zoom`` is the zoom of a line, and is null on a point. The
+    styles draw a line at its own zoom only. ``line_zoom`` is the first
+    zoom with a line, and is null for a glacier without a line.
+    ``label_minzoom`` is the zoom at which a feature enters: on a line it
+    equals ``label_zoom``.
 
     Parameters
     ----------
@@ -656,14 +681,20 @@ def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -
     minzoom = [label_minzoom(a) for a in named["area_km2"]]
     centerlines = main_centerlines(centerlines_parquet, named["rgi_id"].tolist())
     line_zoom: list[int | None] = []
+    line_rows: list[int] = []
+    line_zooms: list[int] = []
     lines: list[shapely.LineString] = []
-    for rgi_id, name, zoom in zip(named["rgi_id"], named["display_name"], minzoom, strict=True):
-        placed = None
+    for row, (rgi_id, name, zoom) in enumerate(
+        zip(named["rgi_id"], named["display_name"], minzoom, strict=True)
+    ):
+        placed: dict[int, np.ndarray] = {}
         if rgi_id in centerlines.index:
-            placed = label_line(np.asarray(centerlines[rgi_id].coords), name, zoom)
-        line_zoom.append(None if placed is None else placed[0])
-        if placed is not None:
-            lines.append(shapely.LineString(placed[1]))
+            placed = label_lines(np.asarray(centerlines[rgi_id].coords), name, zoom)
+        line_zoom.append(min(placed, default=None))
+        for z, line in placed.items():
+            line_rows.append(row)
+            line_zooms.append(z)
+            lines.append(shapely.LineString(line))
     points = gpd.GeoDataFrame(
         {
             "rgi_id": named["rgi_id"],
@@ -671,21 +702,53 @@ def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -
             "area_km2": named["area_km2"],
             "label_minzoom": minzoom,
             "line_zoom": pd.array(line_zoom, dtype="UInt8"),
+            "label_zoom": pd.array([None] * len(named), dtype="UInt8"),
         },
         geometry=gpd.points_from_xy(named["cenlon"], named["cenlat"]),
         crs="EPSG:4326",
     ).astype({"label_minzoom": "uint8"})
-    with_line = points.loc[points["line_zoom"].notna()]
+    with_line = points.iloc[line_rows].reset_index(drop=True)
+    zooms = pd.array(line_zooms, dtype="UInt8")
     line_features = gpd.GeoDataFrame(
         with_line.drop(columns="geometry").assign(
-            label_minzoom=with_line["line_zoom"].astype("uint8")
+            label_minzoom=np.asarray(line_zooms, dtype="uint8"), label_zoom=zooms
         ),
-        geometry=gpd.GeoSeries(lines, index=with_line.index, crs=3857).to_crs(4326),
+        geometry=gpd.GeoSeries(lines, crs=3857).to_crs(4326),
     )
     labels = pd.concat([points, line_features], ignore_index=True)
     out.parent.mkdir(parents=True, exist_ok=True)
     labels.to_parquet(out, index=False)
     return out
+
+
+def write_label_bands(labels: Path, out_dir: Path) -> dict[int, Path]:
+    """Write the input of each zoom of the ``glacier-labels`` layer.
+
+    The input of a zoom holds the points that have entered by it and the
+    lines of that zoom. A line is then in the tiles of its own zoom only.
+    The lines of :data:`MAXZOOM` show past it by overzoom.
+
+    Parameters
+    ----------
+    labels
+        The label file from :func:`write_labels`.
+    out_dir
+        The directory to write.
+
+    Returns
+    -------
+    dict[int, Path]
+        The input of each zoom from :data:`LABEL_MINZOOM` to :data:`MAXZOOM`.
+    """
+    table = gpd.read_parquet(labels)
+    point = table["label_zoom"].isna()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    bands = {}
+    for zoom in range(LABEL_MINZOOM, MAXZOOM + 1):
+        keep = (point & (table["label_minzoom"] <= zoom)) | (table["label_zoom"] == zoom)
+        bands[zoom] = out_dir / f"z{zoom:02d}.parquet"
+        table.loc[keep.fillna(value=False)].to_parquet(bands[zoom], index=False)
+    return bands
 
 
 # The overview zooms below GLACIERS_COMPLETE_ZOOM (write_overview). Every
@@ -795,7 +858,9 @@ def overview_layers(name: str, overview: dict[int, Path]) -> list[LayerSpec]:
     ]
 
 
-def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> list[LayerSpec]:
+def glacier_layers(
+    glaciers: Path, labels: dict[int, Path], overview: dict[int, Path]
+) -> list[LayerSpec]:
     """Return the bands of the ``glaciers`` and ``glacier-labels`` layers.
 
     Parameters
@@ -803,7 +868,7 @@ def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> l
     glaciers
         The glaciers GeoParquet file.
     labels
-        The label file from :func:`write_labels`.
+        The label input of each zoom, from :func:`write_label_bands`.
     overview
         The overview input of each zoom, from :func:`write_overview`.
 
@@ -812,8 +877,8 @@ def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> l
     list[LayerSpec]
         Below :data:`GLACIERS_COMPLETE_ZOOM` the overview: outlines of the
         glaciers that span :data:`SHAPE_MIN_PX` pixels, and a point per grid
-        cell for the others. From it on every glacier is kept. Each label
-        enters at its ``label_minzoom`` and is never thinned.
+        cell for the others. From it on every glacier is kept. The labels
+        have one band per zoom, and no label is thinned.
     """
     return [
         *overview_layers("glaciers", overview),
@@ -825,28 +890,29 @@ def glacier_layers(glaciers: Path, labels: Path, overview: dict[int, Path]) -> l
             POLYGON_COMPLETE,
             complete=True,
         ),
-        LayerSpec(
-            "glacier-labels",
-            labels,
-            LABEL_MINZOOM,
-            MAXZOOM,
-            (
-                *entry_zoom_args("label_minzoom", LABEL_MINZOOM, MAXZOOM),
-                *LINE_COMPLETE,
-                # The tiler's simplification merges the smoothed bends of a
-                # label line into sharper corners, and MapLibre then drops
-                # the label. label_line checks the line as written.
-                "--simplify-factor",
-                "0",
-                # The tiler counts the buffer in pixels of a 256-pixel tile,
-                # so this is one tile on each side. A label line then lies
-                # whole in each tile it touches at its line_zoom, and each
-                # tile finds the same line center.
-                "--tile-buffer",
-                "256",
-            ),
-            complete=True,
-            entry_zoom_column="label_minzoom",
+        *(
+            LayerSpec(
+                "glacier-labels",
+                path,
+                zoom,
+                zoom,
+                (
+                    *LINE_COMPLETE,
+                    # The tiler's simplification merges the smoothed bends of
+                    # a label line into sharper corners, and MapLibre then
+                    # drops the label. label_window checks the line as written.
+                    "--simplify-factor",
+                    "0",
+                    # The tiler counts the buffer in pixels of a 256-pixel
+                    # tile, so this is one tile on each side. A label line then
+                    # lies whole in each tile it touches, and each tile finds
+                    # the same line center.
+                    "--tile-buffer",
+                    "256",
+                ),
+                complete=True,
+            )
+            for zoom, path in sorted(labels.items())
         ),
     ]
 
@@ -1008,7 +1074,7 @@ def write_early_lines(lines: Path, out: Path) -> Path:
 
 def version_layers(
     products: dict[str, Path],
-    labels: Path,
+    labels: dict[int, Path],
     region_labels: Path,
     region_boundaries: Path,
     early_lines: dict[str, Path],
@@ -1021,7 +1087,7 @@ def version_layers(
     products
         The GeoParquet file of each name in :data:`ARCHIVE_PRODUCTS`.
     labels
-        The glacier label file from :func:`write_labels`.
+        The glacier label input of each zoom, from :func:`write_label_bands`.
     region_labels
         The region label file from :func:`write_region_labels`.
     region_boundaries
@@ -1394,7 +1460,10 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
     """
     products = {name: output_path(staging, version, name) for name in ARCHIVE_PRODUCTS}
     work = staging / version_dir(version) / ".tiles"
-    labels = write_labels(products["glaciers"], products["centerlines"], work / "labels.parquet")
+    labels = write_label_bands(
+        write_labels(products["glaciers"], products["centerlines"], work / "labels.parquet"),
+        work / "glacier-labels",
+    )
     region_labels = write_region_labels(products["regions"], work / "region-labels.parquet")
     region_boundaries = write_region_boundaries(
         products["regions"], work / "region-boundaries.parquet"

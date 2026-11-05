@@ -9,7 +9,7 @@ from typing import Any
 import pyarrow.parquet as pq
 import pytest
 
-from rgi_catalog import glyphs, styles
+from rgi_catalog import glyphs, styles, tiles
 from rgi_catalog.paths import STAGING
 from rgi_catalog.pipeline import output_path
 
@@ -72,7 +72,11 @@ def test_styles_label_glaciers_on_top(style: dict[str, Any]) -> None:
 def test_styles_draw_glacier_names_along_label_lines(style: dict[str, Any]) -> None:
     # The tiles step fits each label line to this text, in this font.
     labels = next(layer for layer in style["layers"] if layer["source-layer"] == "glacier-labels")
-    assert labels["filter"] == styles.LINES
+    assert labels["filter"] == [
+        "all",
+        ["match", ["geometry-type"], ["LineString", "MultiLineString"], True, False],
+        ["==", ["get", "label_zoom"], ["min", ["zoom"], tiles.MAXZOOM]],
+    ]
     assert labels["layout"]["symbol-placement"] == "line-center"
     assert labels["layout"]["text-font"] == [glyphs.FONT]
     assert labels["layout"]["text-size"] == glyphs.LABEL_TEXT_SIZE

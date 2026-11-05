@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from rgi_catalog import glyphs
+from rgi_catalog.tiles import MAXZOOM
 
 # The archive lives in the version directory. Styles live in each
 # collection's styles/ directory.
@@ -35,7 +36,13 @@ OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
 # Below z10 the archive holds a glacier too small to draw as a point. A
 # glacier at the antimeridian is a MultiPoint where the tile buffer wraps.
 POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
-LINES = ["in", ["geometry-type"], ["literal", ["LineString", "MultiLineString"]]]
+# The archive has a label line per glacier and zoom, with its zoom in
+# label_zoom. Past MAXZOOM the tiles of MAXZOOM are overzoomed.
+LABEL_LINES = [
+    "all",
+    ["match", ["geometry-type"], ["LineString", "MultiLineString"], True, False],
+    ["==", ["get", "label_zoom"], ["min", ["zoom"], MAXZOOM]],
+]
 DOT_RADIUS = ["interpolate", ["linear"], ["zoom"], 0, 1.5, 6, 2.5]
 
 
@@ -101,9 +108,9 @@ def _region_labels(level: int, minzoom: int, maxzoom: int, size: int) -> dict[st
 LABELS: dict[str, Any] = {
     "id": "glacier-labels",
     "type": "symbol",
-    # A name follows the label line of its glacier. The layer also holds a
-    # point per named glacier, which the styles do not draw.
-    "filter": LINES,
+    # A name follows the label line of its glacier at the zoom. The layer
+    # also holds a point per named glacier, which the styles do not draw.
+    "filter": LABEL_LINES,
     "layout": {
         "text-field": ["get", "display_name"],
         "text-font": LABEL_FONT,

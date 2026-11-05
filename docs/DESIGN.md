@@ -577,12 +577,15 @@ A main centerline runs from the head to the terminus. Its last vertex is
 RGI's terminus point (`termlon`, `termlat`) for each of the 9,457 named
 glaciers with a main centerline. The `tiles` step puts the label line near
 the terminus, as swisstopo's national map writes a name along the tongue.
-At the first zoom at which the name fits, a stretch of the smoothed
-centerline slides up from the terminus in steps of 2 px. The first stretch
-where MapLibre keeps the name wins. The downstream end of the name keeps a
-tenth of the centerline, and at least 8.4 px, to the terminus. The middle
-of the centerline is always a candidate. Each glacier has one label line,
-so the name keeps the place it has at that zoom when the map zooms in.
+At each zoom, a stretch of the smoothed centerline slides up from the
+terminus in steps of 2 px. The first stretch where MapLibre keeps the name
+wins. The downstream end of the name keeps a tenth of the centerline, and
+at least 8.4 px, to the terminus. The middle of the centerline is always a
+candidate. A glacier has a label line for each zoom from its `line_zoom` to
+z12, with that zoom in `label_zoom`. The `glacier-labels` layer has one
+band per zoom, so a tile holds only the lines of its own zoom. The styles
+draw the line whose `label_zoom` is the map zoom, capped at z12. So a name
+moves down the glacier at each whole zoom.
 
 The browser labels a legend entry with the `match` branch value. So each
 `match` takes a nested expression that turns the code into the

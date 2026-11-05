@@ -130,15 +130,22 @@ def labels_parquet(glaciers_parquet: Path, label_centerlines_parquet: Path) -> P
 
 
 @pytest.fixture(scope="module")
+def label_bands(labels_parquet: Path) -> dict[int, Path]:
+    return tiles.write_label_bands(labels_parquet, labels_parquet.parent / "glacier-labels")
+
+
+@pytest.fixture(scope="module")
 def overview(glaciers_parquet: Path) -> dict[int, Path]:
     out = glaciers_parquet.parent / "overview"
     return tiles.write_overview(glaciers_parquet, out, tiles.GLACIER_OVERVIEW_COLUMNS)
 
 
 @pytest.fixture(scope="module")
-def archive(glaciers_parquet: Path, labels_parquet: Path, overview: dict[int, Path]) -> Path:
+def archive(
+    glaciers_parquet: Path, label_bands: dict[int, Path], overview: dict[int, Path]
+) -> Path:
     return build_archive(
-        glacier_layers(glaciers_parquet, labels_parquet, overview),
+        glacier_layers(glaciers_parquet, label_bands, overview),
         glaciers_parquet.parent / "rgi7.0.pmtiles",
         name=tiles.ARCHIVE_NAME,
         attribution=tiles.ARCHIVE_ATTRIBUTION,
@@ -166,6 +173,7 @@ def test_write_labels_skips_unnamed_and_uses_rgi_point(labels_parquet: Path) -> 
         "area_km2",
         "label_minzoom",
         "line_zoom",
+        "label_zoom",
         "geometry",
     ]
     for rgi_id, lon, lat, area, name in named:
@@ -174,21 +182,31 @@ def test_write_labels_skips_unnamed_and_uses_rgi_point(labels_parquet: Path) -> 
         assert row["geometry"].y == lat
         assert row["display_name"] == name
         assert row["label_minzoom"] == label_minzoom(area)
+        assert pd.isna(row["label_zoom"])
 
 
-def test_write_labels_adds_line_along_longest_main_centerline(labels_parquet: Path) -> None:
+def test_write_labels_adds_line_per_zoom_along_longest_main_centerline(
+    labels_parquet: Path,
+) -> None:
     labels = gpd.read_parquet(labels_parquet)
     lines = labels.loc[labels.geom_type == "LineString"]
-    assert list(lines["rgi_id"]) == [BIG]
-    line = lines.iloc[0]
+    assert set(lines["rgi_id"]) == {BIG}
     point = labels.loc[(labels["rgi_id"] == BIG) & (labels.geom_type == "Point")].iloc[0]
-    assert line["line_zoom"] == point["line_zoom"] == line["label_minzoom"]
-    assert line["label_minzoom"] >= point["label_minzoom"]
-    assert line["display_name"] == point["display_name"]
+    assert point["line_zoom"] >= point["label_minzoom"]
+    assert list(lines["label_zoom"]) == list(range(point["line_zoom"], tiles.MAXZOOM + 1))
+    assert (lines["label_minzoom"] == lines["label_zoom"]).all()
+    assert (lines["line_zoom"] == point["line_zoom"]).all()
+    assert (lines["display_name"] == point["display_name"]).all()
+    line = lines.iloc[0]
     # The longer main line, not the shorter one at 61.1. At its line_zoom the
     # line is shorter than a stretch, so the label line is all of it.
     assert line["geometry"].bounds[1] == pytest.approx(61.0, abs=0.001)
     assert line["geometry"].centroid.x == pytest.approx(-147.0, abs=0.01)
+    # The line runs east to its terminus. At each later zoom the name sits
+    # further down the line.
+    middles = [g.interpolate(0.5, normalized=True).x for g in lines["geometry"]]
+    assert middles == sorted(middles)
+    assert middles[-1] > middles[0]
     short = labels.loc[labels["rgi_id"] == "RGI2000-v7.0-G-11-00001"]
     assert list(short.geom_type) == ["Point"]
     assert pd.isna(short["line_zoom"].iloc[0])
@@ -285,7 +303,7 @@ def test_build_archive_label_entry_zoom(archive: Path, tmp_path: Path) -> None:
         assert zooms[rgi_id] == list(range(label_minzoom(area), tiles.MAXZOOM + 1))
 
 
-def test_build_archive_label_line_enters_at_line_zoom(
+def test_build_archive_label_line_only_at_its_zoom(
     archive: Path, labels_parquet: Path, tmp_path: Path
 ) -> None:
     decoded = gpd.read_parquet(decode(archive, tmp_path / "l.parquet", layer="glacier-labels"))
@@ -294,6 +312,22 @@ def test_build_archive_label_line_enters_at_line_zoom(
     line_zoom = int(source.loc[source.geom_type == "LineString", "line_zoom"].iloc[0])
     assert set(lines["rgi_id"]) == {BIG}
     assert sorted(set(lines["zoom"])) == list(range(line_zoom, tiles.MAXZOOM + 1))
+    assert (lines["label_zoom"] == lines["zoom"]).all()
+
+
+def test_write_label_bands_holds_entered_points_and_own_lines(
+    labels_parquet: Path, label_bands: dict[int, Path]
+) -> None:
+    labels = gpd.read_parquet(labels_parquet)
+    points = labels.loc[labels.geom_type == "Point"]
+    assert sorted(label_bands) == list(range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1))
+    for zoom, path in label_bands.items():
+        band = gpd.read_parquet(path)
+        band_points = band.loc[band.geom_type == "Point"]
+        band_lines = band.loc[band.geom_type == "LineString"]
+        assert len(band_points) == (points["label_minzoom"] <= zoom).sum()
+        assert (band_lines["label_zoom"] == zoom).all()
+        assert len(band_lines) == (labels["label_zoom"] == zoom).sum()
 
 
 def test_build_archive_glaciers_complete_from_complete_zoom(
@@ -574,7 +608,7 @@ def test_build_archive_early_centerlines_enter_at_their_zoom(
     early = tiles.write_early_lines(centerlines_parquet, tmp_path / "e.parquet")
     layers = tiles.version_layers(
         dict.fromkeys(tiles.ARCHIVE_PRODUCTS, centerlines_parquet),
-        tmp_path / "labels.parquet",
+        {tiles.MAXZOOM: tmp_path / "labels.parquet"},
         tmp_path / "rl.parquet",
         tmp_path / "rb.parquet",
         {"centerlines": early, "intersects": early},
@@ -663,7 +697,10 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     }
     layers = tiles.version_layers(
         paths,
-        tmp_path / "labels.parquet",
+        {
+            z: tmp_path / f"labels-{z}.parquet"
+            for z in range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1)
+        },
         tmp_path / "rl.parquet",
         tmp_path / "rb.parquet",
         early,
@@ -689,6 +726,7 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         ("centerlines", tiles.INTERSECTS_MINZOOM, tiles.INTERSECTS_MINZOOM),
         ("centerlines", tiles.INTERSECTS_MINZOOM + 1, tiles.MAXZOOM),
         ("intersects", tiles.INTERSECTS_MINZOOM, tiles.MAXZOOM),
+        *(("glacier-labels", z, z) for z in range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1)),
     }
     # The early lines enter at their own zoom, and the main centerlines and
     # the long lines fill z8. From z9 every line is in the archive.
@@ -755,14 +793,14 @@ def test_label_line_sits_near_terminus_before_a_bend() -> None:
     needed_px = label_px + 2 * tiles.LABEL_PAD_PX
     # The line runs from the head at x = 0 to the terminus at x = 1000.
     straight = np.array([[0.0, 0.0], [1000.0, 0.0]])
-    placed = tiles.label_line(straight * tiles.pixel_m(zoom), "Big Glacier", zoom)
+    placed = tiles.label_window(straight * tiles.pixel_m(zoom), "Big Glacier", zoom)
     assert placed is not None
-    center = shapely.LineString(placed[1] / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
+    center = shapely.LineString(placed / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
     margin = 1000 * tiles.LABEL_TONGUE_MARGIN
     assert center.x + label_px / 2 == pytest.approx(1000 - margin, abs=0.5)
     # A sharp bend near the terminus pushes the name up the line, past the bend.
     bent = np.array([[0.0, 0.0], [600.0, 0.0], [600.0, -60.0]])
-    placed = tiles.label_line(bent * tiles.pixel_m(zoom), "Big Glacier", zoom)
+    placed = tiles.label_window(bent * tiles.pixel_m(zoom), "Big Glacier", zoom)
     assert placed is not None
-    center = shapely.LineString(placed[1] / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
+    center = shapely.LineString(placed / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
     assert 600 - needed_px / 2 - 4 * tiles.LABEL_SMOOTH_PX < center.x < 600 - needed_px / 2
