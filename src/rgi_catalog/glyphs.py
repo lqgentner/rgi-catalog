@@ -24,6 +24,8 @@ GLYPHS = "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf"
 FONT = "Noto Sans Italic"
 LABEL_TEXT_SIZE = 14
 LABEL_LETTER_SPACING = 0.2
+# The width of the white halo around the text, in pixels.
+LABEL_HALO_WIDTH = 1.2
 # Every glacier name uses code points 0 to 255 only.
 GLYPHS_URL = GLYPHS.format(fontstack=urllib.parse.quote(FONT), range="0-255")
 ADVANCES = METADATA / "glyph_advances.yaml"

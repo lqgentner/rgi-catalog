@@ -578,8 +578,11 @@ RGI's terminus point (`termlon`, `termlat`) for each of the 9,457 named
 glaciers with a main centerline. The `tiles` step puts the label line near
 the terminus, as swisstopo's national map writes a name along the tongue.
 At each zoom, a stretch of the smoothed centerline slides up from the
-terminus in steps of 2 px. The first stretch where MapLibre keeps the name
-wins. The downstream end of the name keeps a tenth of the centerline, and
+terminus in steps of 2 px. The first stretch that passes two checks wins.
+MapLibre must keep the name. The text must also keep 11.6 px to the
+glacier's own outline on both sides of the line. That is half the text
+height (0.6 em), the 1.2 px halo and a margin of 2 px. A narrow tongue thus
+pushes the name up the glacier, or drops the line at that zoom. The downstream end of the name keeps a tenth of the centerline, and
 at least 8.4 px, to the terminus. The middle of the centerline is always a
 candidate. A glacier has a label line for each zoom from its `line_zoom` to
 z12, with that zoom in `label_zoom`. The `glacier-labels` layer has one

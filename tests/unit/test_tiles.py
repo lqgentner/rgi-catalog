@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -787,20 +788,45 @@ def test_stretch_starts_slide_up_from_terminus_margin() -> None:
     assert tiles.stretch_starts(200.0, 150.0, 200.0).tolist() == [0.0]
 
 
+def _metres(outline: shapely.Geometry, zoom: int) -> shapely.Geometry:
+    return shapely.transform(outline, lambda xy: xy * tiles.pixel_m(zoom))
+
+
 def test_label_line_sits_near_terminus_before_a_bend() -> None:
     zoom = tiles.MAXZOOM
+    px_m = tiles.pixel_m(zoom)
     label_px = tiles.label_width_px("Big Glacier")
     needed_px = label_px + 2 * tiles.LABEL_PAD_PX
     # The line runs from the head at x = 0 to the terminus at x = 1000.
     straight = np.array([[0.0, 0.0], [1000.0, 0.0]])
-    placed = tiles.label_window(straight * tiles.pixel_m(zoom), "Big Glacier", zoom)
+    wide = shapely.box(-100.0, -500.0, 1100.0, 500.0)
+    placed = tiles.label_window(straight * px_m, "Big Glacier", zoom, _metres(wide, zoom))
     assert placed is not None
     center = shapely.LineString(placed / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
     margin = 1000 * tiles.LABEL_TONGUE_MARGIN
     assert center.x + label_px / 2 == pytest.approx(1000 - margin, abs=0.5)
     # A sharp bend near the terminus pushes the name up the line, past the bend.
     bent = np.array([[0.0, 0.0], [600.0, 0.0], [600.0, -60.0]])
-    placed = tiles.label_window(bent * tiles.pixel_m(zoom), "Big Glacier", zoom)
+    placed = tiles.label_window(bent * px_m, "Big Glacier", zoom, _metres(wide, zoom))
     assert placed is not None
     center = shapely.LineString(placed / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
     assert 600 - needed_px / 2 - 4 * tiles.LABEL_SMOOTH_PX < center.x < 600 - needed_px / 2
+
+
+def test_label_line_keeps_clear_of_a_narrow_tongue() -> None:
+    zoom = tiles.MAXZOOM
+    px_m = tiles.pixel_m(zoom)
+    label_px = tiles.label_width_px("Big Glacier")
+    line = np.array([[0.0, 0.0], [1000.0, 0.0]])
+    # The glacier is 100 px wide up to x = 600 and 16 px wide below it.
+    half = 8.0
+    tongue = shapely.box(0.0, -50.0, 600.0, 50.0) | shapely.box(600.0, -half, 1000.0, half)
+    placed = tiles.label_window(line * px_m, "Big Glacier", zoom, _metres(tongue, zoom))
+    assert placed is not None
+    center = shapely.LineString(placed / px_m).interpolate(0.5, normalized=True)
+    # The text ends where it keeps LABEL_CLEARANCE_PX to the corner at (600, 8).
+    limit = 600 - math.sqrt(tiles.LABEL_CLEARANCE_PX**2 - half**2)
+    assert limit - tiles.LABEL_SLIDE_PX - 0.5 <= center.x + label_px / 2 <= limit + 0.5
+    # A glacier narrower than the text everywhere gets no line.
+    strip = shapely.box(-100.0, -half, 1100.0, half)
+    assert tiles.label_window(line * px_m, "Big Glacier", zoom, _metres(strip, zoom)) is None

@@ -22,7 +22,13 @@ import pyarrow.parquet as pq
 import shapely
 from shapely.affinity import translate
 
-from rgi_catalog.glyphs import GLYPH_PX, LABEL_LETTER_SPACING, LABEL_TEXT_SIZE, load_advances
+from rgi_catalog.glyphs import (
+    GLYPH_PX,
+    LABEL_HALO_WIDTH,
+    LABEL_LETTER_SPACING,
+    LABEL_TEXT_SIZE,
+    load_advances,
+)
 from rgi_catalog.paths import CACHE, STAGING, version_dir
 from rgi_catalog.pipeline import output_path
 from rgi_catalog.sources import SourcePin, fetch
@@ -95,6 +101,14 @@ LABEL_WINDOW_PX = 3 / 5 * LABEL_TEXT_SIZE
 LABEL_MAX_ANGLE = math.radians(45 - 5)
 # The free line kept on each side of a name, one angle window.
 LABEL_PAD_PX = LABEL_WINDOW_PX
+# The glacier is wide enough for a name where the text keeps this many pixels
+# to the glacier's outline on both sides of the line: half the height of the
+# text box (0.6 em), the halo, and a margin.
+LABEL_HALF_HEIGHT_EM = 0.6
+LABEL_OUTLINE_MARGIN_PX = 2.0
+LABEL_CLEARANCE_PX = (
+    LABEL_HALF_HEIGHT_EM * LABEL_TEXT_SIZE + LABEL_HALO_WIDTH + LABEL_OUTLINE_MARGIN_PX
+)
 
 # Arrow types a vector tile cannot store as a property.
 _NESTED = (pa.types.is_list, pa.types.is_large_list, pa.types.is_struct, pa.types.is_map)
@@ -543,15 +557,62 @@ def tile_grid(coords: np.ndarray) -> np.ndarray:
     return grid[moved]
 
 
-def label_window(coords_m: np.ndarray, name: str, zoom: int) -> np.ndarray | None:
+def label_clear(
+    stretch: np.ndarray,
+    label_px: float,
+    zoom: int,
+    outline_m: shapely.Geometry,
+    boundary_m: shapely.Geometry,
+) -> bool:
+    """Return whether the text of a name stays clear of the glacier's outline.
+
+    MapLibre centers the text on the line, so the text covers the middle
+    ``label_px`` of the stretch. Each point of it must lie inside the
+    glacier and at least :data:`LABEL_CLEARANCE_PX` from its outline, the
+    exterior and the holes.
+
+    Parameters
+    ----------
+    stretch
+        The label line, in pixels.
+    label_px
+        The width of the name, in pixels.
+    zoom
+        The zoom.
+    outline_m
+        The glacier's polygon, in Web Mercator metres.
+    boundary_m
+        The boundary of ``outline_m``.
+
+    Returns
+    -------
+    bool
+        True if the text keeps the clearance.
+    """
+    length = _arc_length(stretch)[-1]
+    text_px = line_stretch(stretch, max(length - label_px, 0) / 2, min(label_px, length))
+    text = shapely.LineString(text_px * pixel_m(zoom))
+    if not shapely.covers(outline_m, text):
+        return False
+    return not shapely.dwithin(boundary_m, text, LABEL_CLEARANCE_PX * pixel_m(zoom))
+
+
+def label_window(
+    coords_m: np.ndarray, name: str, zoom: int, outline_m: shapely.Geometry
+) -> np.ndarray | None:
     """Return the line along which a name follows its centerline at one zoom.
 
     The line is smoothed by :data:`LABEL_SMOOTH_PX`. A stretch of
     :data:`LABEL_STRETCH` padded label widths, at most :data:`TILE_PX`,
     slides up the line from the terminus (:func:`stretch_starts`). The
-    first stretch on the tile grid where MapLibre keeps the name with
-    :data:`LABEL_PAD_PX` on each side (:func:`center_label_fits`) wins. The
-    label bands do not simplify, so the tile holds this line.
+    first stretch on the tile grid that passes two checks wins:
+
+    - MapLibre keeps the name with :data:`LABEL_PAD_PX` on each side
+      (:func:`center_label_fits`).
+    - The text keeps :data:`LABEL_CLEARANCE_PX` to the glacier's outline
+      (:func:`label_clear`).
+
+    The label bands do not simplify, so the tile holds this line.
 
     Parameters
     ----------
@@ -561,6 +622,8 @@ def label_window(coords_m: np.ndarray, name: str, zoom: int) -> np.ndarray | Non
         The name.
     zoom
         The zoom.
+    outline_m
+        The glacier's outline, in Web Mercator metres.
 
     Returns
     -------
@@ -576,17 +639,23 @@ def label_window(coords_m: np.ndarray, name: str, zoom: int) -> np.ndarray | Non
     smoothed_px = _arc_length(smoothed)[-1]
     if smoothed_px < needed_px:
         return None
+    boundary_m = shapely.boundary(outline_m)
+    shapely.prepare([outline_m, boundary_m])
     keep_px = min(smoothed_px, max(needed_px, min(LABEL_STRETCH * needed_px, TILE_PX)))
     for start in stretch_starts(smoothed_px, label_px, keep_px):
         stretch = line_stretch(smoothed, start, keep_px)
         stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
         stretch = tile_grid(stretch)
-        if center_label_fits(stretch, needed_px):
+        if center_label_fits(stretch, needed_px) and label_clear(
+            stretch, label_px, zoom, outline_m, boundary_m
+        ):
             return stretch * pixel_m(zoom)
     return None
 
 
-def label_lines(coords_m: np.ndarray, name: str, minzoom: int) -> dict[int, np.ndarray]:
+def label_lines(
+    coords_m: np.ndarray, name: str, minzoom: int, outline_m: shapely.Geometry
+) -> dict[int, np.ndarray]:
     """Return the label line of a name at each zoom at which it fits.
 
     Parameters
@@ -597,6 +666,8 @@ def label_lines(coords_m: np.ndarray, name: str, minzoom: int) -> dict[int, np.n
         The name.
     minzoom
         The first zoom at which the name is drawn.
+    outline_m
+        The glacier's outline, in Web Mercator metres.
 
     Returns
     -------
@@ -606,7 +677,7 @@ def label_lines(coords_m: np.ndarray, name: str, minzoom: int) -> dict[int, np.n
     """
     lines: dict[int, np.ndarray] = {}
     for zoom in range(minzoom, MAXZOOM + 1):
-        line = label_window(coords_m, name, zoom)
+        line = label_window(coords_m, name, zoom, outline_m)
         if line is not None:
             lines[zoom] = line
     return lines
@@ -652,7 +723,8 @@ def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -
     """Write the labels: a point per named glacier and a line per zoom at which it fits.
 
     The point is RGI's own point. Each line is a stretch of the glacier's
-    main centerline near the terminus, smoothed (:func:`label_lines`).
+    main centerline near the terminus, smoothed, where the glacier is wide
+    enough for the name (:func:`label_lines`).
     ``label_zoom`` is the zoom of a line, and is null on a point. The
     styles draw a line at its own zoom only. ``line_zoom`` is the first
     zoom with a line, and is null for a glacier without a line.
@@ -680,6 +752,9 @@ def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -
     named = table.loc[table["display_name"].notna()].reset_index(drop=True)
     minzoom = [label_minzoom(a) for a in named["area_km2"]]
     centerlines = main_centerlines(centerlines_parquet, named["rgi_id"].tolist())
+    outlines = gpd.read_parquet(glaciers_parquet, columns=["rgi_id", "geometry"])
+    outlines = outlines.loc[outlines["rgi_id"].isin(centerlines.index)].to_crs(3857)
+    outline = dict(zip(outlines["rgi_id"], outlines.geometry, strict=True))
     line_zoom: list[int | None] = []
     line_rows: list[int] = []
     line_zooms: list[int] = []
@@ -689,7 +764,8 @@ def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -
     ):
         placed: dict[int, np.ndarray] = {}
         if rgi_id in centerlines.index:
-            placed = label_lines(np.asarray(centerlines[rgi_id].coords), name, zoom)
+            coords = np.asarray(centerlines[rgi_id].coords)
+            placed = label_lines(coords, name, zoom, outline[rgi_id])
         line_zoom.append(min(placed, default=None))
         for z, line in placed.items():
             line_rows.append(row)

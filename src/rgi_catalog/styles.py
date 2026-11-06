@@ -123,7 +123,7 @@ LABELS: dict[str, Any] = {
     "paint": {
         "text-color": LABEL_COLOR,
         "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
+        "text-halo-width": glyphs.LABEL_HALO_WIDTH,
     },
 }
 
