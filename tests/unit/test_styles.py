@@ -75,7 +75,7 @@ def test_styles_draw_glacier_names_along_label_lines(style: dict[str, Any]) -> N
     assert labels["filter"] == [
         "all",
         ["match", ["geometry-type"], ["LineString", "MultiLineString"], True, False],
-        ["==", ["get", "label_zoom"], ["min", ["zoom"], tiles.MAXZOOM]],
+        ["==", ["get", "label_zoom"], ["min", ["zoom"], tiles.LABEL_MAXZOOM]],
     ]
     assert labels["layout"]["symbol-placement"] == "line-center"
     assert labels["layout"]["text-font"] == [glyphs.FONT]

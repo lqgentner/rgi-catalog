@@ -77,6 +77,9 @@ TILE_PX = 512
 # The coordinate units across a vector tile.
 TILE_EXTENT = 4096
 LABEL_MINZOOM = 7
+# Names have lines up to this zoom. The lines past MAXZOOM are in the
+# MAXZOOM tiles, which MapLibre overscales.
+LABEL_MAXZOOM = 14
 # A glacier of this area gets its label at GLACIERS_COMPLETE_ZOOM + 1.
 LABEL_REFERENCE_KM2 = 1.0
 # A name follows its centerline once the line is long enough. The fit
@@ -105,7 +108,7 @@ LABEL_PAD_PX = LABEL_WINDOW_PX
 # to the glacier's outline on both sides of the line: half the height of the
 # text box (0.6 em), the halo, and a margin.
 LABEL_HALF_HEIGHT_EM = 0.6
-LABEL_OUTLINE_MARGIN_PX = 2.0
+LABEL_OUTLINE_MARGIN_PX = 0.0
 LABEL_CLEARANCE_PX = (
     LABEL_HALF_HEIGHT_EM * LABEL_TEXT_SIZE + LABEL_HALO_WIDTH + LABEL_OUTLINE_MARGIN_PX
 )
@@ -534,24 +537,27 @@ def center_label_fits(coords: np.ndarray, label_px: float) -> bool:
     return True
 
 
-def tile_grid(coords: np.ndarray) -> np.ndarray:
+def tile_grid(coords: np.ndarray, zoom: int) -> np.ndarray:
     """Return a line as a vector tile stores it, in pixels.
 
     A tile of :data:`TILE_PX` pixels has an extent of 4096 units, so a
-    vertex moves to the nearest 1/8 pixel. A vertex that lands on the one
-    before it is left out.
+    vertex moves to the nearest 1/8 pixel. Past :data:`MAXZOOM` the line
+    is in a :data:`MAXZOOM` tile, so the grid is coarser by a factor of 2
+    per zoom. A vertex that lands on the one before it is left out.
 
     Parameters
     ----------
     coords
         The vertices, in pixels.
+    zoom
+        The zoom of the pixels.
 
     Returns
     -------
     np.ndarray
         The vertices on the tile grid.
     """
-    units = TILE_EXTENT / TILE_PX
+    units = TILE_EXTENT / TILE_PX / 2 ** max(zoom - MAXZOOM, 0)
     grid = np.round(coords * units) / units
     moved = np.concatenate([[True], (np.diff(grid, axis=0) != 0).any(axis=1)])
     return grid[moved]
@@ -645,7 +651,7 @@ def label_window(
     for start in stretch_starts(smoothed_px, label_px, keep_px):
         stretch = line_stretch(smoothed, start, keep_px)
         stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
-        stretch = tile_grid(stretch)
+        stretch = tile_grid(stretch, zoom)
         if center_label_fits(stretch, needed_px) and label_clear(
             stretch, label_px, zoom, outline_m, boundary_m
         ):
@@ -673,10 +679,10 @@ def label_lines(
     -------
     dict[int, np.ndarray]
         The line of :func:`label_window` by zoom, from ``minzoom`` to
-        :data:`MAXZOOM`. A zoom at which the name does not fit has no line.
+        :data:`LABEL_MAXZOOM`. A zoom at which the name does not fit has no line.
     """
     lines: dict[int, np.ndarray] = {}
-    for zoom in range(minzoom, MAXZOOM + 1):
+    for zoom in range(minzoom, LABEL_MAXZOOM + 1):
         line = label_window(coords_m, name, zoom, outline_m)
         if line is not None:
             lines[zoom] = line
@@ -802,7 +808,8 @@ def write_label_bands(labels: Path, out_dir: Path) -> dict[int, Path]:
 
     The input of a zoom holds the points that have entered by it and the
     lines of that zoom. A line is then in the tiles of its own zoom only.
-    The lines of :data:`MAXZOOM` show past it by overzoom.
+    The input of :data:`MAXZOOM` also holds the lines up to
+    :data:`LABEL_MAXZOOM`, which show by overzoom.
 
     Parameters
     ----------
@@ -821,7 +828,10 @@ def write_label_bands(labels: Path, out_dir: Path) -> dict[int, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     bands = {}
     for zoom in range(LABEL_MINZOOM, MAXZOOM + 1):
-        keep = (point & (table["label_minzoom"] <= zoom)) | (table["label_zoom"] == zoom)
+        own = table["label_zoom"] == zoom
+        if zoom == MAXZOOM:
+            own = table["label_zoom"] >= zoom
+        keep = (point & (table["label_minzoom"] <= zoom)) | own
         bands[zoom] = out_dir / f"z{zoom:02d}.parquet"
         table.loc[keep.fillna(value=False)].to_parquet(bands[zoom], index=False)
     return bands

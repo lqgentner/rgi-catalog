@@ -579,16 +579,19 @@ glaciers with a main centerline. The `tiles` step puts the label line near
 the terminus, as swisstopo's national map writes a name along the tongue.
 At each zoom, a stretch of the smoothed centerline slides up from the
 terminus in steps of 2 px. The first stretch that passes two checks wins.
-MapLibre must keep the name. The text must also keep 11.6 px to the
+MapLibre must keep the name. The text must also keep 9.6 px to the
 glacier's own outline on both sides of the line. That is half the text
-height (0.6 em), the 1.2 px halo and a margin of 2 px. A narrow tongue thus
-pushes the name up the glacier, or drops the line at that zoom. The downstream end of the name keeps a tenth of the centerline, and
-at least 8.4 px, to the terminus. The middle of the centerline is always a
-candidate. A glacier has a label line for each zoom from its `line_zoom` to
-z12, with that zoom in `label_zoom`. The `glacier-labels` layer has one
-band per zoom, so a tile holds only the lines of its own zoom. The styles
-draw the line whose `label_zoom` is the map zoom, capped at z12. So a name
-moves down the glacier at each whole zoom.
+height (0.6 em) and the 1.2 px halo. A narrow tongue thus pushes the name up
+the glacier, or drops the line at that zoom. The downstream end of the name
+keeps a tenth of the centerline, and at least 8.4 px, to the terminus. The
+middle of the centerline is always a candidate. A glacier has a label line
+for each zoom from its `line_zoom` to z14 at which a stretch passes, with
+that zoom in `label_zoom`. The `glacier-labels` layer has one band per zoom,
+so a tile holds only the lines of its own zoom. The z12 tiles also hold the
+lines of z13 and z14. MapLibre overscales a z12 tile past z12 and evaluates
+the filter at the overscaled zoom. The fit of a z13 or z14 line uses the
+z12 tile grid. The styles draw the line whose `label_zoom` is the map zoom,
+capped at z14. So a name moves down the glacier at each whole zoom.
 
 The browser labels a legend entry with the `match` branch value. So each
 `match` takes a nested expression that turns the code into the

@@ -194,7 +194,7 @@ def test_write_labels_adds_line_per_zoom_along_longest_main_centerline(
     assert set(lines["rgi_id"]) == {BIG}
     point = labels.loc[(labels["rgi_id"] == BIG) & (labels.geom_type == "Point")].iloc[0]
     assert point["line_zoom"] >= point["label_minzoom"]
-    assert list(lines["label_zoom"]) == list(range(point["line_zoom"], tiles.MAXZOOM + 1))
+    assert list(lines["label_zoom"]) == list(range(point["line_zoom"], tiles.LABEL_MAXZOOM + 1))
     assert (lines["label_minzoom"] == lines["label_zoom"]).all()
     assert (lines["line_zoom"] == point["line_zoom"]).all()
     assert (lines["display_name"] == point["display_name"]).all()
@@ -247,7 +247,11 @@ def test_label_width_px_shapes_like_maplibre() -> None:
 
 def test_tile_grid_rounds_to_eighth_pixel_and_drops_repeats() -> None:
     line = np.array([[0.01, 0.0], [0.02, 0.0], [10.06, 5.0]])
-    assert tiles.tile_grid(line).tolist() == [[0.0, 0.0], [10.0, 5.0]]
+    assert tiles.tile_grid(line, tiles.MAXZOOM).tolist() == [[0.0, 0.0], [10.0, 5.0]]
+    # Two zooms past MAXZOOM the line is in a MAXZOOM tile, on a 1/2 pixel grid.
+    line = np.array([[0.2, 0.0], [10.3, 5.2]])
+    zoom = tiles.MAXZOOM + 2
+    assert tiles.tile_grid(line, zoom).tolist() == [[0.0, 0.0], [10.5, 5.0]]
 
 
 def test_smooth_line_keeps_ends_and_rounds_corners() -> None:
@@ -313,7 +317,12 @@ def test_build_archive_label_line_only_at_its_zoom(
     line_zoom = int(source.loc[source.geom_type == "LineString", "line_zoom"].iloc[0])
     assert set(lines["rgi_id"]) == {BIG}
     assert sorted(set(lines["zoom"])) == list(range(line_zoom, tiles.MAXZOOM + 1))
-    assert (lines["label_zoom"] == lines["zoom"]).all()
+    past = lines["zoom"] == tiles.MAXZOOM
+    assert (lines.loc[~past, "label_zoom"] == lines.loc[~past, "zoom"]).all()
+    # The MAXZOOM tiles also hold the lines of the zooms past it.
+    assert sorted(set(lines.loc[past, "label_zoom"])) == list(
+        range(tiles.MAXZOOM, tiles.LABEL_MAXZOOM + 1)
+    )
 
 
 def test_write_label_bands_holds_entered_points_and_own_lines(
@@ -327,8 +336,11 @@ def test_write_label_bands_holds_entered_points_and_own_lines(
         band_points = band.loc[band.geom_type == "Point"]
         band_lines = band.loc[band.geom_type == "LineString"]
         assert len(band_points) == (points["label_minzoom"] <= zoom).sum()
-        assert (band_lines["label_zoom"] == zoom).all()
-        assert len(band_lines) == (labels["label_zoom"] == zoom).sum()
+        own = labels["label_zoom"] == zoom
+        if zoom == tiles.MAXZOOM:
+            own = labels["label_zoom"] >= zoom
+        assert set(band_lines["label_zoom"]) == set(labels.loc[own, "label_zoom"])
+        assert len(band_lines) == own.sum()
 
 
 def test_build_archive_glaciers_complete_from_complete_zoom(
@@ -441,9 +453,12 @@ def test_build_archive_accepts_entry_zoom_band(labels_parquet: Path, tmp_path: P
     # Labels enter at their own zoom. A complete band is checked against the
     # labels that have entered, not against every label.
     entry = ",".join(f"{z}={z}" for z in range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1))
+    labels = gpd.read_parquet(labels_parquet)
+    points = tmp_path / "points.parquet"
+    labels.loc[labels["label_zoom"].isna()].to_parquet(points, index=False)
     layer = LayerSpec(
         name="glacier-labels",
-        source=labels_parquet,
+        source=points,
         minzoom=tiles.LABEL_MINZOOM,
         maxzoom=tiles.MAXZOOM,
         extra_args=("--entry-zoom", f"label_minzoom:{entry}", *tiles.LINE_COMPLETE),

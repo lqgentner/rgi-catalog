@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from rgi_catalog import glyphs
-from rgi_catalog.tiles import MAXZOOM
+from rgi_catalog.tiles import LABEL_MAXZOOM
 
 # The archive lives in the version directory. Styles live in each
 # collection's styles/ directory.
@@ -41,7 +41,7 @@ POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
 LABEL_LINES = [
     "all",
     ["match", ["geometry-type"], ["LineString", "MultiLineString"], True, False],
-    ["==", ["get", "label_zoom"], ["min", ["zoom"], MAXZOOM]],
+    ["==", ["get", "label_zoom"], ["min", ["zoom"], LABEL_MAXZOOM]],
 ]
 DOT_RADIUS = ["interpolate", ["linear"], ["zoom"], 0, 1.5, 6, 2.5]
 
