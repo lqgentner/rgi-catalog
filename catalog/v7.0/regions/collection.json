@@ -150,8 +150,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 4806,
-      "file:checksum": "1220dd396fe6186387793f97a814aa074afc9542e0105a3b2e235e01a67f2ffaa4f7"
+      "file:size": 5212,
+      "file:checksum": "12200158a6a82d7ee14e363a4cf8bd09770bb146ca74dc41c517ee8d361e028532cb"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",

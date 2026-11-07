@@ -214,17 +214,41 @@
       "id": "glacier-labels",
       "type": "symbol",
       "filter": [
-        "==",
+        "all",
         [
-          "get",
-          "label_zoom"
-        ],
-        [
-          "min",
+          ">=",
           [
             "zoom"
           ],
-          14
+          [
+            "get",
+            "label_zoom"
+          ]
+        ],
+        [
+          "any",
+          [
+            "<",
+            [
+              "zoom"
+            ],
+            [
+              "+",
+              [
+                "get",
+                "label_zoom"
+              ],
+              1
+            ]
+          ],
+          [
+            ">=",
+            [
+              "get",
+              "label_zoom"
+            ],
+            14
+          ]
         ]
       ],
       "layout": {
