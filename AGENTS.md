@@ -60,6 +60,7 @@ pixi run python -m rgi_catalog download --version 7.0
 pixi run python -m rgi_catalog convert --version 7.0
 pixi run python -m rgi_catalog tiles --version 7.0
 pixi run python -m rgi_catalog render --version 7.0
+pixi run python scripts/check_label_placement.py    # each label line whole and placed once, after tiles
 pixi run python -m rgi_catalog columns --version 7.0 # column text that differs from RGI's
 pixi run python -m rgi_catalog preview --version 7.0
 ```

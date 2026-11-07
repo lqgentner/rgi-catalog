@@ -231,6 +231,16 @@ def test_center_label_fits_refuses_sharp_corner() -> None:
     assert not tiles.center_label_fits(straight, 300)
 
 
+def test_center_label_fits_takes_maplibre_limit() -> None:
+    # A corner of 42° passes MapLibre's 45° but not the fit's 40°.
+    turn = math.radians(42)
+    corner = np.array(
+        [[0.0, 0.0], [100.0, 0.0], [100 + 100 * math.cos(turn), 100 * math.sin(turn)]]
+    )
+    assert not tiles.center_label_fits(corner, 100)
+    assert tiles.center_label_fits(corner, 100, max_angle=math.radians(45))
+
+
 def test_center_label_fits_sums_corners_in_window() -> None:
     # Three corners of 20° within 6 px turn 60° in one window of 7.2 px.
     # Spread 10 px apart, each window holds one corner.

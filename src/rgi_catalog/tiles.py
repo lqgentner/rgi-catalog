@@ -480,14 +480,16 @@ def _turn(coords: np.ndarray, vertex: int) -> float:
     return abs((delta + math.pi) % (2 * math.pi) - math.pi)
 
 
-def center_label_fits(coords: np.ndarray, label_px: float) -> bool:
+def center_label_fits(
+    coords: np.ndarray, label_px: float, max_angle: float = LABEL_MAX_ANGLE
+) -> bool:
     """Return whether MapLibre places a ``line-center`` label on a line.
 
     This ports MapLibre's ``getCenterAnchor`` and ``checkMaxAngle``. The
     label sits at the midpoint of the line. MapLibre drops it when the line
     ends under the label, or when the corners under the label turn by more
     than 45° within :data:`LABEL_WINDOW_PX`, 3/5 of the text size. The check
-    uses :data:`LABEL_MAX_ANGLE`, which is stricter.
+    uses :data:`LABEL_MAX_ANGLE` by default, which is stricter.
 
     Parameters
     ----------
@@ -495,6 +497,8 @@ def center_label_fits(coords: np.ndarray, label_px: float) -> bool:
         The vertices, in pixels, without repeated vertices.
     label_px
         The width of the label, in pixels.
+    max_angle
+        The largest total turn in the window, in radians.
 
     Returns
     -------
@@ -530,7 +534,7 @@ def center_label_fits(coords: np.ndarray, label_px: float) -> bool:
         turned += turn
         while along - corners[0][0] > LABEL_WINDOW_PX:
             turned -= corners.pop(0)[1]
-        if turned > LABEL_MAX_ANGLE:
+        if turned > max_angle:
             return False
         along += distance[index + 1] - distance[index]
         index += 1
