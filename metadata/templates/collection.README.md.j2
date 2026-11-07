@@ -22,7 +22,12 @@ The RGI 7.0 user guide describes the
 ## Files
 
 {% set archive_name = record.archive.href.split("/")[-1] %}
+{% set names = record.names if record.names is defined and record.names.collection == name else none %}
 - [`{{ stats.href }}`]({{ public("v" ~ version ~ "/" ~ data_rel) }}): {{ "{:,}".format(stats.row_count) }} rows, {{ "%.1f" | format(record.files[data_rel].size / 1e6) }} MB. GeoParquet {{ stats.geoparquet_version }} in {{ stats.row_groups }} row groups of up to {{ "{:,}".format(stats.row_group_size) }} rows, zstd-compressed and {% if spec.layout is defined %}ordered by `{{ spec.layout.order_by }}`. Each row group contains a separate range of `{{ spec.layout.order_by }}` values, so a filter on one value reads one row group.{% else %}ordered along a Hilbert curve.{% endif %} A `bbox` column lets readers skip row groups in a spatial filter.
+{% if names %}
+{% set names_rel = name ~ "/" ~ names.href %}
+- [`{{ names.href }}`]({{ public("v" ~ version ~ "/" ~ names_rel) }}): {{ "{:,}".format(names.row_count) }} rows, {{ "%.1f" | format(record.files[names_rel].size / 1e6) }} MB. Plain Parquet without geometry, with the columns `{{ names.columns | map(attribute="name") | join("`, `") }}` of the GeoParquet file in the same row order. A search by name or ID reads the whole file in one request.
+{% endif %}
 - [`{{ archive_name }}`]({{ public("v" ~ version ~ "/" ~ record.archive.href) }}): the PMTiles web map archive from z{{ record.archive.minzoom }} to z{{ record.archive.maxzoom }}, with the layers `{{ spec.pmtiles_layers | join("`, `") }}`. {% if overview %}Below z{{ complete_zoom }} the layer is an overview. Features that span {{ shape_min_px }} pixels at a zoom show as simplified outlines. Smaller features show as points at RGI's `cenlon` and `cenlat`, and each grid cell of about a pixel keeps the point of the largest feature. Overview features contain only `{{ overview | join("`, `") }}`. From z{{ complete_zoom }} the tiles{% else %}The tiles{% endif %} contain every column except the list and struct columns, which vector tiles cannot store: `{{ untiled | join("`, `") }}`. Fetch those from the GeoParquet file by `{{ spec.key | default("rgi_id") }}`.{% if has_timestamps %} Timestamps are strings in the tiles.{% endif %}
 
 ## Map styles

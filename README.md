@@ -14,7 +14,8 @@ Citation and credit belong to the RGI Consortium:
 > and Ice Data Center. doi:10.5067/f6jmovy5navz.
 
 The mirror republishes each RGI product as one GeoParquet file and the
-outlines as a PMTiles web map archive. The values are those of the RGI
+outlines as a PMTiles web map archive. A small Parquet table of the glacier
+IDs and names serves search. The values are those of the RGI
 release. [docs/PROVENANCE.md](docs/PROVENANCE.md) lists each fix of a
 documented upstream error.
 

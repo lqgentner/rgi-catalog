@@ -235,6 +235,45 @@ The pixi environment installs it.
 | GDAL 3.13.3 (pyogrio) | ok, 274,531 features |
 | `gpio check all` | ok, 40 spec checks passed |
 
+### The names table
+
+`src/rgi_catalog/nametable.py` writes
+`glaciers/rgi7.0-glacier-names.parquet` from the glaciers file in `convert`.
+The table has the columns `rgi_id`, `display_name`, `glac_name`, `o1region`
+and `o2region`, with the rows in the order of the glaciers file. A search
+client reads the whole table in one request. Before, it read three columns
+of the glaciers file. Those columns are in 68 row groups, and in Chrome
+through data.source.coop the read took 137 requests and about 2.3 s.
+
+The table is plain Parquet. It carries the `rgi:` footer keys of the
+glaciers file, but not the GeoParquet `geo` key. With the `geo` key and no
+geometry, rashid fails the file on PTL-DAT-007. Without it, rashid checks the
+file as a table. The asset follows `data` in the collection. The browser's
+data preview and the QGIS plugin's "Load full data" take the first Parquet
+asset, so both keep the GeoParquet file.
+
+The encodings come from the column contents. `rgi_id` counts up by one, so a
+prefix delta stores only the changed last characters. The names are mostly
+unique, so a length delta packs them better than a dictionary. Column sizes
+in the table, zstd level 19:
+
+| Column | Dictionary | Chosen encoding | Chosen size |
+| --- | ---: | --- | ---: |
+| `rgi_id` | 184 KB | `DELTA_BYTE_ARRAY` | 20 KB |
+| `display_name` | 69 KB | `DELTA_LENGTH_BYTE_ARRAY` | 59 KB |
+| `glac_name` | 161 KB | `DELTA_LENGTH_BYTE_ARRAY` | 113 KB |
+| `o1region`, `o2region` | 2 KB | dictionary | 2 KB |
+
+The table is 198 KB in two row groups, 150,000 and 124,531 rows.
+
+The table leaves out `complex_id`. In glacier order the column is 249 KB at
+best, because RGI numbers the complexes in another order: 38% of the steps
+from one row to the next are +1, 22% repeat the value and 28% go back. A
+search needs only to know that a complex exists. The complex numbers run
+from 1 to the count of each first-order region, with no gaps, so the
+footer statistics of the complexes file answer that.
+`tests/unit/test_nametable.py` checks the numbers and the row order.
+
 ## The products
 
 - **Typing.** The I table's `length_m` is a float and the L table's is an

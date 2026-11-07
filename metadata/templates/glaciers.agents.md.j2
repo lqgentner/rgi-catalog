@@ -1,4 +1,16 @@
 {% set url = public("v" ~ version ~ "/glaciers/" ~ record.collections.glaciers.href) %}
+{% set names_url = public("v" ~ version ~ "/glaciers/" ~ record.names.href) %}
+## The names table
+
+`{{ names_url }}`:
+{{ "{:,}".format(record.names.row_count) }} rows, {{ "%.1f" | format(record.files["glaciers/" ~ record.names.href].size / 1e6) }} MB, plain Parquet without geometry. It has
+these columns of the GeoParquet file:
+`{{ record.names.columns | map(attribute="name") | join("`, `") }}`.
+The rows are in the same order, so row `i` of one file is row `i` of the
+other. The column descriptions are in `assets.names["table:columns"]` of
+`collection.json`. Read the names table to find a glacier by name or ID, and
+the GeoParquet file for its other columns.
+
 ## Recipes
 
 Each recipe runs as written in DuckDB. Load the extensions once:
@@ -8,8 +20,17 @@ INSTALL httpfs; LOAD httpfs; INSTALL spatial; LOAD spatial;
 SELECT 1;
 ```
 
-Find a glacier by name. `display_name` is cleaned for labels, `glac_name` is
-RGI's value:
+Find a glacier by name in the names table. `display_name` is cleaned for
+labels, `glac_name` is RGI's value:
+
+```sql
+SELECT rgi_id, glac_name, display_name, o2region
+FROM '{{ names_url }}'
+WHERE display_name ILIKE '%aletsch%'
+ORDER BY rgi_id;
+```
+
+Find a glacier by name with its area, in the GeoParquet file:
 
 ```sql
 SELECT rgi_id, glac_name, display_name, o1region, area_km2
