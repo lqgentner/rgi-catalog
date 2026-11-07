@@ -406,8 +406,8 @@
       "size": 214686136
     },
     "glaciers/rgi7.0-glaciers.parquet": {
-      "file:checksum": "12201cd5ba2e126c44d928278dea48cb4e2d06283821eee59dc732eb0ed7ea47c8f5",
-      "size": 261370113
+      "file:checksum": "1220cba6b2d8abb99413da97c568c85430062d9e011db30df3eb3649da02c450e586",
+      "size": 261370058
     },
     "intersects/rgi7.0-intersects.parquet": {
       "file:checksum": "1220a10e70936f5d6f869fb67dc4dbed97a0d7990fb326544115eca4c81f00525220",
@@ -418,8 +418,8 @@
       "size": 955336
     },
     "rgi7.0.pmtiles": {
-      "file:checksum": "1220dfd0e2f84d6ff04459deb97ecb24be3e1ec77ded6d5ca6d52419140943945854",
-      "size": 1144451361
+      "file:checksum": "1220332920148ea777d73339c732f3ecae969cea4e689515db32a6740ad5a429850a",
+      "size": 1144467237
     }
   },
   "fixes": {
@@ -506,6 +506,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-11-07T10:16:33Z",
+  "updated": "2026-11-07T13:21:00Z",
   "version": "7.0"
 }

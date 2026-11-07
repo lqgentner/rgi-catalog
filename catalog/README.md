@@ -40,6 +40,7 @@ and set placeholders to null:
 - `FIESCHERGLETSCHER VS` becomes `Fieschergletscher VS`.
 - `CN5J319J0001 Nianbaoyeze Glacier` becomes `Nianbaoyeze Glacier`.
 - `S/N` becomes null.
+- `CHEILON GLACIER DE` becomes `Glacier de Cheilon`.
 
 [docs/PROVENANCE.md](https://github.com/lqgentner/rgi-catalog/blob/main/docs/PROVENANCE.md) lists
 every changed row and the rules of `display_name`.
