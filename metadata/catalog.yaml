@@ -80,6 +80,8 @@ display_name_examples:
     display_name: Nianbaoyeze Glacier
   - glac_name: S/N
     display_name: null
+  - glac_name: CHEILON GLACIER DE
+    display_name: Glacier de Cheilon
 
 # The fixes of the convert report, as the processing notes of the collection
 # READMEs state them. The counts come from the build record.

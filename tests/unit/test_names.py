@@ -44,12 +44,12 @@ CASES = [
     ("Mont Vélan-W", "Mont Vélan W"),
     ("Vostok-4 Ice Cap (Eva-Liv Island)", "Vostok-4 Ice Cap (Eva-Liv Island)"),
     ("SAINT-SORLIN", "Saint-Sorlin"),
-    # Particles in re-cased names are lowercase unless first. No reordering.
+    # Particles in re-cased names are lowercase unless first.
     ("CORDÓN DEL PICO ALTO", "Cordón del Pico Alto"),
-    ("TRIENT GLACIER DU", "Trient Glacier du"),
-    ("PETIT COMBIN GLACIER DU-III", "Petit Combin Glacier du III"),
+    ("TRIENT GLACIER DU", "Glacier du Trient"),
+    ("PETIT COMBIN GLACIER DU-III", "Glacier du Petit Combin III"),
     ("GLACIER D'ARGENTIERE", "Glacier d'Argentiere"),
-    ("ORNY GLACIER D'", "Orny Glacier d'"),
+    ("ORNY GLACIER D'", "Glacier d'Orny"),
     ("DE LA PLAINE MORTE", "De la Plaine Morte"),
     # A Swiss canton code at the end stays in capitals. Elsewhere it is a word.
     ("FIESCHERGLETSCHER VS", "Fieschergletscher VS"),
@@ -83,14 +83,14 @@ CASES = [
     ("VERDE-U1", "Verde-U1"),
     ("JOTABECHE 1", "Jotabeche 1"),
     # Romansh and Italian particles.
-    ("MURTEL VADRET DAL", "Murtel Vadret dal"),
-    ("GREINA GLATSCHER  DALLA", "Greina Glatscher dalla"),
-    ("TUORS GLATSCHER  DALLAS", "Tuors Glatscher dallas"),
-    ("LAI BLAU GLATSCHER DIL", "Lai Blau Glatscher dil"),
-    ("ROSSI VADRET DEI", "Rossi Vadret dei"),
+    ("MURTEL VADRET DAL", "Vadret dal Murtel"),
+    ("GREINA GLATSCHER  DALLA", "Glatscher dalla Greina"),
+    ("TUORS GLATSCHER  DALLAS", "Glatscher dallas Tuors"),
+    ("LAI BLAU GLATSCHER DIL", "Glatscher dil Lai Blau"),
+    ("ROSSI VADRET DEI", "Vadret dei Rossi"),
     # The suffix hyphen leaves no space after an apostrophe or a second space.
-    ("A NEUVE GLACIER DE L'-N", "A Neuve Glacier de l'N"),
-    ("Tour Sallière Glacier de la -II", "Tour Sallière Glacier de la II"),
+    ("A NEUVE GLACIER DE L'-N", "Glacier de l'A Neuve N"),
+    ("Tour Sallière Glacier de la -II", "Glacier de la Tour Sallière II"),
     # A Cyrillic letter after digits becomes the Latin letter.
     ("101а", "101a"),
     ("359е", "359e"),
@@ -145,6 +145,108 @@ FRENCH = [
 @pytest.mark.parametrize(("raw", "want"), FRENCH)
 def test_display_name_french_inventory(raw: str, want: str) -> None:
     assert display_name(raw, region="11") == want
+
+
+# The Swiss Glacier Inventory puts the glacier word and its particle last.
+GLACIER_WORD_LAST = [
+    ("CHEILON GLACIER DE", "Glacier de Cheilon"),
+    ("BRENAY GLACIER DU", "Glacier du Brenay"),
+    ("DENT BLANCHE GLACIER DE LA", "Glacier de la Dent Blanche"),
+    ("OTEMMA GLACIER D'", "Glacier d'Otemma"),
+    ("EVOLE GLACIER DE L'", "Glacier de l'Evole"),
+    ("AROLLA HAUT GLACIER D'", "Haut Glacier d'Arolla"),
+    ("AIGUILLES ROUGES GLACIER SUPERIEUR DES", "Glacier Superieur des Aiguilles Rouges"),
+    ("AIGUILLES ROUGES GL. INF. DES", "Glacier Inferieur des Aiguilles Rouges"),
+    ("PLAINE MORTE-E GLACIER DE LA", "Glacier de la Plaine Morte E"),
+    ("A NEUVE GLACIER DE L'-S", "Glacier de l'A Neuve S"),
+    ("TASNA VADRET DA-E", "Vadret da Tasna E"),
+    ("MORTERATSCH VADRET DA", "Vadret da Morteratsch"),
+    ("MAISAS VADRET DA LAS", "Vadret da las Maisas"),
+    ("ALP OTA VADRET DA L'", "Vadret da l'Alp Ota"),
+    ("BONDASCA VADREC DA LA", "Vadrec da la Bondasca"),
+    ("SORDA VADRECC DI", "Vadrecc di Sorda"),
+    ("CAMP VEDREIT DA", "Vedreit da Camp"),
+    ("LUCENDRO GHIACCIAIO DI", "Ghiacciaio di Lucendro"),
+    # Gh. is Italian. Gl. is Romansh before da, and French otherwise.
+    ("TAMBO GH. DEL", "Ghiacciaio del Tambo"),
+    ("Antabia-W Gh. d'", "Ghiacciaio d'Antabia W"),
+    ("Mucia Gh. de", "Ghiacciaio de Mucia"),
+    ("GANNARETSCH GL. DA", "Glatscher da Gannaretsch"),
+    ("STREM GLATSCHER  DA", "Glatscher da Strem"),
+    ("SEGNAS GLATSCHIU DIL", "Glatschiu dil Segnas"),
+]
+
+
+@pytest.mark.parametrize(("raw", "want"), GLACIER_WORD_LAST)
+def test_display_name_glacier_word_first(raw: str, want: str) -> None:
+    assert display_name(raw, region="11") == want
+
+
+@pytest.mark.parametrize("region", ["02", None])
+def test_display_name_glacier_word_first_in_comma_form(region: str | None) -> None:
+    # The rule applies in every region. Region 02 has the comma form.
+    assert display_name("Poilus, Glacier des", region) == "Glacier des Poilus"
+    assert display_name("Fleur des Neiges, Glacier de", region) == "Glacier de Fleur des Neiges"
+
+
+def test_display_name_keeps_gl_before_an_unknown_particle() -> None:
+    # An Italian particle does not tell whether Gl. is French or Romansh.
+    assert display_name("TAMBO GL. DEL", region="11") == "Gl. del Tambo"
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        # The glacier word starts the name already, or no particle follows it.
+        "Vadret da Morteratsch",
+        "TIATSCHA VADRET",
+        "Pine Island Glacier",
+        # No glacier word before the particle.
+        "PLAN NEVE  l'",
+    ],
+)
+def test_display_name_keeps_word_order(name: str) -> None:
+    _, rules = apply_rules(name, region="11")
+    assert "glacier-word-first" not in rules
+
+
+def test_display_name_expands_glaciar_in_region_17() -> None:
+    assert display_name("Gl. Viedma", region="17") == "Glaciar Viedma"
+    assert display_name("GL. Bah?a del Toro", region="17") == "Glaciar Bah?a del Toro"
+    assert display_name("Gl.Piloto", region="17") == "Glaciar Piloto"
+
+
+def test_display_name_expands_glaciar_in_region_19() -> None:
+    assert display_name("Gl. Lyell", region="19") == "Glaciar Lyell"
+    assert display_name("Gl. Cook (Este)", region="19") == "Glaciar Cook (Este)"
+
+
+def test_display_name_keeps_gl_inside_a_spanish_name() -> None:
+    assert display_name("Cerro Gl. Norte", region="17") == "Cerro Gl. Norte"
+
+
+@pytest.mark.parametrize(
+    ("raw", "region", "want"),
+    [
+        ("Imja/Lhotse Shar Gl.", "15", "Imja/Lhotse Shar Glacier"),
+        ("Changri Shar/Nup Gl", "15", "Changri Shar/Nup Glacier"),
+        ("Speke Gl", "16", "Speke Glacier"),
+        ("TZ3D700C1006 Diamond Gl B,", "16", "Diamond Glacier B"),
+        ("Akshiirak Gl", "13", "Akshiirak Glacier"),
+    ],
+)
+def test_display_name_expands_glacier_at_the_end(raw: str, region: str, want: str) -> None:
+    assert display_name(raw, region=region) == want
+
+
+def test_display_name_keeps_gl_at_the_end_in_region_11() -> None:
+    # The Swiss index order puts the glacier word last, so the name is not English.
+    assert display_name("RIED GL.", region="11") == "Ried Gl."
+
+
+def test_override_puts_glacier_noir_in_order() -> None:
+    overrides = override_map(load_overrides())
+    assert display_name("NOIR GLACIER", "11", overrides) == "Glacier Noir"
 
 
 def test_display_name_particle_outside_region_11() -> None:

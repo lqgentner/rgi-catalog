@@ -515,14 +515,43 @@ order (`src/rgi_catalog/names.py`):
    (`FIESCHERGLETSCHER VS` becomes `Fieschergletscher VS`). A word that holds
    a digit keeps its case (`HPS34`). Particles such as `de`, `du`, `del`,
    `dal`, `dil`, `la` and `d'` are lowercase unless they start the name, and
-   the letter after `O'` is a capital. Words are never reordered. In a
+   the letter after `O'` is a capital. In a
    mixed-case name only the words of four or more capitals are re-cased
    (`TUNGELGLETSCHER09n` becomes `Tungelgletscher09n`). A word that mixes
    cases is kept as written (`MIIGAiK`).
-9. In region 11, a name that starts with `d'`, `de`, `du` or `des` gets
-   `Glacier` in front. The French Glacier Inventory leaves the word out:
-   `FR4N01154Q12 d'Ambin` becomes `Glacier d'Ambin`.
-10. A name that starts with a lowercase letter gets a capital.
+9. A name that ends with a glacier word and a particle starts with them.
+   The Swiss Glacier Inventory lists names in this index order:
+   `CHEILON GLACIER DE` becomes `Glacier de Cheilon`, and
+   `Poilus, Glacier des` in region 02 becomes `Glacier des Poilus`. A compass
+   point or a Roman numeral after the particle stays at the end:
+   `PETIT COMBIN GLACIER DU-III` becomes `Glacier du Petit Combin III`.
+   - The glacier words are `Glacier`, `Haut Glacier`, `Ghiacciaio`, `Vadret`,
+     `Vadrec`, `Vadrecc`, `Vadrettin`, `Vedreit`, `Glatscher`, `Glatschiu`,
+     and the abbreviations `Gl.` and `Gh.`. One adjective may follow the word
+     (`Superieur`, `Inf.`).
+   - The particles are `de`, `du`, `des`, `d'`, `de la`, `de l'`, `da`,
+     `dal`, `dalla`, `dallas`, `da la`, `da las`, `da l'`, `dei`, `del`, `di`
+     and `dil`. After `d'` and `l'` the name follows without a space:
+     `Glacier d'Otemma`.
+   - `Gh.` becomes `Ghiacciaio`: `TAMBO GH. DEL` becomes
+     `Ghiacciaio del Tambo`.
+   - `Gl.` becomes `Glacier` before a French particle and `Glatscher` before
+     a Romansh particle: `GANNARETSCH GL. DA` becomes
+     `Glatscher da Gannaretsch`. Before another particle `Gl.` stays.
+     `GL. INF.` becomes `Glacier Inferieur`.
+10. `Gl.` is expanded where the word order gives its language:
+    - In regions 17 and 19, `Gl.` that starts a name becomes `Glaciar`. These
+      Spanish names put the glacier word first: `Gl. Viedma` becomes
+      `Glaciar Viedma`, and `Gl. Lyell` becomes `Glaciar Lyell`.
+    - Outside region 11, `Gl.` or `Gl` that ends a name, or comes before a
+      one-letter suffix, becomes `Glacier`. These English names put the
+      glacier word last: `Speke Gl` becomes `Speke Glacier`, and
+      `Diamond Gl B` becomes `Diamond Glacier B`. Region 11 puts the glacier
+      word last in its index order, so the rule does not apply there.
+11. In region 11, a name that starts with `d'`, `de`, `du` or `des` gets
+    `Glacier` in front. The French Glacier Inventory leaves the word out:
+    `FR4N01154Q12 d'Ambin` becomes `Glacier d'Ambin`.
+12. A name that starts with a lowercase letter gets a capital.
 
 A `?` at the end of a word stays. In the French Glacier Inventory it marks an
 uncertain name, such as `du Col de Sirac?`.
@@ -533,7 +562,7 @@ more than one rule.
 | Rule | Glaciers |
 | --- | ---: |
 | `empty`: no `glac_name` | 216,535 |
-| `override` | 5 |
+| `override` | 7 |
 | `underscores` | 52 |
 | `trailing-comma` | 290 |
 | `empty-second-name` | 27 |
@@ -547,10 +576,13 @@ more than one rule.
 | `apostrophe` | 6 |
 | `spacing` | 5 |
 | `suffix-hyphen` | 358 |
-| `recased` | 1,118 |
+| `recased` | 1,117 |
+| `glacier-word-first` | 188 |
+| `glaciar-expanded` | 297 |
+| `glacier-expanded` | 23 |
 | `french-glacier` | 415 |
 | `initial-capital` | 9 |
-| `unchanged` | 6,825 |
+| `unchanged` | 6,519 |
 
 57,996 glaciers have a non-empty `glac_name`, and 9,457 have a
 `display_name`.
@@ -564,6 +596,8 @@ more than one rule.
 | `Group of small glaciers` | null | The glac_name is a description. |
 | `FR4N01235A08 dArgentiere` | Glacier d'Argentiere | The apostrophe of the particle d' is missing. |
 | `SHCHuchij` | Shchuchij | The first letters are capitals by mistake. |
+| `Bishops Glacier, The` | The Bishops Glacier | The article after the comma starts the name. |
+| `NOIR GLACIER` | Glacier Noir | The name is in index order, with the adjective first. |
 
 ### Names the rules leave as published
 
@@ -573,6 +607,10 @@ These upstream errors stay in `display_name` as RGI publishes them:
   it (`Hallsttter Gletscher`). Some names in regions 11, 17 and 19 have `?`
   in its place (`Gl. R?o Blanco`).
 - Spelling errors, such as `Chalresbreenn` in region 07.
+- A Swiss name that ends with a glacier word but no particle, such as
+  `TIATSCHA VADRET`. The particle (`da`, `dal`, `d'`, …) is not known.
+- `Gl E Gelas` in region 11. The glacier is on the French and Italian
+  border, so `Gl` could be `Glacier` or `Ghiacciaio`.
 
 ## Known issues
 

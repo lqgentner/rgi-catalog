@@ -20,3 +20,9 @@
 - glac_name: "SHCHuchij"
   display_name: "Shchuchij"
   reason: The first letters are capitals by mistake.
+- glac_name: "Bishops Glacier, The"
+  display_name: "The Bishops Glacier"
+  reason: The article after the comma starts the name.
+- glac_name: "NOIR GLACIER"
+  display_name: "Glacier Noir"
+  reason: The name is in index order, with the adjective first.
