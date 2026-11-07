@@ -156,7 +156,7 @@ GLACIER_WORD_LAST = [
     ("EVOLE GLACIER DE L'", "Glacier de l'Evole"),
     ("AROLLA HAUT GLACIER D'", "Haut Glacier d'Arolla"),
     ("AIGUILLES ROUGES GLACIER SUPERIEUR DES", "Glacier Superieur des Aiguilles Rouges"),
-    ("AIGUILLES ROUGES GL. INF. DES", "Glacier Inf. des Aiguilles Rouges"),
+    ("AIGUILLES ROUGES GL. INF. DES", "Glacier Inferieur des Aiguilles Rouges"),
     ("PLAINE MORTE-E GLACIER DE LA", "Glacier de la Plaine Morte E"),
     ("A NEUVE GLACIER DE L'-S", "Glacier de l'A Neuve S"),
     ("TASNA VADRET DA-E", "Vadret da Tasna E"),
@@ -170,18 +170,28 @@ GLACIER_WORD_LAST = [
     # Gh. is Italian. Gl. is Romansh before da, and French otherwise.
     ("TAMBO GH. DEL", "Ghiacciaio del Tambo"),
     ("Antabia-W Gh. d'", "Ghiacciaio d'Antabia W"),
+    ("Mucia Gh. de", "Ghiacciaio de Mucia"),
     ("GANNARETSCH GL. DA", "Glatscher da Gannaretsch"),
     ("STREM GLATSCHER  DA", "Glatscher da Strem"),
     ("SEGNAS GLATSCHIU DIL", "Glatschiu dil Segnas"),
-    # The comma form of region 02.
-    ("Poilus, Glacier des", "Glacier des Poilus"),
-    ("Fleur des Neiges, Glacier de", "Glacier de Fleur des Neiges"),
 ]
 
 
 @pytest.mark.parametrize(("raw", "want"), GLACIER_WORD_LAST)
 def test_display_name_glacier_word_first(raw: str, want: str) -> None:
     assert display_name(raw, region="11") == want
+
+
+@pytest.mark.parametrize("region", ["02", None])
+def test_display_name_glacier_word_first_in_comma_form(region: str | None) -> None:
+    # The rule applies in every region. Region 02 has the comma form.
+    assert display_name("Poilus, Glacier des", region) == "Glacier des Poilus"
+    assert display_name("Fleur des Neiges, Glacier de", region) == "Glacier de Fleur des Neiges"
+
+
+def test_display_name_keeps_gl_before_an_unknown_particle() -> None:
+    # An Italian particle does not tell whether Gl. is French or Romansh.
+    assert display_name("TAMBO GL. DEL", region="11") == "Gl. del Tambo"
 
 
 @pytest.mark.parametrize(
@@ -206,13 +216,37 @@ def test_display_name_expands_glaciar_in_region_17() -> None:
     assert display_name("Gl.Piloto", region="17") == "Glaciar Piloto"
 
 
-def test_display_name_keeps_gl_where_the_language_is_unknown() -> None:
-    # South Georgia (19-03) has Spanish and English names.
-    assert display_name("Gl. Lyell", region="19") == "Gl. Lyell"
+def test_display_name_expands_glaciar_in_region_19() -> None:
+    assert display_name("Gl. Lyell", region="19") == "Glaciar Lyell"
+    assert display_name("Gl. Cook (Este)", region="19") == "Glaciar Cook (Este)"
 
 
-def test_display_name_expands_glacier_at_the_end() -> None:
-    assert display_name("Imja/Lhotse Shar Gl.", region="15") == "Imja/Lhotse Shar Glacier"
+def test_display_name_keeps_gl_inside_a_spanish_name() -> None:
+    assert display_name("Cerro Gl. Norte", region="17") == "Cerro Gl. Norte"
+
+
+@pytest.mark.parametrize(
+    ("raw", "region", "want"),
+    [
+        ("Imja/Lhotse Shar Gl.", "15", "Imja/Lhotse Shar Glacier"),
+        ("Changri Shar/Nup Gl", "15", "Changri Shar/Nup Glacier"),
+        ("Speke Gl", "16", "Speke Glacier"),
+        ("TZ3D700C1006 Diamond Gl B,", "16", "Diamond Glacier B"),
+        ("Akshiirak Gl", "13", "Akshiirak Glacier"),
+    ],
+)
+def test_display_name_expands_glacier_at_the_end(raw: str, region: str, want: str) -> None:
+    assert display_name(raw, region=region) == want
+
+
+def test_display_name_keeps_gl_at_the_end_in_region_11() -> None:
+    # The Swiss index order puts the glacier word last, so the name is not English.
+    assert display_name("RIED GL.", region="11") == "Ried Gl."
+
+
+def test_override_puts_glacier_noir_in_order() -> None:
+    overrides = override_map(load_overrides())
+    assert display_name("NOIR GLACIER", "11", overrides) == "Glacier Noir"
 
 
 def test_display_name_particle_outside_region_11() -> None:

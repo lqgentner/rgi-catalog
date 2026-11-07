@@ -557,8 +557,11 @@ archive was 12.3 MB larger.
 
 `scripts/check_label_placement.py` reads the label layer of the tiles. It
 checks that the tile at the center of each line contains the whole line, and
-that MapLibre places each name once, with its own 45° limit. All 22,869 lines
-pass. The check takes about a minute on 15 cores.
+that each name is placed once. The placement uses the port of MapLibre's rule
+that the fit uses, with MapLibre's own 45° limit. So the script checks what
+the tiler did to the lines: clipping, rounding to the tile grid, the buffer
+and the overzoom. It does not check the port or the glyph widths. All 22,869
+lines pass. The check takes about a minute on 15 cores.
 
 `label_minzoom` falls by one zoom for every factor of 4 in area, because
 each zoom step quadruples a glacier's area on screen. A glacier of 1 km²

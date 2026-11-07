@@ -534,15 +534,20 @@ order (`src/rgi_catalog/names.py`):
      and `dil`. After `d'` and `l'` the name follows without a space:
      `Glacier d'Otemma`.
    - `Gh.` becomes `Ghiacciaio`: `TAMBO GH. DEL` becomes
-     `Ghiacciaio del Tambo`. `Gl.` becomes `Glatscher` before a Romansh
-     particle (`GANNARETSCH GL. DA` becomes `Glatscher da Gannaretsch`), and
-     `Glacier` otherwise.
-10. `Gl.` is expanded where its language is clear from the region or the word
-    order:
-    - In region 17, `Gl.` that starts a name becomes `Glaciar`:
-      `Gl. Viedma` becomes `Glaciar Viedma`.
-    - In any region, `Gl.` that ends a name becomes `Glacier`:
-      `Imja/Lhotse Shar Gl.` becomes `Imja/Lhotse Shar Glacier`.
+     `Ghiacciaio del Tambo`.
+   - `Gl.` becomes `Glacier` before a French particle and `Glatscher` before
+     a Romansh particle: `GANNARETSCH GL. DA` becomes
+     `Glatscher da Gannaretsch`. Before another particle `Gl.` stays.
+     `GL. INF.` becomes `Glacier Inferieur`.
+10. `Gl.` is expanded where the word order gives its language:
+    - In regions 17 and 19, `Gl.` that starts a name becomes `Glaciar`. These
+      Spanish names put the glacier word first: `Gl. Viedma` becomes
+      `Glaciar Viedma`, and `Gl. Lyell` becomes `Glaciar Lyell`.
+    - Outside region 11, `Gl.` or `Gl` that ends a name, or comes before a
+      one-letter suffix, becomes `Glacier`. These English names put the
+      glacier word last: `Speke Gl` becomes `Speke Glacier`, and
+      `Diamond Gl B` becomes `Diamond Glacier B`. Region 11 puts the glacier
+      word last in its index order, so the rule does not apply there.
 11. In region 11, a name that starts with `d'`, `de`, `du` or `des` gets
     `Glacier` in front. The French Glacier Inventory leaves the word out:
     `FR4N01154Q12 d'Ambin` becomes `Glacier d'Ambin`.
@@ -561,7 +566,7 @@ more than one rule.
 | `underscores` | 52 |
 | `trailing-comma` | 290 |
 | `empty-second-name` | 27 |
-| `inventory-code-stripped`, a name is left | 889 |
+| `inventory-code-stripped`, a name is left | 890 |
 | `code-only` | 23,307 |
 | `no-name-marker` | 18,422 |
 | `numeric-only` | 1,621 |
@@ -571,13 +576,13 @@ more than one rule.
 | `apostrophe` | 6 |
 | `spacing` | 5 |
 | `suffix-hyphen` | 358 |
-| `recased` | 1,118 |
+| `recased` | 1,117 |
 | `glacier-word-first` | 188 |
-| `glaciar-expanded` | 261 |
-| `glacier-expanded` | 2 |
+| `glaciar-expanded` | 297 |
+| `glacier-expanded` | 23 |
 | `french-glacier` | 415 |
 | `initial-capital` | 9 |
-| `unchanged` | 6,557 |
+| `unchanged` | 6,519 |
 
 57,996 glaciers have a non-empty `glac_name`, and 9,457 have a
 `display_name`.
@@ -592,7 +597,7 @@ more than one rule.
 | `FR4N01235A08 dArgentiere` | Glacier d'Argentiere | The apostrophe of the particle d' is missing. |
 | `SHCHuchij` | Shchuchij | The first letters are capitals by mistake. |
 | `Bishops Glacier, The` | The Bishops Glacier | The article after the comma starts the name. |
-| `TZ3D700C1005 Diamond Gl A` | Diamond Glacier A | Gl abbreviates Glacier, which ends the English name. |
+| `NOIR GLACIER` | Glacier Noir | The name is in index order, with the adjective first. |
 
 ### Names the rules leave as published
 
@@ -602,11 +607,10 @@ These upstream errors stay in `display_name` as RGI publishes them:
   it (`Hallsttter Gletscher`). Some names in regions 11, 17 and 19 have `?`
   in its place (`Gl. R?o Blanco`).
 - Spelling errors, such as `Chalresbreenn` in region 07.
-- `Gl.` at the start of the 36 names in South Georgia (19-03), such as
-  `Gl. Lyell`. The region has Spanish and English names, so `Gl.` could be
-  `Glaciar` or `Glacier`.
 - A Swiss name that ends with a glacier word but no particle, such as
   `TIATSCHA VADRET`. The particle (`da`, `dal`, `d'`, …) is not known.
+- `Gl E Gelas` in region 11. The glacier is on the French and Italian
+  border, so `Gl` could be `Glacier` or `Ghiacciaio`.
 
 ## Known issues
 

@@ -23,6 +23,6 @@
 - glac_name: "Bishops Glacier, The"
   display_name: "The Bishops Glacier"
   reason: The article after the comma starts the name.
-- glac_name: "TZ3D700C1005 Diamond Gl A"
-  display_name: "Diamond Glacier A"
-  reason: Gl abbreviates Glacier, which ends the English name.
+- glac_name: "NOIR GLACIER"
+  display_name: "Glacier Noir"
+  reason: The name is in index order, with the adjective first.

@@ -26,16 +26,19 @@ the glacier.
 The PMTiles archive is 1,144.5 MB. `docs/DESIGN.md` gives the method and the
 measurements.
 
-Two new rules change `display_name` for 451 glaciers. Two new overrides
+Two new rules change `display_name` for 508 glaciers. Two new overrides
 change 2 more:
 
 - A Swiss name that ends with a glacier word and a particle starts with them:
   `CHEILON GLACIER DE` becomes `Glacier de Cheilon`, and
-  `MORTERATSCH VADRET DA` becomes `Vadret da Morteratsch`.
-- In region 17, `Gl.` at the start of a name becomes `Glaciar`: `Gl. Viedma`
-  becomes `Glaciar Viedma`.
-- `Gl.` stays in the 36 names of South Georgia. The region has Spanish and
-  English names, so the language of `Gl.` is not known.
+  `MORTERATSCH VADRET DA` becomes `Vadret da Morteratsch`. In these names
+  `Gh.` becomes `Ghiacciaio`, and `Gl.` becomes `Glacier` before a French
+  particle and `Glatscher` before a Romansh particle.
+- In regions 17 and 19, `Gl.` at the start of a name becomes `Glaciar`:
+  `Gl. Viedma` becomes `Glaciar Viedma`.
+- Outside region 11, `Gl.` or `Gl` at the end of a name becomes `Glacier`:
+  `Speke Gl` becomes `Speke Glacier`.
+- The overrides give `The Bishops Glacier` and `Glacier Noir`.
 
 `docs/PROVENANCE.md` lists every rule.
 

@@ -42,11 +42,14 @@ An override in ``metadata/name_overrides.yaml`` replaces the rules for one
    words are ``Glacier``, ``Haut Glacier``, ``Ghiacciaio``, ``Vadret``,
    ``Vadrec``, ``Vadrecc``, ``Vadrettin``, ``Vedreit``, ``Glatscher``,
    ``Glatschiu`` and the abbreviations ``Gl.`` and ``Gh.``. ``Gh.`` becomes
-   ``Ghiacciaio``. ``Gl.`` becomes ``Glatscher`` before a Romansh particle
-   (``da``, ``dal``, ``dil``, …), and ``Glacier`` otherwise.
-10. In region 17, ``Gl.`` that starts a name becomes ``Glaciar``. In any
-    region, ``Gl.`` that ends a name becomes ``Glacier``. Elsewhere ``Gl.``
-    stays, because its language is not known.
+   ``Ghiacciaio``. ``Gl.`` becomes ``Glacier`` before a French particle and
+   ``Glatscher`` before a Romansh particle (``da``, ``dal``, ``dil``, …).
+   Before another particle it stays. ``Gl. Inf.`` becomes
+   ``Glacier Inferieur``.
+10. In regions 17 and 19, ``Gl.`` that starts a name becomes ``Glaciar``.
+    These Spanish names put the glacier word first. Outside region 11, ``Gl.``
+    or ``Gl`` that ends a name, or comes before a one-letter suffix, becomes
+    ``Glacier``. These English names put the glacier word last.
 11. In region 11, a name that starts with ``d'``, ``de``, ``du`` or ``des``
     gets ``Glacier`` in front. The French Glacier Inventory leaves the word
     out: ``d'Ambin`` → ``Glacier d'Ambin``.
@@ -156,11 +159,20 @@ _GLACIER_WORD_LAST = re.compile(
     rf"(?P<place>.+?),? (?P<word>{_GLACIER_WORD}) (?P<particle>{_TRAILING_PARTICLE})"
     rf"(?:(?:(?<=')| )(?P<suffix>{_COMPASS}|{_ROMAN}))?"
 )
-_ROMANSH_PARTICLE = re.compile(r"da|dil")
-# The Spanish names of region 17 abbreviate Glaciar.
-_SPANISH_REGION = "17"
+# The language of the particle gives the word that Gl. abbreviates.
+_GL_BY_PARTICLE = {
+    **dict.fromkeys(("de", "du", "des", "d'", "de la", "de l'"), "Glacier"),
+    **dict.fromkeys(
+        ("da", "dal", "dalla", "dallas", "da la", "da las", "da l'", "dil"), "Glatscher"
+    ),
+}
+# The Spanish names of regions 17 and 19 abbreviate Glaciar.
+_SPANISH_REGIONS = frozenset({"17", "19"})
 _GLACIAR_ABBREVIATION = re.compile(r"G[Ll]\. ?")
-_GLACIER_ABBREVIATION_LAST = re.compile(r" Gl\.$")
+# The English names abbreviate Glacier at the end, before an optional
+# one-letter suffix: "Diamond Gl B". Region 11 puts the glacier word last in
+# its index order instead.
+_GLACIER_ABBREVIATION_LAST = re.compile(r" Gl\.?(?= [A-Z]$|$)")
 _FRENCH_PARTICLE_START = re.compile(r"(?:d'|de |du |des )")
 
 
@@ -264,7 +276,8 @@ def _glacier_word_first(name: str) -> str | None:
         return None
     particle = match["particle"]
     word = match["word"].replace("Gh.", "Ghiacciaio")
-    word = word.replace("Gl.", "Glatscher" if _ROMANSH_PARTICLE.match(particle) else "Glacier")
+    if "Gl." in word and particle in _GL_BY_PARTICLE:
+        word = word.replace("Gl.", _GL_BY_PARTICLE[particle]).replace(" Inf.", " Inferieur")
     space = "" if particle.endswith("'") else " "
     suffix = f" {match['suffix']}" if match["suffix"] else ""
     return f"{word} {particle}{space}{match['place']}{suffix}"
@@ -277,10 +290,10 @@ def _glacier_word(name: str, region: str | None) -> tuple[str, list[str]]:
     if reordered is not None:
         name = reordered
         fired.append("glacier-word-first")
-    if region == _SPANISH_REGION and _GLACIAR_ABBREVIATION.match(name):
+    if region in _SPANISH_REGIONS and _GLACIAR_ABBREVIATION.match(name):
         name = _GLACIAR_ABBREVIATION.sub("Glaciar ", name, count=1)
         fired.append("glaciar-expanded")
-    if _GLACIER_ABBREVIATION_LAST.search(name):
+    if region != _FRENCH_REGION and _GLACIER_ABBREVIATION_LAST.search(name):
         name = _GLACIER_ABBREVIATION_LAST.sub(" Glacier", name)
         fired.append("glacier-expanded")
     return name, fired

@@ -14,12 +14,17 @@ them. For each label line it checks two things:
   then finds the same line center.
 - MapLibre places the name once. A tile places a ``line-center`` label when
   the center of its part of the line lies in the tile and the label fits
-  there (:func:`rgi_catalog.tiles.center_label_fits`, with MapLibre's own
-  45° limit). The check counts these placements over the 5 x 5 tiles around
-  the center tile.
+  there. The check counts these placements over the 5 x 5 tiles around the
+  center tile.
 
-The script exits with 1 when a line fails a check, and lists the first
-problems of each zoom.
+The fit check is :func:`rgi_catalog.tiles.center_label_fits` with MapLibre's
+own 45° limit, and the label width is :func:`rgi_catalog.tiles.label_width_px`.
+The ``tiles`` step uses the same port of MapLibre's rule. So the script checks
+what the tiler did to the lines: clipping, rounding to the tile grid, the
+buffer and the overzoom. It does not check the port itself.
+
+The script exits with 1 when a line fails a check, when a tile holds a label
+line that the label file does not have, or when the label file has no line.
 """
 
 from __future__ import annotations
@@ -55,7 +60,7 @@ NEIGHBOURS = range(-2, 3)
 VARINT, FIXED64, LENGTH, FIXED32 = 0, 1, 2, 5
 CONTINUATION = 0x80
 TILE_LAYER = 3
-LAYER_NAME, LAYER_FEATURE, LAYER_KEY, LAYER_VALUE = 1, 2, 3, 4
+LAYER_NAME, LAYER_FEATURE, LAYER_KEY, LAYER_VALUE, LAYER_EXTENT = 1, 2, 3, 4, 5
 FEATURE_TAGS, FEATURE_TYPE, FEATURE_GEOMETRY = 2, 3, 4
 LINESTRING = 2
 VALUE_STRING, VALUE_SINT = 1, 6
@@ -156,6 +161,10 @@ def _label_features(tile: bytes) -> list[tuple[str, int, list[np.ndarray]]]:
         items = _fields(layer)
         if next(v for f, v in items if f == LAYER_NAME).decode() != LAYER:
             continue
+        extent = next((v for f, v in items if f == LAYER_EXTENT), EXTENT)
+        if extent != EXTENT:
+            msg = f"the {LAYER} layer has an extent of {extent}, not {EXTENT}"
+            raise ValueError(msg)
         keys = [v.decode() for f, v in items if f == LAYER_KEY]
         values = [_value(v) for f, v in items if f == LAYER_VALUE]
         out = []
@@ -187,15 +196,24 @@ def _init(archive: str, lines: dict[tuple[str, int], Line]) -> None:
     _lines = lines
 
 
-def _check_tiles(
-    batch: list[tuple[int, int, int]],
-) -> tuple[list[tuple[str, int]], list[tuple[str, int, bool]]]:
-    """Return the whole lines in their center tiles and the placements, of tiles."""
+Checked = tuple[list[tuple[str, int]], list[tuple[str, int, bool]], set[tuple[str, int]]]
+
+
+def _check_tiles(batch: list[tuple[int, int, int]]) -> Checked:
+    """Check the label lines of tiles.
+
+    Returns
+    -------
+    Checked
+        The lines that are whole in their center tile, each placement with
+        whether the label fits, and the lines that the label file lacks.
+    """
     if _reader is None:
         msg = "the worker has no archive"
         raise RuntimeError(msg)
     whole: list[tuple[str, int]] = []
     placed: list[tuple[str, int, bool]] = []
+    unknown: set[tuple[str, int]] = set()
     for z, x, y in batch:
         tile = _reader.get(z, x, y)
         if tile is None:
@@ -203,6 +221,7 @@ def _check_tiles(
         for rgi_id, label_zoom, geometry in _label_features(tile):
             line = _lines.get((rgi_id, label_zoom))
             if line is None:
+                unknown.add((rgi_id, label_zoom))
                 continue
             tx, ty, length, label_px, px_per_unit = line
             parts = [p for p in geometry if len(p) > 1]
@@ -219,7 +238,7 @@ def _check_tiles(
                         part * px_per_unit, label_px, max_angle=MAPLIBRE_MAX_ANGLE
                     )
                     placed.append((rgi_id, label_zoom, fits))
-    return whole, placed
+    return whole, placed, unknown
 
 
 def _lines_of(labels: Path) -> dict[tuple[str, int], Line]:
@@ -265,25 +284,34 @@ def check(archive: Path, labels: Path, workers: int | None = None) -> bool:
         True if every line passes both checks.
     """
     lines = _lines_of(labels)
+    if not lines:
+        print(f"{labels} has no label line")
+        return False
     wanted: set[tuple[int, int, int]] = set()
     for (_, label_zoom), (tx, ty, *_) in lines.items():
         zoom = min(label_zoom, tiles.MAXZOOM)
         n = 2**zoom
+        # Tile columns wrap at the antimeridian, rows end at the poles.
         wanted.update(
-            (zoom, tx + dx, ty + dy)
+            (zoom, (tx + dx) % n, ty + dy)
             for dx in NEIGHBOURS
             for dy in NEIGHBOURS
-            if 0 <= tx + dx < n and 0 <= ty + dy < n
+            if 0 <= ty + dy < n
         )
     ordered = sorted(wanted)
     batches = [ordered[i : i + 500] for i in range(0, len(ordered), 500)]
     whole: set[tuple[str, int]] = set()
     placements: collections.Counter[tuple[str, int]] = collections.Counter()
+    unknown: set[tuple[str, int]] = set()
     with ProcessPoolExecutor(workers, initializer=_init, initargs=(str(archive), lines)) as pool:
-        for batch_whole, batch_placed in pool.map(_check_tiles, batches):
+        for batch_whole, batch_placed, batch_unknown in pool.map(_check_tiles, batches):
             whole.update(batch_whole)
             placements.update((rgi_id, z) for rgi_id, z, fits in batch_placed if fits)
-    ok = True
+            unknown.update(batch_unknown)
+    ok = not unknown
+    if unknown:
+        first = sorted(unknown)[:5]
+        print(f"{len(unknown)} label lines in the tiles are not in {labels}: {first}")
     by_zoom: dict[int, list[tuple[str, int]]] = collections.defaultdict(list)
     for key in lines:
         by_zoom[key[1]].append(key)
