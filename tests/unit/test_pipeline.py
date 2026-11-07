@@ -46,9 +46,12 @@ def test_convert_glaciers_on_fixture(
     result = pipeline.convert("7.0", ["glaciers"], staging=staging)
 
     out = staging / "v7.0" / "glaciers" / "rgi7.0-glaciers.parquet"
-    assert result.paths == {"glaciers": out}
-    assert result.row_counts == {"glaciers": 3}
+    names = staging / "v7.0" / "glaciers" / "rgi7.0-glacier-names.parquet"
+    assert result.paths == {"glaciers": out, pipeline.NAMES: names}
+    assert result.row_counts == {"glaciers": 3, pipeline.NAMES: 3}
     assert pq.ParquetFile(out).metadata.num_rows == 3
+    ids = pq.read_table(out, columns=["rgi_id"])["rgi_id"]
+    assert pq.read_table(names, columns=["rgi_id"])["rgi_id"].equals(ids)
     assert layouts == [{"order_by": "rgi_id", "row_group_size": 4096}]
     footer = {k.decode(): v.decode() for k, v in pq.ParquetFile(out).metadata.metadata.items()}
     assert footer["rgi:version"] == "7.0"
@@ -97,6 +100,7 @@ def test_convert_every_product_on_fixture(
     result = pipeline.convert("7.0", list(pipeline.BUILDERS), staging=staging)
     assert result.row_counts == {
         "glaciers": 3,
+        pipeline.NAMES: 3,
         "complexes": 2,
         "centerlines": 3,
         "intersects": 1,

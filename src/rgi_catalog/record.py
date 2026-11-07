@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, cast
 from pmtiles.reader import MmapSource, Reader
 import pyarrow.parquet as pq
 
+from rgi_catalog import nametable
 from rgi_catalog.paths import METADATA, STAGING, version_dir
 from rgi_catalog.pipeline import catalog_metadata, output_path
 from rgi_catalog.sources import load_pins, sha256_file
@@ -70,6 +71,19 @@ def _collection(path: Path) -> dict[str, Any]:
         dates = pq.read_table(path, columns=[DATE_COLUMN]).column(0).to_pandas()
         entry["temporal"] = [_iso(dates.min()), _iso(dates.max())]
     return entry
+
+
+def _names(path: Path) -> dict[str, Any]:
+    pf = pq.ParquetFile(path)
+    meta = pf.metadata
+    return {
+        "collection": nametable.COLLECTION,
+        "href": path.name,
+        "row_count": meta.num_rows,
+        "row_groups": meta.num_row_groups,
+        "row_group_size": max(meta.row_group(i).num_rows for i in range(meta.num_row_groups)),
+        "columns": [{"name": f.name, "type": str(f.type)} for f in pf.schema_arrow],
+    }
 
 
 def _archive(path: Path) -> dict[str, Any]:
@@ -134,8 +148,8 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
     -------
     dict[str, Any]
         Sizes, checksums, extents, row counts and schemas of the staged files,
-        the archive's layers, the upstream pins, and the fix counts of the
-        convert report.
+        the names table, the archive's layers, the upstream pins, and the fix
+        counts of the convert report.
     """
     meta = catalog_metadata()
     versions = cast("dict[str, Any]", meta["versions"])
@@ -148,6 +162,8 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
         path = output_path(staging, version, name)
         files[path.relative_to(vdir).as_posix()] = _file_entry(path)
         collections[name] = _collection(path)
+    names = nametable.names_path(staging, version)
+    files[names.relative_to(vdir).as_posix()] = _file_entry(names)
     archive = archive_path(staging, version)
     files[archive.relative_to(vdir).as_posix()] = _file_entry(archive)
     return {
@@ -157,6 +173,7 @@ def build_record(version: str, *, staging: Path = STAGING) -> dict[str, Any]:
         "sources": {k: {"filename": p.filename, "sha256": p.sha256} for k, p in pins.items()},
         "files": files,
         "collections": collections,
+        "names": _names(names),
         "archive": {"href": archive.relative_to(vdir).as_posix(), **_archive(archive)},
         "fixes": fix_counts(vdir / ".reports" / "fixes.json", spec["collections"]),
     }

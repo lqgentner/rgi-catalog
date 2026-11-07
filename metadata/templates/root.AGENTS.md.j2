@@ -13,7 +13,8 @@ this rule when you edit the file.
 
 The public root is `{{ public("catalog.json") }}`. Each RGI version is a
 sub-catalog. Each RGI product is a collection with one GeoParquet file and no
-items.
+items. The glaciers collection also has a names table: a plain Parquet file
+of each glacier's ID, names and region codes.
 
 {% for version, vspec in versions.items() %}
 - `v{{ version }}/`: {{ vspec.title }}, mirror revision `{{ records[version].mirror_revision }}`. Collections: `{{ vspec.collections | join("`, `") }}`. Read `v{{ version }}/AGENTS.md` next.

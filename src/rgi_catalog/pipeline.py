@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import yaml
 
+from rgi_catalog import nametable
 from rgi_catalog.assemble import (
     centerlines,
     complexes,
@@ -38,6 +39,10 @@ PRODUCT_SOURCES: dict[str, tuple[str, ...]] = {
     "intersects": ("I",),
     "regions": ("regions",),
 }
+
+
+# The key of the names table in a ConvertResult.
+NAMES = "glacier-names"
 
 
 @dataclass
@@ -133,6 +138,8 @@ def convert(
 ) -> ConvertResult:
     """Build the GeoParquet file of each product and the fix report.
 
+    The glaciers also give the names table (:mod:`rgi_catalog.nametable`).
+
     Parameters
     ----------
     version
@@ -181,6 +188,10 @@ def convert(
         result.paths[product] = out
         result.row_counts[product] = len(gdf)
         result.fixes.extend(fixes)
+        if product == nametable.COLLECTION:
+            names = nametable.names_path(staging, version)
+            result.paths[NAMES] = nametable.write_names_table(out, names)
+            result.row_counts[NAMES] = len(gdf)
     reports = staging / version_dir(version) / ".reports"
     reports.mkdir(parents=True, exist_ok=True)
     (reports / "fixes.json").write_text(

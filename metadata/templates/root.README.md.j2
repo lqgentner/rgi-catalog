@@ -14,6 +14,9 @@
   of its rows and columns. The side files of RGI's glacier product are
   columns of the glaciers file: the hypsometry, the submission information,
   the glacier complex of each glacier and the links to RGI 6.0.
+- **A names table, for search.** The glaciers collection also has a small
+  Parquet file of each glacier's ID, names and region codes, without the
+  outlines. Its rows are in the order of the glaciers file.
 - **PMTiles, for web maps only.** One archive contains the vector tiles of
   all collections, with overviews for rendering at low zooms. Each
   collection provides a map style (`styles/*.json`). The tiles leave out the

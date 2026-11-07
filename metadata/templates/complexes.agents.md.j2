@@ -38,7 +38,10 @@ ORDER BY g.area_km2 DESC;
 ## Join keys
 
 - `rgi_id` is unique: {{ "{:,}".format(record.collections.complexes.row_count) }}
-  distinct values.
+  distinct values. In each first-order region the numbers run from 1 to
+  the number of complexes in the region, with no gaps. So
+  `RGI2000-v7.0-C-11-01323` exists if region 11 has at least 1,323
+  complexes.
 - `glacier_ids` holds the `rgi_id` of each member glacier, sorted. Every
   glacier is in exactly one complex: the lists hold 274,531 distinct glacier
   IDs, and `glaciers.complex_id` names the same complex.

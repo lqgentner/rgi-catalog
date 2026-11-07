@@ -199,6 +199,35 @@ def test_assets_and_links_resolve_relatively(rendered: Path) -> None:
     assert asset["file:checksum"] == pmtiles["file:checksum"]
 
 
+def test_names_table_is_the_second_data_asset_of_the_glaciers(rendered: Path) -> None:
+    rec = json.loads((METADATA / "builds" / "v7.0.json").read_text())
+    for collection in _collections(rendered):
+        name = collection["id"].removeprefix("rgi-v7-0-")
+        has_names = "names" in collection["assets"]
+        assert has_names == (name == rec["names"]["collection"])
+    glaciers = json.loads((rendered / "v7.0" / "glaciers" / "collection.json").read_text())
+    assets = glaciers["assets"]
+    # Clients take the first Parquet asset as the collection's data.
+    assert list(assets)[:2] == ["data", "names"]
+    names = assets["names"]
+    assert names["href"] == f"./{rec['names']['href']}"
+    assert names["type"] == "application/vnd.apache.parquet"
+    assert names["roles"] == ["data"]
+    assert "table:primary_geometry" not in names
+    assert names["table:row_count"] == assets["data"]["table:row_count"]
+    assert names["file:size"] == rec["files"][f"glaciers/{rec['names']['href']}"]["size"]
+    assert names["alternate"]["s3"]["href"].endswith(f"/v7.0/glaciers/{rec['names']['href']}")
+    data_columns = {c["name"]: c for c in assets["data"]["table:columns"]}
+    assert [c["name"] for c in names["table:columns"]] == [
+        c["name"] for c in rec["names"]["columns"]
+    ]
+    for column in names["table:columns"]:
+        assert column["description"] == data_columns[column["name"]]["description"]
+    staged = STAGING / "v7.0" / "glaciers" / rec["names"]["href"]
+    if staged.exists():
+        assert [c["name"] for c in names["table:columns"]] == pq.read_schema(staged).names
+
+
 def test_styles_written_with_one_default(rendered: Path) -> None:
     glaciers = json.loads((rendered / "v7.0" / "glaciers" / "collection.json").read_text())
     styles = {k: a for k, a in glaciers["assets"].items() if "style" in a["roles"]}

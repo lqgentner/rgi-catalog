@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any
 import jinja2
 import yaml
 
-from rgi_catalog import styles
+from rgi_catalog import nametable, styles
 from rgi_catalog.paths import CATALOG, METADATA, STAGING, version_dir
 from rgi_catalog.pipeline import PRODUCT_SOURCES
 from rgi_catalog.record import record_path, write_build_record
@@ -274,6 +274,39 @@ def _table_columns(ctx: Context, name: str, record: dict[str, Any]) -> list[dict
     return out
 
 
+def _names_asset(ctx: Context, version: str, name: str, record: dict[str, Any]) -> dict[str, Any]:
+    """Return the asset of the names table, a second data asset after the GeoParquet file.
+
+    Clients take the first Parquet asset as the collection's data, so this
+    asset follows ``data``. Its columns keep the descriptions of the
+    glaciers file.
+    """
+    names = record["names"]
+    rel = f"{name}/{names['href']}"
+    files = record["files"]
+    described = {c["name"]: c for c in _table_columns(ctx, name, record)}
+    return {
+        "href": f"./{names['href']}",
+        "type": PARQUET,
+        "title": "Glacier names and IDs, Parquet",
+        "description": (
+            "The IDs, names and region codes of the GeoParquet file, without the outlines. "
+            "The rows are in the order of the GeoParquet file."
+        ),
+        "roles": ["data"],
+        "file:size": files[rel]["size"],
+        "file:checksum": files[rel]["file:checksum"],
+        "alternate": {
+            "s3": {
+                "href": f"{ctx.meta['public_s3_base']}/{version_dir(version)}/{rel}",
+                "title": "Anonymous S3 access",
+            },
+        },
+        "table:row_count": names["row_count"],
+        "table:columns": [{**described[c["name"]], "type": c["type"]} for c in names["columns"]],
+    }
+
+
 def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
     meta = ctx.meta
     record = ctx.records[version]
@@ -310,6 +343,9 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
             "table:columns": _table_columns(ctx, name, record),
         },
     }
+    names = record.get("names")
+    if names is not None and names["collection"] == name:
+        assets[nametable.ASSET] = _names_asset(ctx, version, name, record)
     pins = load_pins(version)
     # The upstream files are links, so a client lists them with the other
     # resources and does not offer them as data of this collection.
