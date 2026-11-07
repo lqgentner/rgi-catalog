@@ -37,8 +37,19 @@ OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
 # glacier at the antimeridian is a MultiPoint where the tile buffer wraps.
 POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
 # The archive has a label line per glacier and zoom, with its zoom in
-# label_zoom. Past MAXZOOM the tiles of MAXZOOM are overzoomed.
-LABEL_LINES = ["==", ["get", "label_zoom"], ["min", ["zoom"], LABEL_MAXZOOM]]
+# label_zoom. Past MAXZOOM the tiles of MAXZOOM are overzoomed. A line shows
+# from its zoom up to the next zoom, and the line of LABEL_MAXZOOM shows at
+# every zoom past it. A renderer that evaluates the filter at a fractional
+# zoom then also matches one line per glacier.
+LABEL_LINES = [
+    "all",
+    [">=", ["zoom"], ["get", "label_zoom"]],
+    [
+        "any",
+        ["<", ["zoom"], ["+", ["get", "label_zoom"], 1]],
+        [">=", ["get", "label_zoom"], LABEL_MAXZOOM],
+    ],
+]
 DOT_RADIUS = ["interpolate", ["linear"], ["zoom"], 0, 1.5, 6, 2.5]
 
 

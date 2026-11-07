@@ -606,8 +606,11 @@ so a tile holds only the lines of its own zoom. RGI's point of each named
 glacier is in the `glacier-label-points` layer, which no style draws. The z12 tiles also hold the
 lines of z13 and z14. MapLibre overscales a z12 tile past z12 and evaluates
 the filter at the overscaled zoom. The fit of a z13 or z14 line uses the
-z12 tile grid. The styles draw the line whose `label_zoom` is the map zoom,
-capped at z14. So a name moves down the glacier at each whole zoom.
+z12 tile grid. The styles draw a line from its `label_zoom` up to the next
+zoom, and the z14 line at every zoom from z14. So a name moves down the
+glacier at each whole zoom. MapLibre evaluates a filter at the whole zoom of
+the tile. OpenLayers with ol-mapbox-style evaluates it at the fractional map
+zoom. The range matches one line per glacier in both.
 
 The browser labels a legend entry with the `match` branch value. So each
 `match` takes a nested expression that turns the code into the

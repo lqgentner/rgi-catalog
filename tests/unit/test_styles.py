@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import operator
 import re
 from typing import Any
 
@@ -72,11 +73,7 @@ def test_styles_label_glaciers_on_top(style: dict[str, Any]) -> None:
 def test_styles_draw_glacier_names_along_label_lines(style: dict[str, Any]) -> None:
     # The tiles step fits each label line to this text, in this font.
     labels = next(layer for layer in style["layers"] if layer["source-layer"] == "glacier-labels")
-    assert labels["filter"] == [
-        "==",
-        ["get", "label_zoom"],
-        ["min", ["zoom"], tiles.LABEL_MAXZOOM],
-    ]
+    assert labels["filter"] == styles.LABEL_LINES
     assert labels["layout"]["symbol-placement"] == "line-center"
     assert labels["layout"]["text-font"] == [glyphs.FONT]
     assert labels["layout"]["text-size"] == glyphs.LABEL_TEXT_SIZE
@@ -287,3 +284,31 @@ def test_region_labels_show_the_number(level: int, code: str) -> None:
     )
     assert ["get", code] in label["layout"]["text-field"]
     assert ["get", "full_name"] in label["layout"]["text-field"]
+
+
+def _evaluate(expression: Any, zoom: float, feature: dict[str, Any]) -> Any:
+    """Evaluate the expression operators of the label filter."""
+    if not isinstance(expression, list):
+        return expression
+    op, *args = expression
+    if op == "zoom":
+        return zoom
+    if op == "get":
+        return feature[args[0]]
+    values = [_evaluate(a, zoom, feature) for a in args]
+    compare = {">=": operator.ge, "<": operator.lt}
+    if op in compare:
+        return compare[op](*values)
+    return {"all": all, "any": any, "+": sum}[op](values)
+
+
+@pytest.mark.parametrize("zoom", [z / 4 for z in range(4 * 6, 4 * 18)])
+def test_label_filter_matches_one_line_at_any_zoom(zoom: float) -> None:
+    # MapLibre evaluates the filter at the tile zoom, a whole number.
+    # OpenLayers evaluates it at the fractional map zoom.
+    lines = range(tiles.LABEL_MINZOOM, tiles.LABEL_MAXZOOM + 1)
+    shown = [z for z in lines if _evaluate(styles.LABEL_LINES, zoom, {"label_zoom": z})]
+    if zoom < tiles.LABEL_MINZOOM:
+        assert shown == []
+    else:
+        assert shown == [min(int(zoom), tiles.LABEL_MAXZOOM)]
