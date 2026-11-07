@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 
 GEOPARQUET_VERSION: Literal["2.0", "1.1"] = "2.0"
 # A target, not a limit: gpio's DuckDB writer makes groups of about 10,300 to
-# 12,100 rows on the glaciers table. docs/DESIGN.md has the measurements.
+# 12,100 rows on the glaciers table in Hilbert order. docs/DESIGN.md has the
+# measurements.
 ROW_GROUP_SIZE: int = 10_240
 COMPRESSION_LEVEL = 19
 # The Portolan cap on rows per row group (PORTO-FMT-009).
