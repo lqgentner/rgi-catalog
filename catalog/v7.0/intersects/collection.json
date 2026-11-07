@@ -25,7 +25,7 @@
     "glacier divides"
   ],
   "version": "7.0-r1",
-  "updated": "2026-11-06T22:03:35Z",
+  "updated": "2026-11-07T10:16:33Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -135,8 +135,8 @@
         "style",
         "default"
       ],
-      "file:size": 5495,
-      "file:checksum": "12205863d1710780f3ee0c511b33cdab8175d73c9e18f52d97d8d3c2f1b9c3af58ce"
+      "file:size": 5230,
+      "file:checksum": "1220ca9340c325a2e49b012de9c996174c002d769900b38dda5075ff3c0b2e7ffe63"
     },
     "style-glaciers": {
       "href": "./styles/glaciers.json",
@@ -146,8 +146,8 @@
       "roles": [
         "style"
       ],
-      "file:size": 5071,
-      "file:checksum": "12201dd1ea947bf07d5eef7030fca682628acab1196068df338f2d63fff0e160f227"
+      "file:size": 4806,
+      "file:checksum": "1220dd396fe6186387793f97a814aa074afc9542e0105a3b2e235e01a67f2ffaa4f7"
     },
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
@@ -156,8 +156,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1156718049,
-      "file:checksum": "122048ca02f6689d7153e5be1ba16756edfd1a21f6d7efa2fb342a36bc61192b82fd"
+      "file:size": 1144451361,
+      "file:checksum": "1220dfd0e2f84d6ff04459deb97ecb24be3e1ec77ded6d5ca6d52419140943945854"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -246,8 +246,8 @@
       "pmtiles:layers": [
         "intersects"
       ],
-      "file:size": 1156718049,
-      "file:checksum": "122048ca02f6689d7153e5be1ba16756edfd1a21f6d7efa2fb342a36bc61192b82fd"
+      "file:size": 1144451361,
+      "file:checksum": "1220dfd0e2f84d6ff04459deb97ecb24be3e1ec77ded6d5ca6d52419140943945854"
     }
   ]
 }
