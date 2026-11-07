@@ -509,7 +509,7 @@ as a square at z7–8. Large glaciers then appeared all at once at z7.
 
 ### Result (measured 2026-11-07)
 
-`tiles --version 7.0` takes 15 min 50 s and peaks at 7.3 GB of memory. The
+`tiles --version 7.0` takes 16 min 3 s and peaks at 7.4 GB of memory. The
 per-zoom overview inputs and the label lines take most of the time. The
 archive is 1,144.5 MB with every layer.
 
@@ -524,8 +524,8 @@ The largest tiles cover High Mountain Asia.
 
 | z | Tiles | MB addressed | p50 bytes | Max bytes |
 | ---: | ---: | ---: | ---: | ---: |
-| 0 | 1 | 0.2 | 189,577 | 189,577 |
-| 1 | 4 | 0.4 | 50,817 | 234,667 |
+| 0 | 1 | 0.2 | 189,579 | 189,579 |
+| 1 | 4 | 0.4 | 50,818 | 234,667 |
 | 2 | 16 | 1.1 | 33,147 | 380,530 |
 | 3 | 64 | 2.5 | 5,748 | 337,649 |
 | 4 | 225 | 4.9 | 1,280 | 419,359 |
@@ -547,10 +547,10 @@ Label lines, by `label_zoom`:
 
 | z | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| lines | 118 | 371 | 823 | 1,514 | 2,636 | 4,178 | 5,791 | 7,438 |
+| lines | 118 | 371 | 822 | 1,509 | 2,632 | 4,177 | 5,791 | 7,438 |
 
 7,438 glaciers have a line at some zoom. Each line lies whole in each tile
-it touches, so it is in 28 to 47 tiles on average, 513,836 copies in all. A
+it touches, so it is in 28 to 47 tiles on average, 513,744 copies in all. A
 point is in 1.2 tiles on average, 23,644 copies in all. When the points
 shared the lines' layer and its buffer, they had 356,121 copies, and the
 archive was 12.3 MB larger.
@@ -560,7 +560,7 @@ checks that the tile at the center of each line contains the whole line, and
 that each name is placed once. The placement uses the port of MapLibre's rule
 that the fit uses, with MapLibre's own 45° limit. So the script checks what
 the tiler did to the lines: clipping, rounding to the tile grid, the buffer
-and the overzoom. It does not check the port or the glyph widths. All 22,869
+and the overzoom. It does not check the port or the glyph widths. All 22,858
 lines pass. The check takes about a minute on 15 cores.
 
 `label_minzoom` falls by one zoom for every factor of 4 in area, because
