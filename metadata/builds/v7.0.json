@@ -405,6 +405,10 @@
       "file:checksum": "12203caa2e1b01628b7272d2e9a845a02a2996be31d71251c2e952ad3271647799ac",
       "size": 214686136
     },
+    "glaciers/rgi7.0-glacier-names.parquet": {
+      "file:checksum": "1220d6730b0f85db3dfe1c367d66a4d9312af4ce44a002aebda8292310c2acaa2bbb",
+      "size": 197967
+    },
     "glaciers/rgi7.0-glaciers.parquet": {
       "file:checksum": "1220b715c77f8b7d75c1fafb5a033ebe4ea66c49ed071f766cc81c7d9308d0643055",
       "size": 261370052
@@ -480,6 +484,35 @@
     ]
   },
   "mirror_revision": "7.0-r1",
+  "names": {
+    "collection": "glaciers",
+    "columns": [
+      {
+        "name": "rgi_id",
+        "type": "string"
+      },
+      {
+        "name": "display_name",
+        "type": "string"
+      },
+      {
+        "name": "glac_name",
+        "type": "string"
+      },
+      {
+        "name": "o1region",
+        "type": "string"
+      },
+      {
+        "name": "o2region",
+        "type": "string"
+      }
+    ],
+    "href": "rgi7.0-glacier-names.parquet",
+    "row_count": 274531,
+    "row_group_size": 150000,
+    "row_groups": 2
+  },
   "sources": {
     "C": {
       "filename": "RGI2000-v7.0-C-global.zip",
@@ -506,6 +539,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-11-07T14:33:11Z",
+  "updated": "2026-11-07T16:21:26Z",
   "version": "7.0"
 }

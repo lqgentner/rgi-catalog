@@ -27,6 +27,17 @@ the upstream columns. Coded columns carry their meanings in
 `classification:classes`. Their descriptions leave out RGI's pointer to the
 user guide.
 
+## The names table
+
+`https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glacier-names.parquet`:
+274,531 rows, 0.2 MB, plain Parquet without geometry. It has
+these columns of the GeoParquet file:
+`rgi_id`, `display_name`, `glac_name`, `o1region`, `o2region`.
+The rows are in the same order, so row `i` of one file is row `i` of the
+other. The column descriptions are in `assets.names["table:columns"]` of
+`collection.json`. Read the names table to find a glacier by name or ID, and
+the GeoParquet file for its other columns.
+
 ## Recipes
 
 Each recipe runs as written in DuckDB. Load the extensions once:
@@ -36,8 +47,17 @@ INSTALL httpfs; LOAD httpfs; INSTALL spatial; LOAD spatial;
 SELECT 1;
 ```
 
-Find a glacier by name. `display_name` is cleaned for labels, `glac_name` is
-RGI's value:
+Find a glacier by name in the names table. `display_name` is cleaned for
+labels, `glac_name` is RGI's value:
+
+```sql
+SELECT rgi_id, glac_name, display_name, o2region
+FROM 'https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glacier-names.parquet'
+WHERE display_name ILIKE '%aletsch%'
+ORDER BY rgi_id;
+```
+
+Find a glacier by name with its area, in the GeoParquet file:
 
 ```sql
 SELECT rgi_id, glac_name, display_name, o1region, area_km2

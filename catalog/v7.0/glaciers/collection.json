@@ -26,7 +26,7 @@
     "hypsometry"
   ],
   "version": "7.0-r1",
-  "updated": "2026-11-07T14:33:11Z",
+  "updated": "2026-11-07T16:21:26Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -524,6 +524,51 @@
           "name": "bbox",
           "type": "struct<xmin: double, ymin: double, xmax: double, ymax: double>",
           "description": "The bounding box of the geometry (xmin, ymin, xmax, ymax), the GeoParquet covering column. Readers use it to skip row groups in a spatial filter."
+        }
+      ]
+    },
+    "names": {
+      "href": "./rgi7.0-glacier-names.parquet",
+      "type": "application/vnd.apache.parquet",
+      "title": "Glacier names and IDs, Parquet",
+      "description": "The IDs, names and region codes of the GeoParquet file, without the outlines. The rows are in the order of the GeoParquet file.",
+      "roles": [
+        "data"
+      ],
+      "file:size": 197967,
+      "file:checksum": "1220d6730b0f85db3dfe1c367d66a4d9312af4ce44a002aebda8292310c2acaa2bbb",
+      "alternate": {
+        "s3": {
+          "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glacier-names.parquet",
+          "title": "Anonymous S3 access"
+        }
+      },
+      "table:row_count": 274531,
+      "table:columns": [
+        {
+          "name": "rgi_id",
+          "type": "string",
+          "description": "Unique identifier assigned to a glacier outline."
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "description": "The glacier name for map labels, cleaned from glac_name. Null when glac_name contains no usable name. The rules are in docs/PROVENANCE.md."
+        },
+        {
+          "name": "glac_name",
+          "type": "string",
+          "description": "Glacier name (when available)."
+        },
+        {
+          "name": "o1region",
+          "type": "string",
+          "description": "Code of the first-order region to which the glacier belongs."
+        },
+        {
+          "name": "o2region",
+          "type": "string",
+          "description": "Code of the second-order region to which the glacier belongs."
         }
       ]
     },
