@@ -4,7 +4,7 @@
   "metadata": {
     "description": "First-order and second-order glacier regions, with their names."
   },
-  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   "sources": {
     "data": {
       "type": "vector",
@@ -114,7 +114,7 @@
           ]
         ],
         "text-font": [
-          "Open Sans Bold"
+          "Noto Sans Bold"
         ],
         "text-size": 12,
         "text-transform": "uppercase",
@@ -155,7 +155,7 @@
           ]
         ],
         "text-font": [
-          "Open Sans Regular"
+          "Noto Sans Regular"
         ],
         "text-size": 11,
         "text-transform": "none",

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,7 +16,7 @@ import pytest
 import shapely
 from shapely.geometry import MultiPolygon, Polygon
 
-from rgi_catalog import assemble, styles, tiles
+from rgi_catalog import assemble, glyphs, styles, tiles
 from rgi_catalog.geoparquet import write_geoparquet
 from rgi_catalog.tiles import (
     LayerSpec,
@@ -95,9 +96,48 @@ def glaciers_parquet(tmp_path_factory: pytest.TempPathFactory) -> Path:
     return out
 
 
+# (rgi_g_id, is_main, line). Big Glacier has two main lines and the longer
+# one carries its name. The line of Hintereisferner is too short for its name
+# at any zoom.
+LABEL_CENTERLINES = [
+    (BIG, True, [(-147.4, 61.0), (-146.6, 61.0)]),
+    (BIG, True, [(-147.1, 61.1), (-146.9, 61.1)]),
+    (BIG, False, [(-147.4, 61.2), (-146.4, 61.2)]),
+    ("RGI2000-v7.0-G-11-00001", True, [(10.753, 46.805), (10.757, 46.805)]),
+]
+
+
 @pytest.fixture(scope="module")
-def labels_parquet(glaciers_parquet: Path) -> Path:
-    return write_labels(glaciers_parquet, glaciers_parquet.parent / "glacier-labels.parquet")
+def label_centerlines_parquet(glaciers_parquet: Path) -> Path:
+    out = glaciers_parquet.parent / "centerlines.parquet"
+    gpd.GeoDataFrame(
+        {
+            "rgi_g_id": [c[0] for c in LABEL_CENTERLINES],
+            "is_main": [c[1] for c in LABEL_CENTERLINES],
+        },
+        geometry=[shapely.LineString(c[2]) for c in LABEL_CENTERLINES],
+        crs="EPSG:4326",
+    ).to_parquet(out, index=False)
+    return out
+
+
+@pytest.fixture(scope="module")
+def labels_parquet(glaciers_parquet: Path, label_centerlines_parquet: Path) -> Path:
+    return write_labels(
+        glaciers_parquet,
+        label_centerlines_parquet,
+        glaciers_parquet.parent / "glacier-labels.parquet",
+    )
+
+
+@pytest.fixture(scope="module")
+def label_bands(labels_parquet: Path) -> dict[int, Path]:
+    return tiles.write_label_bands(labels_parquet, labels_parquet.parent / "glacier-labels")
+
+
+@pytest.fixture(scope="module")
+def label_points(labels_parquet: Path) -> Path:
+    return tiles.write_label_points(labels_parquet, labels_parquet.parent / "label-points.parquet")
 
 
 @pytest.fixture(scope="module")
@@ -107,9 +147,14 @@ def overview(glaciers_parquet: Path) -> dict[int, Path]:
 
 
 @pytest.fixture(scope="module")
-def archive(glaciers_parquet: Path, labels_parquet: Path, overview: dict[int, Path]) -> Path:
+def archive(
+    glaciers_parquet: Path,
+    label_bands: dict[int, Path],
+    label_points: Path,
+    overview: dict[int, Path],
+) -> Path:
     return build_archive(
-        glacier_layers(glaciers_parquet, labels_parquet, overview),
+        glacier_layers(glaciers_parquet, label_bands, label_points, overview),
         glaciers_parquet.parent / "rgi7.0.pmtiles",
         name=tiles.ARCHIVE_NAME,
         attribution=tiles.ARCHIVE_ATTRIBUTION,
@@ -128,6 +173,7 @@ def test_label_minzoom_monotonic() -> None:
 
 def test_write_labels_skips_unnamed_and_uses_rgi_point(labels_parquet: Path) -> None:
     labels = gpd.read_parquet(labels_parquet)
+    labels = labels.loc[labels.geom_type == "Point"]
     named = [g for g in GLACIERS if g[4] is not None]
     assert sorted(labels["rgi_id"]) == sorted(g[0] for g in named)
     assert list(labels.columns) == [
@@ -135,6 +181,8 @@ def test_write_labels_skips_unnamed_and_uses_rgi_point(labels_parquet: Path) -> 
         "display_name",
         "area_km2",
         "label_minzoom",
+        "line_zoom",
+        "label_zoom",
         "geometry",
     ]
     for rgi_id, lon, lat, area, name in named:
@@ -143,6 +191,85 @@ def test_write_labels_skips_unnamed_and_uses_rgi_point(labels_parquet: Path) -> 
         assert row["geometry"].y == lat
         assert row["display_name"] == name
         assert row["label_minzoom"] == label_minzoom(area)
+        assert pd.isna(row["label_zoom"])
+
+
+def test_write_labels_adds_line_per_zoom_along_longest_main_centerline(
+    labels_parquet: Path,
+) -> None:
+    labels = gpd.read_parquet(labels_parquet)
+    lines = labels.loc[labels.geom_type == "LineString"]
+    assert set(lines["rgi_id"]) == {BIG}
+    point = labels.loc[(labels["rgi_id"] == BIG) & (labels.geom_type == "Point")].iloc[0]
+    assert point["line_zoom"] >= point["label_minzoom"]
+    assert list(lines["label_zoom"]) == list(range(point["line_zoom"], tiles.LABEL_MAXZOOM + 1))
+    assert (lines["label_minzoom"] == lines["label_zoom"]).all()
+    assert (lines["line_zoom"] == point["line_zoom"]).all()
+    assert (lines["display_name"] == point["display_name"]).all()
+    line = lines.iloc[0]
+    # The longer main line, not the shorter one at 61.1. At its line_zoom the
+    # line is shorter than a stretch, so the label line is all of it.
+    assert line["geometry"].bounds[1] == pytest.approx(61.0, abs=0.001)
+    assert line["geometry"].centroid.x == pytest.approx(-147.0, abs=0.01)
+    # The line runs east to its terminus. At each later zoom the name sits
+    # further down the line.
+    middles = [g.interpolate(0.5, normalized=True).x for g in lines["geometry"]]
+    assert middles == sorted(middles)
+    assert middles[-1] > middles[0]
+    short = labels.loc[labels["rgi_id"] == "RGI2000-v7.0-G-11-00001"]
+    assert list(short.geom_type) == ["Point"]
+    assert pd.isna(short["line_zoom"].iloc[0])
+
+
+def test_center_label_fits_refuses_sharp_corner() -> None:
+    straight = np.array([[0.0, 0.0], [200.0, 0.0]])
+    corner = np.array([[0.0, 0.0], [100.0, 0.0], [100.0, 100.0]])
+    arc = np.array([[100 * np.cos(t), 100 * np.sin(t)] for t in np.linspace(0, 1, 50)])
+    assert tiles.center_label_fits(straight, 100)
+    assert not tiles.center_label_fits(corner, 100)
+    assert tiles.center_label_fits(arc, 80)
+    assert not tiles.center_label_fits(straight, 300)
+
+
+def test_center_label_fits_sums_corners_in_window() -> None:
+    # Three corners of 20° within 6 px turn 60° in one window of 7.2 px.
+    # Spread 10 px apart, each window holds one corner.
+    def zigzag(step: float) -> np.ndarray:
+        heading = np.radians([0, 20, 40, 60, 60])
+        lengths = [100, step, step, step, 100]
+        moves = np.column_stack([np.cos(heading), np.sin(heading)]) * np.array(lengths)[:, None]
+        return np.vstack([[0, 0], np.cumsum(moves, axis=0)])
+
+    assert not tiles.center_label_fits(zigzag(3.0), 100)
+    assert tiles.center_label_fits(zigzag(10.0), 100)
+
+
+def test_label_width_px_shapes_like_maplibre() -> None:
+    advances = glyphs.load_advances()
+    scale = tiles.LABEL_TEXT_SIZE / glyphs.GLYPH_PX
+    spacing = tiles.LABEL_LETTER_SPACING * tiles.LABEL_TEXT_SIZE
+    expected = (advances[ord("A")] + advances[ord("b")]) * scale + spacing
+    assert tiles.label_width_px("Ab") == pytest.approx(expected)
+    assert tiles.label_width_px("") == 0
+
+
+def test_tile_grid_rounds_to_eighth_pixel_and_drops_repeats() -> None:
+    line = np.array([[0.01, 0.0], [0.02, 0.0], [10.06, 5.0]])
+    assert tiles.tile_grid(line, tiles.MAXZOOM).tolist() == [[0.0, 0.0], [10.0, 5.0]]
+    # Two zooms past MAXZOOM the line is in a MAXZOOM tile, on a 1/2 pixel grid.
+    line = np.array([[0.2, 0.0], [10.3, 5.2]])
+    zoom = tiles.MAXZOOM + 2
+    assert tiles.tile_grid(line, zoom).tolist() == [[0.0, 0.0], [10.5, 5.0]]
+
+
+def test_smooth_line_keeps_ends_and_rounds_corners() -> None:
+    # A corner of 45° turns too far for a label, and the smoothing spreads it.
+    corner = np.array([[0.0, 0.0], [100.0, 0.0], [170.7, 70.7]])
+    smoothed = tiles.smooth_line(corner, tiles.LABEL_SMOOTH_PX)
+    assert smoothed[0] == pytest.approx([0, 0], abs=1e-6)
+    assert smoothed[-1] == pytest.approx(corner[-1], abs=1e-6)
+    assert not tiles.center_label_fits(corner, 100)
+    assert tiles.center_label_fits(smoothed, 100)
 
 
 def test_tile_properties_leaves_out_list_columns(glaciers_parquet: Path) -> None:
@@ -162,7 +289,10 @@ def test_build_archive_contains_layers(archive: Path) -> None:
         reader = Reader(MmapSource(f))
         header = reader.header()
         meta = reader.metadata()
-    assert {layer["id"] for layer in meta["vector_layers"]} == {"glaciers", "glacier-labels"}
+    layers = {layer["id"]: layer for layer in meta["vector_layers"]}
+    assert set(layers) == {"glaciers", "glacier-labels", "glacier-label-points"}
+    assert "label_minzoom" not in layers["glacier-labels"]["fields"]
+    assert "label_zoom" not in layers["glacier-label-points"]["fields"]
     assert meta["name"] == tiles.ARCHIVE_NAME
     assert meta["attribution"] == tiles.ARCHIVE_ATTRIBUTION
     assert meta["description"] == "Test archive."
@@ -178,8 +308,8 @@ def test_build_archive_contains_layers(archive: Path) -> None:
     assert "bbox" not in glacier_fields
 
 
-def test_build_archive_label_entry_zoom(archive: Path, tmp_path: Path) -> None:
-    decoded = decode(archive, tmp_path / "labels.parquet", layer="glacier-labels")
+def test_build_archive_label_points_enter_at_their_zoom(archive: Path, tmp_path: Path) -> None:
+    decoded = decode(archive, tmp_path / "labels.parquet", layer="glacier-label-points")
     rows = pq.read_table(decoded, columns=["rgi_id", "zoom"]).to_pandas()
     zooms = {k: sorted(set(v)) for k, v in rows.groupby("rgi_id")["zoom"]}
     for rgi_id, _, _, area, name in GLACIERS:
@@ -187,6 +317,49 @@ def test_build_archive_label_entry_zoom(archive: Path, tmp_path: Path) -> None:
             assert rgi_id not in zooms
             continue
         assert zooms[rgi_id] == list(range(label_minzoom(area), tiles.MAXZOOM + 1))
+
+
+def test_build_archive_label_line_only_at_its_zoom(
+    archive: Path, labels_parquet: Path, tmp_path: Path
+) -> None:
+    lines = gpd.read_parquet(decode(archive, tmp_path / "l.parquet", layer="glacier-labels"))
+    assert lines.geom_type.isin(["LineString", "MultiLineString"]).all()
+    source = gpd.read_parquet(labels_parquet)
+    line_zoom = int(source.loc[source.geom_type == "LineString", "line_zoom"].iloc[0])
+    assert set(lines["rgi_id"]) == {BIG}
+    assert sorted(set(lines["zoom"])) == list(range(line_zoom, tiles.MAXZOOM + 1))
+    past = lines["zoom"] == tiles.MAXZOOM
+    assert (lines.loc[~past, "label_zoom"] == lines.loc[~past, "zoom"]).all()
+    # The MAXZOOM tiles also hold the lines of the zooms past it.
+    assert sorted(set(lines.loc[past, "label_zoom"])) == list(
+        range(tiles.MAXZOOM, tiles.LABEL_MAXZOOM + 1)
+    )
+
+
+def test_write_label_bands_holds_own_lines(
+    labels_parquet: Path, label_bands: dict[int, Path]
+) -> None:
+    labels = gpd.read_parquet(labels_parquet)
+    line_zoom = int(labels["label_zoom"].min())
+    # A zoom without a line has no band.
+    assert sorted(label_bands) == list(range(line_zoom, tiles.MAXZOOM + 1))
+    for zoom, path in label_bands.items():
+        band = gpd.read_parquet(path)
+        assert (band.geom_type == "LineString").all()
+        assert "label_minzoom" not in band.columns
+        own = labels["label_zoom"] == zoom
+        if zoom == tiles.MAXZOOM:
+            own = labels["label_zoom"] >= zoom
+        assert set(band["label_zoom"]) == set(labels.loc[own, "label_zoom"])
+        assert len(band) == own.sum()
+
+
+def test_write_label_points_holds_every_point(labels_parquet: Path, label_points: Path) -> None:
+    labels = gpd.read_parquet(labels_parquet)
+    points = gpd.read_parquet(label_points)
+    assert (points.geom_type == "Point").all()
+    assert sorted(points["rgi_id"]) == sorted(labels.loc[labels["label_zoom"].isna(), "rgi_id"])
+    assert "label_zoom" not in points.columns
 
 
 def test_build_archive_glaciers_complete_from_complete_zoom(
@@ -299,12 +472,15 @@ def test_build_archive_accepts_entry_zoom_band(labels_parquet: Path, tmp_path: P
     # Labels enter at their own zoom. A complete band is checked against the
     # labels that have entered, not against every label.
     entry = ",".join(f"{z}={z}" for z in range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1))
+    labels = gpd.read_parquet(labels_parquet)
+    points = tmp_path / "points.parquet"
+    labels.loc[labels["label_zoom"].isna()].to_parquet(points, index=False)
     layer = LayerSpec(
         name="glacier-labels",
-        source=labels_parquet,
+        source=points,
         minzoom=tiles.LABEL_MINZOOM,
         maxzoom=tiles.MAXZOOM,
-        extra_args=("--entry-zoom", f"label_minzoom:{entry}", "--no-density-drop"),
+        extra_args=("--entry-zoom", f"label_minzoom:{entry}", *tiles.LINE_COMPLETE),
         complete=True,
         entry_zoom_column="label_minzoom",
     )
@@ -467,7 +643,8 @@ def test_build_archive_early_centerlines_enter_at_their_zoom(
     early = tiles.write_early_lines(centerlines_parquet, tmp_path / "e.parquet")
     layers = tiles.version_layers(
         dict.fromkeys(tiles.ARCHIVE_PRODUCTS, centerlines_parquet),
-        tmp_path / "labels.parquet",
+        {tiles.MAXZOOM: tmp_path / "labels.parquet"},
+        tmp_path / "lp.parquet",
         tmp_path / "rl.parquet",
         tmp_path / "rb.parquet",
         {"centerlines": early, "intersects": early},
@@ -556,7 +733,11 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
     }
     layers = tiles.version_layers(
         paths,
-        tmp_path / "labels.parquet",
+        {
+            z: tmp_path / f"labels-{z}.parquet"
+            for z in range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1)
+        },
+        tmp_path / "lp.parquet",
         tmp_path / "rl.parquet",
         tmp_path / "rb.parquet",
         early,
@@ -569,6 +750,7 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         "complexes",
         "glaciers",
         "glacier-labels",
+        "glacier-label-points",
         "centerlines",
         "intersects",
     }
@@ -582,7 +764,12 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         ("centerlines", tiles.INTERSECTS_MINZOOM, tiles.INTERSECTS_MINZOOM),
         ("centerlines", tiles.INTERSECTS_MINZOOM + 1, tiles.MAXZOOM),
         ("intersects", tiles.INTERSECTS_MINZOOM, tiles.MAXZOOM),
+        *(("glacier-labels", z, z) for z in range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1)),
+        ("glacier-label-points", tiles.LABEL_MINZOOM, tiles.MAXZOOM),
     }
+    # Only the label lines need a buffer of a whole tile.
+    points = next(layer for layer in layers if layer.name == "glacier-label-points")
+    assert "--tile-buffer" not in points.extra_args
     # The early lines enter at their own zoom, and the main centerlines and
     # the long lines fill z8. From z9 every line is in the archive.
     bands = {
@@ -625,3 +812,62 @@ def test_overview_columns_cover_the_styles() -> None:
     themed = {theme.column for theme in styles.THEMES.values()}
     assert themed | {"rgi_id", "display_name", "area_km2"} <= set(tiles.GLACIER_OVERVIEW_COLUMNS)
     assert set(tiles.COMPLEX_OVERVIEW_COLUMNS) == {"rgi_id", "area_km2"}
+
+
+def test_stretch_starts_slide_up_from_terminus_margin() -> None:
+    # The name ends a tenth of the line before the terminus. The slide
+    # goes up to the head and passes the middle.
+    line_px, label_px, keep_px = 1000.0, 92.0, 160.0
+    starts = tiles.stretch_starts(line_px, label_px, keep_px)
+    label_end = starts[0] + (keep_px + label_px) / 2
+    assert label_end == pytest.approx(line_px * (1 - tiles.LABEL_TONGUE_MARGIN))
+    assert np.all(np.diff(starts) < 0)
+    assert np.all(-np.diff(starts) <= tiles.LABEL_SLIDE_PX)
+    assert (line_px - keep_px) / 2 in starts
+    assert starts[-1] == 0
+    # A name that only fits at the middle keeps the middle.
+    assert tiles.stretch_starts(200.0, 150.0, 200.0).tolist() == [0.0]
+
+
+def _metres(outline: shapely.Geometry, zoom: int) -> shapely.Geometry:
+    return shapely.transform(outline, lambda xy: xy * tiles.pixel_m(zoom))
+
+
+def test_label_line_sits_near_terminus_before_a_bend() -> None:
+    zoom = tiles.MAXZOOM
+    px_m = tiles.pixel_m(zoom)
+    label_px = tiles.label_width_px("Big Glacier")
+    needed_px = label_px + 2 * tiles.LABEL_PAD_PX
+    # The line runs from the head at x = 0 to the terminus at x = 1000.
+    straight = np.array([[0.0, 0.0], [1000.0, 0.0]])
+    wide = shapely.box(-100.0, -500.0, 1100.0, 500.0)
+    placed = tiles.label_window(straight * px_m, "Big Glacier", zoom, _metres(wide, zoom))
+    assert placed is not None
+    center = shapely.LineString(placed / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
+    margin = 1000 * tiles.LABEL_TONGUE_MARGIN
+    assert center.x + label_px / 2 == pytest.approx(1000 - margin, abs=0.5)
+    # A sharp bend near the terminus pushes the name up the line, past the bend.
+    bent = np.array([[0.0, 0.0], [600.0, 0.0], [600.0, -60.0]])
+    placed = tiles.label_window(bent * px_m, "Big Glacier", zoom, _metres(wide, zoom))
+    assert placed is not None
+    center = shapely.LineString(placed / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
+    assert 600 - needed_px / 2 - 4 * tiles.LABEL_SMOOTH_PX < center.x < 600 - needed_px / 2
+
+
+def test_label_line_keeps_clear_of_a_narrow_tongue() -> None:
+    zoom = tiles.MAXZOOM
+    px_m = tiles.pixel_m(zoom)
+    label_px = tiles.label_width_px("Big Glacier")
+    line = np.array([[0.0, 0.0], [1000.0, 0.0]])
+    # The glacier is 100 px wide up to x = 600 and 16 px wide below it.
+    half = 8.0
+    tongue = shapely.box(0.0, -50.0, 600.0, 50.0) | shapely.box(600.0, -half, 1000.0, half)
+    placed = tiles.label_window(line * px_m, "Big Glacier", zoom, _metres(tongue, zoom))
+    assert placed is not None
+    center = shapely.LineString(placed / px_m).interpolate(0.5, normalized=True)
+    # The text ends where it keeps LABEL_CLEARANCE_PX to the corner at (600, 8).
+    limit = 600 - math.sqrt(tiles.LABEL_CLEARANCE_PX**2 - half**2)
+    assert limit - tiles.LABEL_SLIDE_PX - 0.5 <= center.x + label_px / 2 <= limit + 0.5
+    # A glacier narrower than the text everywhere gets no line.
+    strip = shapely.box(-100.0, -half, 1100.0, half)
+    assert tiles.label_window(line * px_m, "Big Glacier", zoom, _metres(strip, zoom)) is None

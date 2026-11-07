@@ -164,3 +164,6 @@ typecheck = "pyrefly check"
 # hrefs here as in CI. The preview tree checks them with the data present.
 gates = { cmd = "python tests/run_all.py", env = { CI_LIGHT = "1" } }
 check = { depends-on = ["lint", "typecheck", "test", "gates"] }
+# The "prose / vale" CI job on committed files. Pass a base ref to compare
+# with another branch than origin/main.
+prose = "bash scripts/prose_check.sh"

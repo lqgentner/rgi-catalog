@@ -5,14 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from rgi_catalog import glyphs
+from rgi_catalog.tiles import LABEL_MAXZOOM
+
 # The archive lives in the version directory. Styles live in each
 # collection's styles/ directory.
 SOURCE_ID = "data"
-# The glyphs of the browser's default basemaps (CARTO), which cover Latin,
-# Cyrillic and Greek.
-GLYPHS = "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf"
-LABEL_FONT = ["Open Sans Italic"]
-REGION_FONTS = {1: ["Open Sans Bold"], 2: ["Open Sans Regular"]}
+# OpenFreeMap's glyphs. The label lines in the archive are fitted to the
+# glyph advances of LABEL_FONT from the same server.
+GLYPHS = glyphs.GLYPHS
+LABEL_FONT = [glyphs.FONT]
+REGION_FONTS = {1: ["Noto Sans Bold"], 2: ["Noto Sans Regular"]}
 
 # One colour per product, the same in every style. Each clears 3:1 against a
 # light grey basemap, and the four stay apart for colour-blind readers.
@@ -33,6 +36,20 @@ OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
 # Below z10 the archive holds a glacier too small to draw as a point. A
 # glacier at the antimeridian is a MultiPoint where the tile buffer wraps.
 POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
+# The archive has a label line per glacier and zoom, with its zoom in
+# label_zoom. Past MAXZOOM the tiles of MAXZOOM are overzoomed. A line shows
+# from its zoom up to the next zoom, and the line of LABEL_MAXZOOM shows at
+# every zoom past it. A renderer that evaluates the filter at a fractional
+# zoom then also matches one line per glacier.
+LABEL_LINES = [
+    "all",
+    [">=", ["zoom"], ["get", "label_zoom"]],
+    [
+        "any",
+        ["<", ["zoom"], ["+", ["get", "label_zoom"], 1]],
+        [">=", ["get", "label_zoom"], LABEL_MAXZOOM],
+    ],
+]
 DOT_RADIUS = ["interpolate", ["linear"], ["zoom"], 0, 1.5, 6, 2.5]
 
 
@@ -98,17 +115,21 @@ def _region_labels(level: int, minzoom: int, maxzoom: int, size: int) -> dict[st
 LABELS: dict[str, Any] = {
     "id": "glacier-labels",
     "type": "symbol",
+    # A name follows the label line of its glacier at the zoom.
+    "filter": LABEL_LINES,
     "layout": {
         "text-field": ["get", "display_name"],
         "text-font": LABEL_FONT,
-        "text-size": 12,
+        "text-size": glyphs.LABEL_TEXT_SIZE,
+        "text-letter-spacing": glyphs.LABEL_LETTER_SPACING,
+        "symbol-placement": "line-center",
         # Larger glaciers win label collisions.
         "symbol-sort-key": ["-", ["get", "area_km2"]],
     },
     "paint": {
         "text-color": LABEL_COLOR,
         "text-halo-color": "#ffffff",
-        "text-halo-width": 1.2,
+        "text-halo-width": glyphs.LABEL_HALO_WIDTH,
     },
 }
 

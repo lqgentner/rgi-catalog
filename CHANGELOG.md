@@ -6,6 +6,26 @@ the same name.
 
 ## Unreleased
 
+The default styles write each glacier name along a curved line near the
+glacier's terminus. Before, a name was a straight label at RGI's point of
+the glacier.
+
+- The `tiles` step fits one label line per glacier and zoom, from z7 to z14.
+  7,444 of the 9,457 named glaciers have a label line at one or more zooms.
+- The text keeps 9.6 px to the glacier's outline on both sides of the line.
+  On a narrow tongue the name moves up the glacier.
+- The `glacier-labels` layer holds the label lines. The z12 tiles also hold
+  the lines of z13 and z14, which MapLibre shows by overzoom.
+- The new `glacier-label-points` layer holds RGI's point of each named
+  glacier. No default style draws it.
+- A style shows each label line from its `label_zoom` up to the next zoom. The
+  filter also matches one line per glacier in a renderer that uses a
+  fractional zoom, such as OpenLayers.
+- The 2,013 named glaciers without a label line have no name in the styles.
+
+The PMTiles archive is 1,144.5 MB. `docs/DESIGN.md` gives the method and the
+measurements.
+
 ## 7.0-r1 (2026-11-03)
 
 The first publication of the mirror, at <https://source.coop/lqgentner/rgi>.

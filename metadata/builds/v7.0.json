@@ -8,6 +8,7 @@
       "complexes",
       "glaciers",
       "glacier-labels",
+      "glacier-label-points",
       "centerlines",
       "intersects"
     ],
@@ -417,8 +418,8 @@
       "size": 955336
     },
     "rgi7.0.pmtiles": {
-      "file:checksum": "1220f0beab50a1a5f3a8b7c901046f11233f30a869d91400e9e6d98411fe208067e9",
-      "size": 1098840073
+      "file:checksum": "1220dfd0e2f84d6ff04459deb97ecb24be3e1ec77ded6d5ca6d52419140943945854",
+      "size": 1144451361
     }
   },
   "fixes": {
@@ -505,6 +506,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-11-02T10:49:31Z",
+  "updated": "2026-11-07T10:16:33Z",
   "version": "7.0"
 }

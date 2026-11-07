@@ -3,7 +3,7 @@
 [Portolan/STAC browser](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json) · [RGI 7.0 user guide](https://rgidata.org/user_guide/) · [Code on GitHub](https://github.com/lqgentner/rgi-catalog) · [Data on Source Cooperative](https://source.coop/lqgentner/rgi)
 
 RGI 7.0, released in 2023. It holds 274,531 glacier outlines with their attributes. This is mirror revision
-`7.0-r1`, built 2026-11-02.
+`7.0-r1`, built 2026-11-07.
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
@@ -41,7 +41,7 @@ every changed row and the rules of `display_name`.
 | [centerlines](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/centerlines/collection.json) | 367,724 | 210.3 MB | [README](centerlines/README.md) · [Agents guide](centerlines/AGENTS.md) |
 | [regions](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/regions/collection.json) | 110 | 1.0 MB | [README](regions/README.md) · [Agents guide](regions/AGENTS.md) |
 
-The web map archive `rgi7.0.pmtiles` (1098.8 MB) holds the layers `regions`, `region-boundaries`, `region-labels`, `complexes`, `glaciers`, `glacier-labels`, `centerlines`, `intersects`, z0 to z12.
+The web map archive `rgi7.0.pmtiles` (1144.5 MB) holds the layers `regions`, `region-boundaries`, `region-labels`, `complexes`, `glaciers`, `glacier-labels`, `glacier-label-points`, `centerlines`, `intersects`, z0 to z12.
 
 ## License and citation
 

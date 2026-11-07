@@ -55,6 +55,7 @@ Every command runs inside the pixi environment.
 ```bash
 pixi install                                         # create the environment
 pixi run check                                       # lint, typecheck, unit tests, catalog gates
+pixi run prose                                       # the Vale prose check of CI, on committed files
 pixi run python -m rgi_catalog download --version 7.0
 pixi run python -m rgi_catalog convert --version 7.0
 pixi run python -m rgi_catalog tiles --version 7.0
@@ -62,6 +63,17 @@ pixi run python -m rgi_catalog render --version 7.0
 pixi run python -m rgi_catalog columns --version 7.0 # column text that differs from RGI's
 pixi run python -m rgi_catalog preview --version 7.0
 ```
+
+### Before a pull request
+
+Run `pixi run check` and `pixi run prose` before you open or update a pull
+request. Both must pass.
+
+`pixi run prose` runs the "prose / vale" job of CI on this machine. Vale
+checks the Markdown files against the org rules in portolan-sdi/portolan-ops.
+The job fails when the branch adds a Vale error that `origin/main` does not
+have. The check reads committed files only, so commit the change first. To
+compare with another base branch, run `pixi run prose <base>`.
 
 ### The render rule
 

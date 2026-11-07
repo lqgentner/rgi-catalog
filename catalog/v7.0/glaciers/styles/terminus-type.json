@@ -4,7 +4,7 @@
   "metadata": {
     "description": "Glaciers by terminus type (term_type). RGI 7.0 assigns only the marine-terminating class."
   },
-  "glyphs": "https://tiles.basemaps.cartocdn.com/fonts/{fontstack}/{range}.pbf",
+  "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   "sources": {
     "data": {
       "type": "vector",
@@ -212,7 +212,7 @@
           ]
         ],
         "text-font": [
-          "Open Sans Bold"
+          "Noto Sans Bold"
         ],
         "text-size": 12,
         "text-transform": "uppercase",
@@ -253,7 +253,7 @@
           ]
         ],
         "text-font": [
-          "Open Sans Regular"
+          "Noto Sans Regular"
         ],
         "text-size": 11,
         "text-transform": "none",
@@ -269,15 +269,55 @@
     {
       "id": "glacier-labels",
       "type": "symbol",
+      "filter": [
+        "all",
+        [
+          ">=",
+          [
+            "zoom"
+          ],
+          [
+            "get",
+            "label_zoom"
+          ]
+        ],
+        [
+          "any",
+          [
+            "<",
+            [
+              "zoom"
+            ],
+            [
+              "+",
+              [
+                "get",
+                "label_zoom"
+              ],
+              1
+            ]
+          ],
+          [
+            ">=",
+            [
+              "get",
+              "label_zoom"
+            ],
+            14
+          ]
+        ]
+      ],
       "layout": {
         "text-field": [
           "get",
           "display_name"
         ],
         "text-font": [
-          "Open Sans Italic"
+          "Noto Sans Italic"
         ],
-        "text-size": 12,
+        "text-size": 14,
+        "text-letter-spacing": 0.2,
+        "symbol-placement": "line-center",
         "symbol-sort-key": [
           "-",
           [
