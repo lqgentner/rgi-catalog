@@ -25,8 +25,8 @@
     "glacier centerlines",
     "glacier length"
   ],
-  "version": "7.0-r1",
-  "updated": "2026-11-07T16:21:26Z",
+  "version": "7.0-r2",
+  "updated": "2026-11-07T16:42:46Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI 7.0 Consortium. (2023). Randolph Glacier Inventory: A dataset of global glacier outlines (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -91,7 +91,7 @@
         "data"
       ],
       "file:size": 210294494,
-      "file:checksum": "1220888ffa7a5876613494167423c64ec83af3ad6e289891daa92e6af6e80f6fb9f4",
+      "file:checksum": "1220dcde2a1f77dc6a41fa5f2a0a05435c23efdb25d5b714176a01aae1bd9db0c4a8",
       "alternate": {
         "s3": {
           "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/centerlines/rgi7.0-centerlines.parquet",

@@ -44,6 +44,6 @@ The letter `X` identifies the product: `G` for glaciers, `C` for complexes,
 
 ## Versions
 
-The mirror revision (`7.0-r1`) counts rebuilds of this
+The mirror revision (`7.0-r2`) counts rebuilds of this
 mirror. It is not an RGI version. The collection field `version` and the
 footer key `rgi:mirror_revision` of each file carry it.
