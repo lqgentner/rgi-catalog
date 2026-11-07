@@ -6,8 +6,8 @@ the same name.
 
 ## 7.0-r2 (2026-11-07)
 
-The map writes each glacier name along the glacier, and 510 display names
-read more like the names on a map.
+The map writes each glacier name along the glacier, 510 display names read
+more like the names on a map, and a small names table serves search.
 
 ### Added
 
@@ -15,6 +15,9 @@ read more like the names on a map.
   glacier's terminus, from z7 to z14. 7,438 of the 9,457 named glaciers have
   a label line.
 - The `glacier-label-points` layer holds RGI's point of each named glacier.
+- The glaciers collection has a names table,
+  `rgi7.0-glacier-names.parquet`. It holds the ID, names and region codes of
+  each glacier in 0.2 MB, in the row order of the glaciers file.
 
 ### Changed
 

@@ -100,8 +100,9 @@ first. Never use `portolan push`.
 A fix to the conversion or the catalog overwrites the files at the same paths.
 Each fix is a mirror revision, named `7.0-r1`, then `7.0-r2`, then `7.0-r3`.
 
-1. Rebuild: `download`, `convert`, `tiles`.
-2. Bump the revision in `metadata/catalog.yaml`.
+1. Bump the revision in `metadata/catalog.yaml`. `convert` writes it into
+   the footer of each Parquet file, so bump it before the rebuild.
+2. Rebuild: `download`, `convert`, `tiles`.
 3. Run `render`, then `pixi run check`.
 4. Upload the data, then publish the catalog.
 5. Add a `CHANGELOG.md` entry.
