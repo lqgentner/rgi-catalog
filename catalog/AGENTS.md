@@ -18,7 +18,7 @@ sub-catalog. Each RGI product is a collection with one GeoParquet file and no
 items. The glaciers collection also has a names table: a plain Parquet file
 of each glacier's ID, names and region codes.
 
-- `v7.0/`: RGI 7.0, mirror revision `7.0-r1`. Collections: `glaciers`, `complexes`, `intersects`, `centerlines`, `regions`. Read `v7.0/AGENTS.md` next.
+- `v7.0/`: RGI 7.0, mirror revision `7.0-r2`. Collections: `glaciers`, `complexes`, `intersects`, `centerlines`, `regions`. Read `v7.0/AGENTS.md` next.
 
 ## How to read it
 

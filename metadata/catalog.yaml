@@ -113,7 +113,7 @@ description: >-
 
 versions:
   "7.0":
-    mirror_revision: 7.0-r1
+    mirror_revision: 7.0-r2
     title: RGI 7.0
     description: >-
       RGI 7.0, released in 2023. It holds 274,531 glacier outlines with

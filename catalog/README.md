@@ -51,7 +51,7 @@ every changed row and the rules of `display_name`.
 ## Versions
 
 - [RGI 7.0](https://browser.portolan-sdi.org/#/external/data.source.coop/lqgentner/rgi/v7.0/catalog.json), mirror
-  revision `7.0-r1`: the glaciers, complexes, intersects, centerlines and regions.
+  revision `7.0-r2`: the glaciers, complexes, intersects, centerlines and regions.
   Read the [README](v7.0/README.md) or the
   [agents guide](v7.0/AGENTS.md).
 
