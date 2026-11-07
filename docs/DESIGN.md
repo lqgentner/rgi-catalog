@@ -355,7 +355,9 @@ for byte and replaces only the metadata block.
 ### The archive build
 
 1. `write_labels` writes one point per glacier with a `display_name`, at
-   RGI's own `cenlon`/`cenlat`, to `staging/v7.0/.tiles/labels.parquet`.
+   RGI's own `cenlon`/`cenlat`, and the glacier's label lines to
+   `staging/v7.0/.tiles/labels.parquet`. `write_label_bands` writes the
+   lines of each zoom, and `write_label_points` writes the points.
 2. `write_early_lines` writes the centerlines and the intersects that enter
    before z9, with their `line_minzoom`.
 3. `write_web_mercator` writes each band's input in Web Mercator.
@@ -368,7 +370,8 @@ for byte and replaces only the metadata block.
 | --- | --- | --- |
 | `glaciers` | z0, …, z9, one band each | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0 --sort-key area_km2`, tiled to z+1 |
 | `glaciers` | z10–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0 --simplify-factor 0.5` |
-| `glacier-labels` | z7–12 | `--entry-zoom label_minzoom:7=7,…,12=12 --no-density-drop` |
+| `glacier-labels` | z7, …, z12, one band each | as `intersects`, with `--tile-buffer 256`. The z12 band also holds the z13 and z14 lines |
+| `glacier-label-points` | z7–12 | `--no-density-drop --point-thinning 0 --entry-zoom label_minzoom:7=7,…,12=12` |
 | `regions` | z0–12 | `--no-density-drop --polygon-thinning 0 --polygon-visibility 0` |
 | `region-boundaries` | z0–12 | as `intersects` |
 | `region-labels` | z0–12 | `--no-density-drop --point-thinning 0` |
@@ -395,7 +398,7 @@ each scalar column (`tile_properties`). List and struct columns
 as JSON strings. Timestamps become strings in the tiles.
 
 A band marked `complete` must keep every feature at every zoom, or every
-feature that has entered by that zoom for the label layer. The build reads
+feature that has entered by that zoom for the label points. The build reads
 each band's tylertoo report and fails otherwise.
 
 ### Findings that set the flags
@@ -504,11 +507,11 @@ Features drawn as outlines, of 274,531 glaciers and 192,869 complexes:
 The earlier overview drew every glacier as a point up to z6 and a small one
 as a square at z7–8. Large glaciers then appeared all at once at z7.
 
-### Result (measured 2026-10-24)
+### Result (measured 2026-11-07)
 
-`tiles --version 7.0` takes 12 min 21 s and peaks at 6.1 GB of memory. The
-per-zoom overview inputs take most of the time. The archive is 1,043.8 MB
-with every layer.
+`tiles --version 7.0` takes 16 min 33 s and peaks at 7.3 GB of memory. The
+per-zoom overview inputs and the label lines take most of the time. The
+archive is 1,144.5 MB with every layer.
 
 The region polygons cover the oceans and the Antarctic, so z12 addresses
 11.9 million tiles. Most are the same small tile inside a region. "MB
@@ -521,24 +524,36 @@ The largest tiles cover High Mountain Asia.
 
 | z | Tiles | MB addressed | p50 bytes | Max bytes |
 | ---: | ---: | ---: | ---: | ---: |
-| 0 | 1 | 0.1 | 101,396 | 101,396 |
-| 1 | 4 | 0.2 | 31,907 | 121,118 |
-| 2 | 16 | 0.7 | 18,011 | 222,867 |
-| 3 | 64 | 1.8 | 3,482 | 223,225 |
-| 4 | 225 | 3.8 | 806 | 399,597 |
-| 5 | 832 | 7.4 | 233 | 445,550 |
-| 6 | 3,100 | 13.5 | 197 | 496,761 |
-| 7 | 12,106 | 23.0 | 193 | 479,630 |
-| 8 | 47,447 | 52.6 | 192 | 402,905 |
-| 9 | 187,891 | 106.4 | 192 | 206,014 |
-| 10 | 748,229 | 298.1 | 192 | 156,538 |
-| 11 | 2,983,757 | 782.0 | 192 | 87,217 |
-| 12 | 11,916,787 | 2667.4 | 192 | 61,220 |
+| 0 | 1 | 0.2 | 189,576 | 189,576 |
+| 1 | 4 | 0.4 | 50,811 | 234,667 |
+| 2 | 16 | 1.1 | 33,147 | 380,530 |
+| 3 | 64 | 2.5 | 5,748 | 337,649 |
+| 4 | 225 | 4.9 | 1,280 | 419,359 |
+| 5 | 832 | 9.0 | 286 | 455,621 |
+| 6 | 3,100 | 15.9 | 210 | 507,485 |
+| 7 | 12,130 | 28.3 | 195 | 496,026 |
+| 8 | 47,447 | 65.3 | 193 | 419,472 |
+| 9 | 187,891 | 122.1 | 192 | 233,670 |
+| 10 | 748,229 | 309.1 | 192 | 160,372 |
+| 11 | 2,983,757 | 796.8 | 192 | 87,446 |
+| 12 | 11,916,787 | 2692.4 | 192 | 59,069 |
 
-Decoded counts: 274,531 glaciers at z10, z11 and z12. Labels: 244 at z7,
-714 at z8, 1,462 at z9, 2,715 at z10, 4,514 at z11 and all 9,457 at z12.
+Decoded counts: 274,531 glaciers at z10, z11 and z12. Label points: 244 at
+z7, 714 at z8, 1,462 at z9, 2,715 at z10, 4,514 at z11 and all 9,457 at z12.
 Each equals the number of named glaciers whose `label_minzoom` has been
 reached.
+
+Label lines, by `label_zoom`:
+
+| z | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| lines | 118 | 371 | 823 | 1,515 | 2,639 | 4,187 | 5,807 | 7,444 |
+
+7,444 glaciers have a line at some zoom. Each line lies whole in each tile
+it touches, so it is in 28 to 47 tiles on average, 514,201 copies in all. A
+point is in 1.2 tiles on average, 23,644 copies in all. When the points
+shared the lines' layer and its buffer, they had 356,121 copies, and the
+archive was 12.3 MB larger.
 
 `label_minzoom` falls by one zoom for every factor of 4 in area, because
 each zoom step quadruples a glacier's area on screen. A glacier of 1 km²
@@ -587,7 +602,8 @@ keeps a tenth of the centerline, and at least 8.4 px, to the terminus. The
 middle of the centerline is always a candidate. A glacier has a label line
 for each zoom from its `line_zoom` to z14 at which a stretch passes, with
 that zoom in `label_zoom`. The `glacier-labels` layer has one band per zoom,
-so a tile holds only the lines of its own zoom. The z12 tiles also hold the
+so a tile holds only the lines of its own zoom. RGI's point of each named
+glacier is in the `glacier-label-points` layer, which no style draws. The z12 tiles also hold the
 lines of z13 and z14. MapLibre overscales a z12 tile past z12 and evaluates
 the filter at the overscaled zoom. The fit of a z13 or z14 line uses the
 z12 tile grid. The styles draw the line whose `label_zoom` is the map zoom,

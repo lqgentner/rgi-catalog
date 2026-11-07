@@ -136,6 +136,11 @@ def label_bands(labels_parquet: Path) -> dict[int, Path]:
 
 
 @pytest.fixture(scope="module")
+def label_points(labels_parquet: Path) -> Path:
+    return tiles.write_label_points(labels_parquet, labels_parquet.parent / "label-points.parquet")
+
+
+@pytest.fixture(scope="module")
 def overview(glaciers_parquet: Path) -> dict[int, Path]:
     out = glaciers_parquet.parent / "overview"
     return tiles.write_overview(glaciers_parquet, out, tiles.GLACIER_OVERVIEW_COLUMNS)
@@ -143,10 +148,13 @@ def overview(glaciers_parquet: Path) -> dict[int, Path]:
 
 @pytest.fixture(scope="module")
 def archive(
-    glaciers_parquet: Path, label_bands: dict[int, Path], overview: dict[int, Path]
+    glaciers_parquet: Path,
+    label_bands: dict[int, Path],
+    label_points: Path,
+    overview: dict[int, Path],
 ) -> Path:
     return build_archive(
-        glacier_layers(glaciers_parquet, label_bands, overview),
+        glacier_layers(glaciers_parquet, label_bands, label_points, overview),
         glaciers_parquet.parent / "rgi7.0.pmtiles",
         name=tiles.ARCHIVE_NAME,
         attribution=tiles.ARCHIVE_ATTRIBUTION,
@@ -281,7 +289,10 @@ def test_build_archive_contains_layers(archive: Path) -> None:
         reader = Reader(MmapSource(f))
         header = reader.header()
         meta = reader.metadata()
-    assert {layer["id"] for layer in meta["vector_layers"]} == {"glaciers", "glacier-labels"}
+    layers = {layer["id"]: layer for layer in meta["vector_layers"]}
+    assert set(layers) == {"glaciers", "glacier-labels", "glacier-label-points"}
+    assert "label_minzoom" not in layers["glacier-labels"]["fields"]
+    assert "label_zoom" not in layers["glacier-label-points"]["fields"]
     assert meta["name"] == tiles.ARCHIVE_NAME
     assert meta["attribution"] == tiles.ARCHIVE_ATTRIBUTION
     assert meta["description"] == "Test archive."
@@ -297,8 +308,8 @@ def test_build_archive_contains_layers(archive: Path) -> None:
     assert "bbox" not in glacier_fields
 
 
-def test_build_archive_label_entry_zoom(archive: Path, tmp_path: Path) -> None:
-    decoded = decode(archive, tmp_path / "labels.parquet", layer="glacier-labels")
+def test_build_archive_label_points_enter_at_their_zoom(archive: Path, tmp_path: Path) -> None:
+    decoded = decode(archive, tmp_path / "labels.parquet", layer="glacier-label-points")
     rows = pq.read_table(decoded, columns=["rgi_id", "zoom"]).to_pandas()
     zooms = {k: sorted(set(v)) for k, v in rows.groupby("rgi_id")["zoom"]}
     for rgi_id, _, _, area, name in GLACIERS:
@@ -311,8 +322,8 @@ def test_build_archive_label_entry_zoom(archive: Path, tmp_path: Path) -> None:
 def test_build_archive_label_line_only_at_its_zoom(
     archive: Path, labels_parquet: Path, tmp_path: Path
 ) -> None:
-    decoded = gpd.read_parquet(decode(archive, tmp_path / "l.parquet", layer="glacier-labels"))
-    lines = decoded.loc[decoded.geom_type.isin(["LineString", "MultiLineString"])]
+    lines = gpd.read_parquet(decode(archive, tmp_path / "l.parquet", layer="glacier-labels"))
+    assert lines.geom_type.isin(["LineString", "MultiLineString"]).all()
     source = gpd.read_parquet(labels_parquet)
     line_zoom = int(source.loc[source.geom_type == "LineString", "line_zoom"].iloc[0])
     assert set(lines["rgi_id"]) == {BIG}
@@ -325,22 +336,30 @@ def test_build_archive_label_line_only_at_its_zoom(
     )
 
 
-def test_write_label_bands_holds_entered_points_and_own_lines(
+def test_write_label_bands_holds_own_lines(
     labels_parquet: Path, label_bands: dict[int, Path]
 ) -> None:
     labels = gpd.read_parquet(labels_parquet)
-    points = labels.loc[labels.geom_type == "Point"]
-    assert sorted(label_bands) == list(range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1))
+    line_zoom = int(labels["label_zoom"].min())
+    # A zoom without a line has no band.
+    assert sorted(label_bands) == list(range(line_zoom, tiles.MAXZOOM + 1))
     for zoom, path in label_bands.items():
         band = gpd.read_parquet(path)
-        band_points = band.loc[band.geom_type == "Point"]
-        band_lines = band.loc[band.geom_type == "LineString"]
-        assert len(band_points) == (points["label_minzoom"] <= zoom).sum()
+        assert (band.geom_type == "LineString").all()
+        assert "label_minzoom" not in band.columns
         own = labels["label_zoom"] == zoom
         if zoom == tiles.MAXZOOM:
             own = labels["label_zoom"] >= zoom
-        assert set(band_lines["label_zoom"]) == set(labels.loc[own, "label_zoom"])
-        assert len(band_lines) == own.sum()
+        assert set(band["label_zoom"]) == set(labels.loc[own, "label_zoom"])
+        assert len(band) == own.sum()
+
+
+def test_write_label_points_holds_every_point(labels_parquet: Path, label_points: Path) -> None:
+    labels = gpd.read_parquet(labels_parquet)
+    points = gpd.read_parquet(label_points)
+    assert (points.geom_type == "Point").all()
+    assert sorted(points["rgi_id"]) == sorted(labels.loc[labels["label_zoom"].isna(), "rgi_id"])
+    assert "label_zoom" not in points.columns
 
 
 def test_build_archive_glaciers_complete_from_complete_zoom(
@@ -625,6 +644,7 @@ def test_build_archive_early_centerlines_enter_at_their_zoom(
     layers = tiles.version_layers(
         dict.fromkeys(tiles.ARCHIVE_PRODUCTS, centerlines_parquet),
         {tiles.MAXZOOM: tmp_path / "labels.parquet"},
+        tmp_path / "lp.parquet",
         tmp_path / "rl.parquet",
         tmp_path / "rb.parquet",
         {"centerlines": early, "intersects": early},
@@ -717,6 +737,7 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
             z: tmp_path / f"labels-{z}.parquet"
             for z in range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1)
         },
+        tmp_path / "lp.parquet",
         tmp_path / "rl.parquet",
         tmp_path / "rb.parquet",
         early,
@@ -729,6 +750,7 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         "complexes",
         "glaciers",
         "glacier-labels",
+        "glacier-label-points",
         "centerlines",
         "intersects",
     }
@@ -743,7 +765,11 @@ def test_version_layers_cover_every_product(tmp_path: Path) -> None:
         ("centerlines", tiles.INTERSECTS_MINZOOM + 1, tiles.MAXZOOM),
         ("intersects", tiles.INTERSECTS_MINZOOM, tiles.MAXZOOM),
         *(("glacier-labels", z, z) for z in range(tiles.LABEL_MINZOOM, tiles.MAXZOOM + 1)),
+        ("glacier-label-points", tiles.LABEL_MINZOOM, tiles.MAXZOOM),
     }
+    # Only the label lines need a buffer of a whole tile.
+    points = next(layer for layer in layers if layer.name == "glacier-label-points")
+    assert "--tile-buffer" not in points.extra_args
     # The early lines enter at their own zoom, and the main centerlines and
     # the long lines fill z8. From z9 every line is in the archive.
     bands = {

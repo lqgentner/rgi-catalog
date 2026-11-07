@@ -806,10 +806,10 @@ def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -
 def write_label_bands(labels: Path, out_dir: Path) -> dict[int, Path]:
     """Write the input of each zoom of the ``glacier-labels`` layer.
 
-    The input of a zoom holds the points that have entered by it and the
-    lines of that zoom. A line is then in the tiles of its own zoom only.
-    The input of :data:`MAXZOOM` also holds the lines up to
-    :data:`LABEL_MAXZOOM`, which show by overzoom.
+    The input of a zoom holds the lines of that zoom. A line is then in the
+    tiles of its own zoom only. The input of :data:`MAXZOOM` also holds the
+    lines up to :data:`LABEL_MAXZOOM`, which show by overzoom.
+    ``label_minzoom`` equals ``label_zoom`` on a line and is left out.
 
     Parameters
     ----------
@@ -821,20 +821,46 @@ def write_label_bands(labels: Path, out_dir: Path) -> dict[int, Path]:
     Returns
     -------
     dict[int, Path]
-        The input of each zoom from :data:`LABEL_MINZOOM` to :data:`MAXZOOM`.
+        The input of each zoom from :data:`LABEL_MINZOOM` to :data:`MAXZOOM`
+        that has a line.
     """
     table = gpd.read_parquet(labels)
-    point = table["label_zoom"].isna()
+    table = table.loc[table["label_zoom"].notna()].drop(columns="label_minzoom")
     out_dir.mkdir(parents=True, exist_ok=True)
     bands = {}
     for zoom in range(LABEL_MINZOOM, MAXZOOM + 1):
         own = table["label_zoom"] == zoom
         if zoom == MAXZOOM:
             own = table["label_zoom"] >= zoom
-        keep = (point & (table["label_minzoom"] <= zoom)) | own
-        bands[zoom] = out_dir / f"z{zoom:02d}.parquet"
-        table.loc[keep.fillna(value=False)].to_parquet(bands[zoom], index=False)
+        if own.any():
+            bands[zoom] = out_dir / f"z{zoom:02d}.parquet"
+            table.loc[own].to_parquet(bands[zoom], index=False)
     return bands
+
+
+def write_label_points(labels: Path, out: Path) -> Path:
+    """Write the input of the ``glacier-label-points`` layer.
+
+    It holds the point of each named glacier. ``label_zoom`` is null on a
+    point and is left out.
+
+    Parameters
+    ----------
+    labels
+        The label file from :func:`write_labels`.
+    out
+        The file to write.
+
+    Returns
+    -------
+    Path
+        ``out``.
+    """
+    table = gpd.read_parquet(labels)
+    points = table.loc[table["label_zoom"].isna()].drop(columns="label_zoom")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    points.to_parquet(out, index=False)
+    return out
 
 
 # The overview zooms below GLACIERS_COMPLETE_ZOOM (write_overview). Every
@@ -945,16 +971,18 @@ def overview_layers(name: str, overview: dict[int, Path]) -> list[LayerSpec]:
 
 
 def glacier_layers(
-    glaciers: Path, labels: dict[int, Path], overview: dict[int, Path]
+    glaciers: Path, labels: dict[int, Path], label_points: Path, overview: dict[int, Path]
 ) -> list[LayerSpec]:
-    """Return the bands of the ``glaciers`` and ``glacier-labels`` layers.
+    """Return the bands of the ``glaciers`` layer and its two label layers.
 
     Parameters
     ----------
     glaciers
         The glaciers GeoParquet file.
     labels
-        The label input of each zoom, from :func:`write_label_bands`.
+        The label line input of each zoom, from :func:`write_label_bands`.
+    label_points
+        The label point input, from :func:`write_label_points`.
     overview
         The overview input of each zoom, from :func:`write_overview`.
 
@@ -963,8 +991,9 @@ def glacier_layers(
     list[LayerSpec]
         Below :data:`GLACIERS_COMPLETE_ZOOM` the overview: outlines of the
         glaciers that span :data:`SHAPE_MIN_PX` pixels, and a point per grid
-        cell for the others. From it on every glacier is kept. The labels
-        have one band per zoom, and no label is thinned.
+        cell for the others. From it on every glacier is kept. The label
+        lines have one band per zoom. Each label point enters at its
+        ``label_minzoom``. No label is thinned.
     """
     return [
         *overview_layers("glaciers", overview),
@@ -999,6 +1028,22 @@ def glacier_layers(
                 complete=True,
             )
             for zoom, path in sorted(labels.items())
+        ),
+        # The points have the tiler's default buffer. A point is in the tile
+        # that holds it and in the few tiles whose buffer it is in.
+        LayerSpec(
+            "glacier-label-points",
+            label_points,
+            LABEL_MINZOOM,
+            MAXZOOM,
+            (
+                "--no-density-drop",
+                "--point-thinning",
+                "0",
+                *entry_zoom_args("label_minzoom", LABEL_MINZOOM, MAXZOOM),
+            ),
+            complete=True,
+            entry_zoom_column="label_minzoom",
         ),
     ]
 
@@ -1161,6 +1206,7 @@ def write_early_lines(lines: Path, out: Path) -> Path:
 def version_layers(
     products: dict[str, Path],
     labels: dict[int, Path],
+    label_points: Path,
     region_labels: Path,
     region_boundaries: Path,
     early_lines: dict[str, Path],
@@ -1173,7 +1219,9 @@ def version_layers(
     products
         The GeoParquet file of each name in :data:`ARCHIVE_PRODUCTS`.
     labels
-        The glacier label input of each zoom, from :func:`write_label_bands`.
+        The glacier label line input of each zoom, from :func:`write_label_bands`.
+    label_points
+        The glacier label point input, from :func:`write_label_points`.
     region_labels
         The region label file from :func:`write_region_labels`.
     region_boundaries
@@ -1240,7 +1288,7 @@ def version_layers(
             POLYGON_COMPLETE,
             complete=True,
         ),
-        *glacier_layers(products["glaciers"], labels, overviews["glaciers"]),
+        *glacier_layers(products["glaciers"], labels, label_points, overviews["glaciers"]),
         LayerSpec(
             "centerlines",
             early_lines["centerlines"],
@@ -1546,10 +1594,11 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
     """
     products = {name: output_path(staging, version, name) for name in ARCHIVE_PRODUCTS}
     work = staging / version_dir(version) / ".tiles"
-    labels = write_label_bands(
-        write_labels(products["glaciers"], products["centerlines"], work / "labels.parquet"),
-        work / "glacier-labels",
+    all_labels = write_labels(
+        products["glaciers"], products["centerlines"], work / "labels.parquet"
     )
+    labels = write_label_bands(all_labels, work / "glacier-labels")
+    label_points = write_label_points(all_labels, work / "glacier-label-points.parquet")
     region_labels = write_region_labels(products["regions"], work / "region-labels.parquet")
     region_boundaries = write_region_boundaries(
         products["regions"], work / "region-boundaries.parquet"
@@ -1567,7 +1616,13 @@ def build_tiles(version: str, *, staging: Path = STAGING) -> Path:
         }
         return build_archive(
             version_layers(
-                products, labels, region_labels, region_boundaries, early_lines, overviews
+                products,
+                labels,
+                label_points,
+                region_labels,
+                region_boundaries,
+                early_lines,
+                overviews,
             ),
             archive_path(staging, version),
             name=ARCHIVE_NAME,

@@ -73,9 +73,9 @@ def test_styles_draw_glacier_names_along_label_lines(style: dict[str, Any]) -> N
     # The tiles step fits each label line to this text, in this font.
     labels = next(layer for layer in style["layers"] if layer["source-layer"] == "glacier-labels")
     assert labels["filter"] == [
-        "all",
-        ["match", ["geometry-type"], ["LineString", "MultiLineString"], True, False],
-        ["==", ["get", "label_zoom"], ["min", ["zoom"], tiles.LABEL_MAXZOOM]],
+        "==",
+        ["get", "label_zoom"],
+        ["min", ["zoom"], tiles.LABEL_MAXZOOM],
     ]
     assert labels["layout"]["symbol-placement"] == "line-center"
     assert labels["layout"]["text-font"] == [glyphs.FONT]

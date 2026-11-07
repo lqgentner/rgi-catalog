@@ -38,11 +38,7 @@ OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
 POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
 # The archive has a label line per glacier and zoom, with its zoom in
 # label_zoom. Past MAXZOOM the tiles of MAXZOOM are overzoomed.
-LABEL_LINES = [
-    "all",
-    ["match", ["geometry-type"], ["LineString", "MultiLineString"], True, False],
-    ["==", ["get", "label_zoom"], ["min", ["zoom"], LABEL_MAXZOOM]],
-]
+LABEL_LINES = ["==", ["get", "label_zoom"], ["min", ["zoom"], LABEL_MAXZOOM]]
 DOT_RADIUS = ["interpolate", ["linear"], ["zoom"], 0, 1.5, 6, 2.5]
 
 
@@ -108,8 +104,7 @@ def _region_labels(level: int, minzoom: int, maxzoom: int, size: int) -> dict[st
 LABELS: dict[str, Any] = {
     "id": "glacier-labels",
     "type": "symbol",
-    # A name follows the label line of its glacier at the zoom. The layer
-    # also holds a point per named glacier, which the styles do not draw.
+    # A name follows the label line of its glacier at the zoom.
     "filter": LABEL_LINES,
     "layout": {
         "text-field": ["get", "display_name"],
