@@ -11,7 +11,7 @@ glacier's terminus. Before, a name was a straight label at RGI's point of
 the glacier.
 
 - The `tiles` step fits one label line per glacier and zoom, from z7 to z14.
-  7,444 of the 9,457 named glaciers have a label line at one or more zooms.
+  7,438 of the 9,457 named glaciers have a label line at one or more zooms.
 - The text keeps 9.6 px to the glacier's outline on both sides of the line.
   On a narrow tongue the name moves up the glacier.
 - The `glacier-labels` layer holds the label lines. The z12 tiles also hold
@@ -21,10 +21,23 @@ the glacier.
 - A style shows each label line from its `label_zoom` up to the next zoom. The
   filter also matches one line per glacier in a renderer that uses a
   fractional zoom, such as OpenLayers.
-- The 2,013 named glaciers without a label line have no name in the styles.
+- The 2,019 named glaciers without a label line have no name in the styles.
 
 The PMTiles archive is 1,144.5 MB. `docs/DESIGN.md` gives the method and the
 measurements.
+
+Two new rules change `display_name` for 451 glaciers. Two new overrides
+change 2 more:
+
+- A Swiss name that ends with a glacier word and a particle starts with them:
+  `CHEILON GLACIER DE` becomes `Glacier de Cheilon`, and
+  `MORTERATSCH VADRET DA` becomes `Vadret da Morteratsch`.
+- In region 17, `Gl.` at the start of a name becomes `Glaciar`: `Gl. Viedma`
+  becomes `Glaciar Viedma`.
+- `Gl.` stays in the 36 names of South Georgia. The region has Spanish and
+  English names, so the language of `Gl.` is not known.
+
+`docs/PROVENANCE.md` lists every rule.
 
 ## 7.0-r1 (2026-11-03)
 
