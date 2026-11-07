@@ -20,3 +20,9 @@
 - glac_name: "SHCHuchij"
   display_name: "Shchuchij"
   reason: The first letters are capitals by mistake.
+- glac_name: "Bishops Glacier, The"
+  display_name: "The Bishops Glacier"
+  reason: The article after the comma starts the name.
+- glac_name: "TZ3D700C1005 Diamond Gl A"
+  display_name: "Diamond Glacier A"
+  reason: Gl abbreviates Glacier, which ends the English name.

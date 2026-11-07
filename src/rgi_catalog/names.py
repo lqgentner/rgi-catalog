@@ -31,14 +31,26 @@ An override in ``metadata/name_overrides.yaml`` replaces the rules for one
    (``FIESCHERGLETSCHER VS`` → ``Fieschergletscher VS``). A word that holds a
    digit keeps its case (``HPS34``). Particles (``de``, ``du``, ``del``,
    ``dal``, ``la``, ``d'``, …) are lowercase unless they start the name, and
-   the letter after ``O'`` is a capital. Words are never reordered. In a
+   the letter after ``O'`` is a capital. In a
    mixed-case name only the words of four or more capitals are re-cased
    (``TUNGELGLETSCHER09n`` → ``Tungelgletscher09n``). A word that mixes cases
    is kept as written (``MIIGAiK``).
-9. In region 11, a name that starts with ``d'``, ``de``, ``du`` or ``des``
-   gets ``Glacier`` in front. The French Glacier Inventory leaves the word
-   out: ``d'Ambin`` → ``Glacier d'Ambin``.
-10. A name that starts with a lowercase letter gets a capital.
+9. A name that ends with a glacier word and a particle starts with them,
+   as in the Swiss Glacier Inventory's index order: ``CHEILON GLACIER DE``
+   → ``Glacier de Cheilon``. A compass point or a Roman numeral after the
+   particle stays at the end: ``Glacier du Petit Combin III``. The glacier
+   words are ``Glacier``, ``Haut Glacier``, ``Ghiacciaio``, ``Vadret``,
+   ``Vadrec``, ``Vadrecc``, ``Vadrettin``, ``Vedreit``, ``Glatscher``,
+   ``Glatschiu`` and the abbreviations ``Gl.`` and ``Gh.``. ``Gh.`` becomes
+   ``Ghiacciaio``. ``Gl.`` becomes ``Glatscher`` before a Romansh particle
+   (``da``, ``dal``, ``dil``, …), and ``Glacier`` otherwise.
+10. In region 17, ``Gl.`` that starts a name becomes ``Glaciar``. In any
+    region, ``Gl.`` that ends a name becomes ``Glacier``. Elsewhere ``Gl.``
+    stays, because its language is not known.
+11. In region 11, a name that starts with ``d'``, ``de``, ``du`` or ``des``
+    gets ``Glacier`` in front. The French Glacier Inventory leaves the word
+    out: ``d'Ambin`` → ``Glacier d'Ambin``.
+12. A name that starts with a lowercase letter gets a capital.
 
 ``glac_name`` keeps RGI's value. ``rgi_id`` is the key, never the name.
 """
@@ -76,6 +88,9 @@ RULES: tuple[str, ...] = (
     "spacing",
     "suffix-hyphen",
     "recased",
+    "glacier-word-first",
+    "glaciar-expanded",
+    "glacier-expanded",
     "french-glacier",
     "initial-capital",
     "unchanged",
@@ -127,6 +142,25 @@ _O_PREFIX = re.compile(r"(O)'(.+)", re.IGNORECASE)
 _WORD_START = re.compile(r"(^|[\s\-/(.])(\w)")
 _PART_SEPARATOR = re.compile(r"([-/])")
 _FRENCH_REGION = "11"
+# A glacier word, with an optional adjective after it, then the particle.
+_GLACIER_WORD = (
+    r"(?:Haut )?(?:Glacier|Ghiacciaio|Vadret|Vadrec|Vadrecc|Vadrettin|Vedreit|Glatscher|Glatschiu"
+    r"|Gl\.|Gh\.)(?: (?:Superieur|Inf\.))?"
+)
+_TRAILING_PARTICLE = (
+    r"(?:de la|de l'|da la|da las|da l'|de|du|des|d'|da|dal|dalla|dallas|dei|del|di|dil)"
+)
+# A compass point or a Roman numeral may follow the particle. After an
+# apostrophe it follows without a space: "Glacier de l'S".
+_GLACIER_WORD_LAST = re.compile(
+    rf"(?P<place>.+?),? (?P<word>{_GLACIER_WORD}) (?P<particle>{_TRAILING_PARTICLE})"
+    rf"(?:(?:(?<=')| )(?P<suffix>{_COMPASS}|{_ROMAN}))?"
+)
+_ROMANSH_PARTICLE = re.compile(r"da|dil")
+# The Spanish names of region 17 abbreviate Glaciar.
+_SPANISH_REGION = "17"
+_GLACIAR_ABBREVIATION = re.compile(r"G[Ll]\. ?")
+_GLACIER_ABBREVIATION_LAST = re.compile(r" Gl\.$")
 _FRENCH_PARTICLE_START = re.compile(r"(?:d'|de |du |des )")
 
 
@@ -223,6 +257,35 @@ def _recase_capitals(name: str) -> str | None:
     return None
 
 
+def _glacier_word_first(name: str) -> str | None:
+    """Apply rule 9, or return ``None`` when the name does not end with a glacier word."""
+    match = _GLACIER_WORD_LAST.fullmatch(name)
+    if match is None:
+        return None
+    particle = match["particle"]
+    word = match["word"].replace("Gh.", "Ghiacciaio")
+    word = word.replace("Gl.", "Glatscher" if _ROMANSH_PARTICLE.match(particle) else "Glacier")
+    space = "" if particle.endswith("'") else " "
+    suffix = f" {match['suffix']}" if match["suffix"] else ""
+    return f"{word} {particle}{space}{match['place']}{suffix}"
+
+
+def _glacier_word(name: str, region: str | None) -> tuple[str, list[str]]:
+    """Apply rules 9 and 10: the glacier word first, and ``Gl.`` expanded."""
+    fired: list[str] = []
+    reordered = _glacier_word_first(name)
+    if reordered is not None:
+        name = reordered
+        fired.append("glacier-word-first")
+    if region == _SPANISH_REGION and _GLACIAR_ABBREVIATION.match(name):
+        name = _GLACIAR_ABBREVIATION.sub("Glaciar ", name, count=1)
+        fired.append("glaciar-expanded")
+    if _GLACIER_ABBREVIATION_LAST.search(name):
+        name = _GLACIER_ABBREVIATION_LAST.sub(" Glacier", name)
+        fired.append("glacier-expanded")
+    return name, fired
+
+
 def apply_rules(
     raw: str | None,
     region: str | None = None,
@@ -266,6 +329,8 @@ def apply_rules(
     if recased is not None:
         name = recased
         fired.append("recased")
+    name, glacier_word = _glacier_word(name, region)
+    fired += glacier_word
     if region == _FRENCH_REGION and _FRENCH_PARTICLE_START.match(name):
         name = f"Glacier {name}"
         fired.append("french-glacier")
