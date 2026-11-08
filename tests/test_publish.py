@@ -23,6 +23,9 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 
 from publish import (  # noqa: E402
+    MAX_ATTEMPTS,
+    PART_SIZE,
+    PARTS_IN_FLIGHT,
     Upload,
     aws_session,
     collect_uploads,
@@ -165,20 +168,22 @@ class FakeClient:
         self.calls = calls
         self.fail_key = fail_key
 
-    def upload_file(self, local, bucket, key, ExtraArgs):
+    def upload_file(self, local, bucket, key, ExtraArgs, Config):
         if key == self.fail_key:
             raise RuntimeError("boom")
-        self.calls.append((local, bucket, key, ExtraArgs["ContentType"]))
+        self.calls.append((local, bucket, key, ExtraArgs["ContentType"], Config))
 
 
 class FakeSession:
     def __init__(self, fail_key: str | None = None) -> None:
         self.calls: list = []
+        self.configs: list = []
         self.clients = 0
         self.fail_key = fail_key
 
-    def client(self, name):
+    def client(self, name, config):
         self.clients += 1
+        self.configs.append(config)
         return FakeClient(self.calls, self.fail_key)
 
 
@@ -210,6 +215,26 @@ with tempfile.TemporaryDirectory() as tmp:
     check(
         {c[1] for c in session.calls} == {"a-bucket"},
         "the bucket reaches upload_file",
+    )
+    # The Source Cooperative proxy answers 520 under the boto3 defaults.
+    transfers = {id(c[4]): c[4] for c in session.calls}.values()
+    check(
+        all(
+            t.multipart_chunksize == PART_SIZE
+            and t.multipart_threshold == PART_SIZE
+            and t.max_concurrency == PARTS_IN_FLIGHT
+            for t in transfers
+        ),
+        "each file uploads PART_SIZE parts, PARTS_IN_FLIGHT at a time",
+    )
+    check(
+        all(
+            c.request_checksum_calculation == "when_required"
+            and c.response_checksum_validation == "when_required"
+            and c.retries == {"max_attempts": MAX_ATTEMPTS, "mode": "adaptive"}
+            for c in session.configs
+        ),
+        "the client adds a checksum only where S3 requires one",
     )
 
     # One bad object names itself and does not stop the other uploads.

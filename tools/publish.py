@@ -87,6 +87,17 @@ MAX_UPLOAD_WORKERS = 16
 # publish of thousands of files stays readable.
 PROGRESS_EVERY = 100
 
+# Source Cooperative serves the bucket through a proxy behind Cloudflare. That
+# proxy answers 520 to UploadPart under the boto3 defaults: 8 MiB parts, 10
+# parts at a time, and a CRC32 trailer on each part. A 1.1 GB PMTiles archive
+# failed on each attempt with those defaults. So each file sends one 64 MiB
+# part at a time, and a part carries a checksum only where the API requires
+# one. A file smaller than one part goes up in a single request, and its ETag
+# is then its MD5.
+PART_SIZE = 64 << 20
+PARTS_IN_FLIGHT = 1
+MAX_ATTEMPTS = 10
+
 
 @dataclass(frozen=True)
 class Upload:
@@ -241,6 +252,32 @@ def remote_index(
         return {}
 
 
+def client_config():
+    """The botocore settings of the upload client.
+
+    A request carries a checksum only where the S3 API requires one, and a
+    throttled or failed request is tried up to MAX_ATTEMPTS times.
+    """
+    from botocore.config import Config
+
+    return Config(
+        request_checksum_calculation="when_required",
+        response_checksum_validation="when_required",
+        retries={"max_attempts": MAX_ATTEMPTS, "mode": "adaptive"},
+    )
+
+
+def transfer_config():
+    """The multipart settings of each file upload: PART_SIZE parts, PARTS_IN_FLIGHT at a time."""
+    from boto3.s3.transfer import TransferConfig
+
+    return TransferConfig(
+        multipart_threshold=PART_SIZE,
+        multipart_chunksize=PART_SIZE,
+        max_concurrency=PARTS_IN_FLIGHT,
+    )
+
+
 def upload_all(session, bucket: str, uploads: list[Upload]) -> list[str]:
     """Upload every object on a bounded pool. Returns the keys that failed.
 
@@ -259,8 +296,10 @@ def upload_all(session, bucket: str, uploads: list[Upload]) -> list[str]:
         if existing is not None:
             return existing
         with new_client:
-            thread_state.client = session.client("s3")
+            thread_state.client = session.client("s3", config=client_config())
         return thread_state.client
+
+    transfer = transfer_config()
 
     def put(upload: Upload) -> None:
         client().upload_file(
@@ -268,6 +307,7 @@ def upload_all(session, bucket: str, uploads: list[Upload]) -> list[str]:
             bucket,
             upload.key,
             ExtraArgs={"ContentType": upload.content_type},
+            Config=transfer,
         )
 
     failures: list[str] = []
