@@ -16,7 +16,7 @@ jobs:
         with:
           persist-credentials: false
 
-      # The pixi environment pins rashid (>=0.3.0,<0.4.0), ruff, pyrefly and
+      # The pixi environment pins rashid (>=0.4.0,<0.5.0), ruff, pyrefly and
       # pytest from pixi.lock, so CI runs the same tools as a local check.
       - uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
         with:

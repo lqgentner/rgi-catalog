@@ -14,18 +14,18 @@ widened allow-list is a false claim about what this catalog conforms to.
 
 ## The rashid version floor
 
-The gate needs rashid `>=0.3.0,<0.4.0`. It reads `rashid --version` and fails
+The gate needs rashid `>=0.4.0,<0.5.0`. It reads `rashid --version` and fails
 outside that range. It also fails when rashid is absent, and prints the install
 command. A skip would report a green run for a catalog that no validator read.
 
-The floor is 0.3.0 because the installed portolan skills (v0.5.0) pin that
-release. The rules this catalog is built against are the 0.3 rules. An older
-rashid reports a pass for a catalog that it never checked against them. The
-same range is in `pyproject.toml`, which installs rashid into the pixi
-environment that CI uses.
+The floor is 0.4.0 because it is the first release that bundles the Portolan
+v0.3.0 profile schema, and the catalog declares that schema. The rules this
+catalog is built against are the 0.4 rules. An older rashid reports a pass for
+a catalog that it never checked against them. The same range is in
+`pyproject.toml`, which installs rashid into the pixi environment that CI uses.
 
-The upper bound stops an unreviewed 0.4 rule set from changing what this gate
-means. Raise both bounds together when you move to 0.4, and read the new rules
+The upper bound stops an unreviewed 0.5 rule set from changing what this gate
+means. Raise both bounds together when you move to 0.5, and read the new rules
 first.
 
 This file also records workarounds for the other validator CI runs. Those are

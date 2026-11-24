@@ -38,14 +38,14 @@ ACCEPTED: set[str] = set()
 config = load_config()
 target = ROOT / config["publish_dir"]
 
-# The floor is the rashid release that the installed portolan skills (v0.5.0)
-# pin, and the version the pixi environment installs. A rashid below the floor
-# reports a pass for a catalog that it never checked against the 0.3 rules.
-# The upper bound stops an unreviewed 0.4 rule set from changing what this
+# The floor is the first rashid release that bundles the Portolan v0.3.0
+# profile schema, which this catalog declares. A rashid below the floor
+# reports a pass for a catalog that it never checked against the 0.4 rules.
+# The upper bound stops an unreviewed 0.5 rule set from changing what this
 # gate means.
-MIN_VERSION = (0, 3, 0)
-MAX_VERSION = (0, 4, 0)
-SPEC = "rashid>=0.3.0,<0.4.0"
+MIN_VERSION = (0, 4, 0)
+MAX_VERSION = (0, 5, 0)
+SPEC = "rashid>=0.4.0,<0.5.0"
 INSTALL = f"python -m pip install '{SPEC}'"
 
 

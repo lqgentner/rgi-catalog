@@ -2,7 +2,7 @@
   "type": "Collection",
   "stac_version": "1.1.0",
   "stac_extensions": [
-    "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json",
+    "https://schemas.portolan-sdi.org/portolan/v0.3.0/schema.json",
     "https://stac-extensions.github.io/table/v1.2.0/schema.json",
     "https://stac-extensions.github.io/version/v1.2.0/schema.json",
     "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
@@ -87,6 +87,7 @@
       "href": "./rgi7.0-centerlines.parquet",
       "type": "application/vnd.apache.parquet",
       "title": "RGI 7.0 glacier centerlines, GeoParquet",
+      "description": "The glacier centerlines as lines in longitude and latitude (WGS84). The rows are sorted by rgi_id.",
       "roles": [
         "data"
       ],
@@ -177,6 +178,7 @@
       "href": "../rgi7.0.pmtiles",
       "type": "application/vnd.pmtiles",
       "title": "Web map archive (vector tiles)",
+      "description": "Vector tiles for web maps. All collections of this version share the archive.",
       "roles": [
         "visual"
       ],

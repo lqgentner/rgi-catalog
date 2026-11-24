@@ -136,6 +136,8 @@ versions:
           web maps.
         keywords: [glacier outlines, hypsometry]
         pmtiles_layers: [glaciers, glacier-labels]
+        # The geometry in the description of the data asset.
+        geometry: glacier outlines as polygons
         # The row order and the rows per row group of the GeoParquet file. In
         # rgi_id order a filter on one rgi_id selects one row group. The
         # products without a layout follow the Hilbert curve in groups of
@@ -188,6 +190,8 @@ versions:
           has a PMTiles archive for web maps.
         keywords: [glacier complexes]
         pmtiles_layers: [complexes]
+        # The geometry in the description of the data asset.
+        geometry: glacier complex outlines as polygons
         layout:
           order_by: rgi_id
           row_group_size: 4096
@@ -225,6 +229,8 @@ versions:
           maps.
         keywords: [glacier divides]
         pmtiles_layers: [intersects]
+        # The geometry in the description of the data asset.
+        geometry: divides between adjacent glaciers as lines
         layout:
           order_by: rgi_id
           row_group_size: 10240
@@ -255,6 +261,8 @@ versions:
           attributes. The collection also has a PMTiles archive for web maps.
         keywords: [glacier centerlines, glacier length]
         pmtiles_layers: [centerlines]
+        # The geometry in the description of the data asset.
+        geometry: glacier centerlines as lines
         layout:
           order_by: rgi_id
           row_group_size: 4096
@@ -303,6 +311,8 @@ versions:
           a PMTiles archive for web maps.
         keywords: [glacier regions, GTN-G]
         pmtiles_layers: [regions, region-boundaries, region-labels]
+        # The geometry in the description of the data asset.
+        geometry: region outlines as polygons
         # The regions are GTN-G's, with their own citation and terms.
         doi: 10.5904/gtng-glacreg-2023-07
         citation: >-
