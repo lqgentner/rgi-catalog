@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 STAC_VERSION = "1.1.0"
-PORTOLAN = "https://schemas.portolan-sdi.org/portolan/v0.2.0/schema.json"
+PORTOLAN = "https://schemas.portolan-sdi.org/portolan/v0.3.0/schema.json"
 COLLECTION_EXTENSIONS = [
     PORTOLAN,
     "https://stac-extensions.github.io/table/v1.2.0/schema.json",
@@ -307,6 +307,26 @@ def _names_asset(ctx: Context, version: str, name: str, record: dict[str, Any]) 
     }
 
 
+PMTILES_DESCRIPTION = (
+    "Vector tiles for web maps. All collections of this version share the archive."
+)
+
+
+def _data_description(spec: dict[str, Any]) -> str:
+    """Return the description of a collection's GeoParquet asset.
+
+    The row order comes from ``layout``. A product without a layout follows
+    the Hilbert curve.
+    """
+    layout = spec.get("layout")
+    order = (
+        f"The rows are sorted by {layout['order_by']}."
+        if layout
+        else "The rows follow the Hilbert curve."
+    )
+    return f"The {spec['geometry']} in longitude and latitude (WGS84). {order}"
+
+
 def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
     meta = ctx.meta
     record = ctx.records[version]
@@ -329,6 +349,7 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
             "href": f"./{stats['href']}",
             "type": PARQUET,
             "title": f"{spec['title']}, GeoParquet",
+            "description": _data_description(spec),
             "roles": ["data"],
             "file:size": files[data_rel]["size"],
             "file:checksum": files[data_rel]["file:checksum"],
@@ -398,6 +419,7 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
         "href": archive_rel,
         "type": PMTILES,
         "title": "Web map archive (vector tiles)",
+        "description": PMTILES_DESCRIPTION,
         "roles": ["visual"],
         **archive_file,
     }

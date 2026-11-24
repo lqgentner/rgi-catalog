@@ -4,6 +4,19 @@ Each entry is one mirror revision of the published catalog. A revision name
 is the RGI version plus a counter, for example `7.0-r1`. The git tag carries
 the same name.
 
+## Unreleased
+
+These changes are in `catalog/` on `main` and are not yet published.
+
+### Changed
+
+- The catalog declares the Portolan v0.3.0 profile schema instead of v0.2.0.
+  The conformance gate requires rashid 0.4.
+
+### Added
+
+- The `data` and `pmtiles` assets of each collection have a description.
+
 ## 7.0-r2 (2026-11-07)
 
 The map writes each glacier name along the glacier, 510 display names read
