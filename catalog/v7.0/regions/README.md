@@ -6,7 +6,7 @@ The 20 first-order and 90 second-order glacier regions of RGI 7.0, in one GeoPar
 
 This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritative source is [RGI 7.0 at NSIDC](https://nsidc.org/data/nsidc-0770/versions/7). Citation and credit belong to the RGI Consortium:
 
-> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
+> RGI Consortium. (2023). *Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7* [Data set]. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
 ## About the product
 
@@ -98,11 +98,12 @@ The rest of the RGI 7.0 release is under
 [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). The regions are part of the
 release, so cite the RGI Consortium as well:
 
-> RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center. https://doi.org/10.5067/F6JMOVY5NAVZ
+> RGI Consortium. (2023). *Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7* [Data set]. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/F6JMOVY5NAVZ
 
-Read the [user guide](https://rgidata.org/user_guide/) for a detailed description of RGI 7.0:
+The [user guide](https://rgidata.org/user_guide/) describes RGI 7.0 in detail. Cite it as
+well when you refer to specific details that are not covered elsewhere:
 
-> Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). *The Randolph Glacier Inventory version 7.0 user guide*. Zenodo. https://doi.org/10.5281/zenodo.8362857
+> Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023). *The Randolph Glacier Inventory version 7.0 User guide*. Zenodo. https://doi.org/10.5281/ZENODO.8362857
 
 For regional studies, the user guide also invites users to cite the analysts
 who provided the outlines. The `subm_analysts` column of the glaciers names

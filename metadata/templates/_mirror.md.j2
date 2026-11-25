@@ -16,12 +16,14 @@ The rest of the RGI 7.0 release is under
 release, so cite the RGI Consortium as well:
 {% else %}
 RGI 7.0 is under [{{ meta.license }}]({{ meta.license_url }}). Anyone may use
-it with due acknowledgement. Cite the RGI Consortium:
+it with due acknowledgement. Cite the RGI Consortium in every publication
+that uses RGI 7.0 data:
 {% endif %}
 
 > {{ citation }}
 
-Read the [user guide]({{ meta.user_guide }}) for a detailed description of RGI 7.0:
+The [user guide]({{ meta.user_guide }}) describes RGI 7.0 in detail. Cite it as
+well when you refer to specific details that are not covered elsewhere:
 
 {% for p in meta.publications %}
 > {{ p.citation.split() | join(" ") }}
