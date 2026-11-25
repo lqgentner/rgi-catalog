@@ -21,12 +21,14 @@ license: CC-BY-4.0
 license_url: https://creativecommons.org/licenses/by/4.0/
 
 doi: 10.5067/f6jmovy5navz
-# The citations are in APA 7 style, in Markdown. The STAC sci fields carry them
+# The citations of the two RGI DOIs are the APA 7 text of citation.doi.org,
+# with the title in italics as Markdown. The STAC sci fields carry them
 # without the asterisks.
 citation: >-
-  RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global
-  glacier outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data
-  Center. https://doi.org/10.5067/F6JMOVY5NAVZ
+  RGI Consortium. (2023). *Randolph Glacier Inventory - A Dataset of Global
+  Glacier Outlines, Version 7* [Data set]. NASA National Snow and Ice Data
+  Center Distributed Active Archive Center.
+  https://doi.org/10.5067/F6JMOVY5NAVZ
 
 # The authoritative distribution.
 via:
@@ -43,8 +45,8 @@ publications:
     citation: >-
       Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M.,
       Andreassen, L., Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., &
-      Tielidze, L. (2023). *The Randolph Glacier Inventory version 7.0 user
-      guide*. Zenodo. https://doi.org/10.5281/zenodo.8362857
+      Tielidze, L. (2023). *The Randolph Glacier Inventory version 7.0 User
+      guide*. Zenodo. https://doi.org/10.5281/ZENODO.8362857
 
 providers:
   - name: RGI Consortium

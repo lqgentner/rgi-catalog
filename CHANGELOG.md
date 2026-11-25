@@ -12,6 +12,9 @@ These changes are in `catalog/` on `main` and are not yet published.
 
 - The catalog declares the Portolan v0.3.0 profile schema instead of v0.2.0.
   The conformance gate requires rashid 0.4.
+- The citations of the RGI 7.0 dataset and its user guide are the APA 7
+  text of citation.doi.org. The dataset citation names the RGI Consortium
+  and the NASA NSIDC DAAC.
 
 ### Added
 

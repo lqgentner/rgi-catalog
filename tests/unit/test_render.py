@@ -20,17 +20,17 @@ DISCLAIMER = (
     "not endorsed by the rgi consortium",
     "https://doi.org/10.5067/f6jmovy5navz",
 )
-# The citations in APA 7 style.
+# The citations in APA 7 style, as citation.doi.org gives them.
 CITATION = (
-    "RGI 7.0 Consortium. (2023). *Randolph Glacier Inventory: A dataset of global glacier"
-    " outlines* (Version 7.0) [Data set]. NSIDC: National Snow and Ice Data Center."
-    " https://doi.org/10.5067/F6JMOVY5NAVZ"
+    "RGI Consortium. (2023). *Randolph Glacier Inventory - A Dataset of Global Glacier"
+    " Outlines, Version 7* [Data set]. NASA National Snow and Ice Data Center Distributed"
+    " Active Archive Center. https://doi.org/10.5067/F6JMOVY5NAVZ"
 )
 USER_GUIDE = (
     "Maussion, F., Hock, R., Paul, F., Raup, B., Rastner, P., Zemp, M., Andreassen, L.,"
     " Barr, I., Bolch, T., Kochtitzky, W., McNabb, R., & Tielidze, L. (2023)."
-    " *The Randolph Glacier Inventory version 7.0 user guide*. Zenodo."
-    " https://doi.org/10.5281/zenodo.8362857"
+    " *The Randolph Glacier Inventory version 7.0 User guide*. Zenodo."
+    " https://doi.org/10.5281/ZENODO.8362857"
 )
 # Files in catalog/ that the render does not write.
 NOT_RENDERED = ("_assets/",)
