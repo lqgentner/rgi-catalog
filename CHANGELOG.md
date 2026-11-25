@@ -15,6 +15,9 @@ These changes are in `catalog/` on `main` and are not yet published.
 - The citations of the RGI 7.0 dataset and its user guide are the APA 7
   text of citation.doi.org. The dataset citation names the RGI Consortium
   and the NASA NSIDC DAAC.
+- The READMEs say when to cite each RGI reference. The dataset goes in every
+  publication that uses RGI 7.0 data. The user guide is for specific details
+  that are not covered elsewhere, as the user guide itself states.
 
 ### Added
 
