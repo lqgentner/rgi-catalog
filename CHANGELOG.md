@@ -18,6 +18,10 @@ These changes are in `catalog/` on `main` and are not yet published.
 - The READMEs say when to cite each RGI reference. The dataset goes in every
   publication that uses RGI 7.0 data. The user guide is for specific details
   that are not covered elsewhere, as the user guide itself states.
+- Each `pmtiles` asset and `rel: pmtiles` link has the title of its
+  collection, for example `RGI 7.0 glaciers, PMTiles`. QGIS names the tile
+  layer after this title.
+- The names table has the title `RGI 7.0 glacier names, Parquet`.
 
 ### Added
 

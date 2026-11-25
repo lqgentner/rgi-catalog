@@ -107,6 +107,26 @@ thumbnail: >-
   share one frame, the Garibaldi and Marinelli glaciers in the Cordillera
   Darwin, on white.
 
+# The title and description of the file assets of each collection. The render
+# puts the collection title in {title} and the RGI version in {version}. A
+# client such as QGIS names a layer after the title, so each title names the
+# collection and the format. The pmtiles title is also the title of the
+# rel:pmtiles link. The description of the data asset comes from the geometry
+# and layout of its collection.
+assets:
+  data:
+    title: "{title}, GeoParquet"
+  names:
+    title: RGI {version} glacier names, Parquet
+    description: >-
+      The IDs, names and region codes of the GeoParquet file, without the
+      outlines. The rows are in the order of the GeoParquet file.
+  pmtiles:
+    title: "{title}, PMTiles"
+    description: >-
+      Vector tiles for web maps. All collections of this version share the
+      archive.
+
 description: >-
   The Randolph Glacier Inventory (RGI) is a globally complete inventory of
   glacier outlines. This catalog republishes it as GeoParquet files and a web

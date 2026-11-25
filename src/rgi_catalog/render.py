@@ -282,17 +282,14 @@ def _names_asset(ctx: Context, version: str, name: str, record: dict[str, Any]) 
     glaciers file.
     """
     names = record["names"]
+    spec = ctx.meta["versions"][version]["collections"][name]
     rel = f"{name}/{names['href']}"
     files = record["files"]
     described = {c["name"]: c for c in _table_columns(ctx, name, record)}
     return {
         "href": f"./{names['href']}",
         "type": PARQUET,
-        "title": "Glacier names and IDs, Parquet",
-        "description": (
-            "The IDs, names and region codes of the GeoParquet file, without the outlines. "
-            "The rows are in the order of the GeoParquet file."
-        ),
+        **_asset_text(ctx.meta, nametable.ASSET, spec, version),
         "roles": ["data"],
         "file:size": files[rel]["size"],
         "file:checksum": files[rel]["file:checksum"],
@@ -307,9 +304,19 @@ def _names_asset(ctx: Context, version: str, name: str, record: dict[str, Any]) 
     }
 
 
-PMTILES_DESCRIPTION = (
-    "Vector tiles for web maps. All collections of this version share the archive."
-)
+def _asset_text(
+    meta: dict[str, Any], key: str, spec: dict[str, Any], version: str
+) -> dict[str, str]:
+    """Return the title and description of a collection asset from ``assets`` in catalog.yaml.
+
+    The title fills ``{title}`` with the collection title and ``{version}``
+    with the RGI version.
+    """
+    text = meta["assets"][key]
+    out = {"title": text["title"].format(title=spec["title"], version=version)}
+    if "description" in text:
+        out["description"] = " ".join(text["description"].split())
+    return out
 
 
 def _data_description(spec: dict[str, Any]) -> str:
@@ -348,7 +355,7 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
         "data": {
             "href": f"./{stats['href']}",
             "type": PARQUET,
-            "title": f"{spec['title']}, GeoParquet",
+            **_asset_text(meta, "data", spec, version),
             "description": _data_description(spec),
             "roles": ["data"],
             "file:size": files[data_rel]["size"],
@@ -412,14 +419,14 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
         "file:size": files[archive]["size"],
         "file:checksum": files[archive]["file:checksum"],
     }
+    archive_text = _asset_text(meta, "pmtiles", spec, version)
     # The browser draws a collection from its assets, so the archive is an
     # asset as well as the rel:pmtiles link that the Portolan spec requires.
     # Every collection of the version shares the one archive.
     assets["pmtiles"] = {
         "href": archive_rel,
         "type": PMTILES,
-        "title": "Web map archive (vector tiles)",
-        "description": PMTILES_DESCRIPTION,
+        **archive_text,
         "roles": ["visual"],
         **archive_file,
     }
@@ -439,7 +446,7 @@ def _collection(ctx: Context, version: str, name: str) -> dict[str, Any]:
             "rel": "pmtiles",
             "href": archive_rel,
             "type": PMTILES,
-            "title": "Web map archive (vector tiles)",
+            "title": archive_text["title"],
             "pmtiles:layers": spec["pmtiles_layers"],
             **archive_file,
         },

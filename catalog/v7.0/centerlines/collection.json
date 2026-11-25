@@ -177,7 +177,7 @@
     "pmtiles": {
       "href": "../rgi7.0.pmtiles",
       "type": "application/vnd.pmtiles",
-      "title": "Web map archive (vector tiles)",
+      "title": "RGI 7.0 glacier centerlines, PMTiles",
       "description": "Vector tiles for web maps. All collections of this version share the archive.",
       "roles": [
         "visual"
@@ -268,7 +268,7 @@
       "rel": "pmtiles",
       "href": "../rgi7.0.pmtiles",
       "type": "application/vnd.pmtiles",
-      "title": "Web map archive (vector tiles)",
+      "title": "RGI 7.0 glacier centerlines, PMTiles",
       "pmtiles:layers": [
         "centerlines"
       ],
