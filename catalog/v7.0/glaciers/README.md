@@ -97,11 +97,11 @@ Open it from the Web menu and select this collection.
 | `zmax_m` | `double` | Maximum elevation (m above sea level) of the glacier. Unit: m. |
 | `zmed_m` | `double` | Median elevation (m above sea level) of the glacier. Unit: m. |
 | `zmean_m` | `double` | Mean elevation (m above sea level) of the glacier. Unit: m. |
-| `slope_deg` | `double` | Mean slope of the glacier surface. Unit: degrees. |
-| `aspect_deg` | `double` | The aspect (orientation) of the glacier surface presented as an azimuth relative to 0° at due north. Unit: degrees. |
-| `aspect_sec` | `uint8` | The aspect (orientation) of the glacier surface presented as a category. See [Coded columns](#coded-columns). |
+| `slope_deg` | `double` | Mean surface slope of the glacier. Unit: degrees. |
+| `aspect_deg` | `double` | Surface aspect (orientation) of the glacier presented as an azimuth relative to 0° at due north. Unit: degrees. |
+| `aspect_sec` | `uint8` | Surface aspect (orientation) of the glacier presented as a category. See [Coded columns](#coded-columns). |
 | `dem_source` | `string` | The name of the dataset that was used to compute the topography attributes. See [Coded columns](#coded-columns). |
-| `lmax_m` | `uint32` | Length (m) of the longest surface centerline of the glacier. Unit: m. |
+| `lmax_m` | `uint32` | Length (m) of the longest centerline of the glacier. Unit: m. |
 | `display_name` | `string` | The glacier name for map labels, cleaned from glac_name. Null when glac_name contains no usable name. The rules are in docs/PROVENANCE.md. |
 | `complex_id` | `string` | The identifier of the glacier complex to which the glacier belongs. |
 | `hypso_z0_m` | `int32` | Central elevation of the first elevation band of hypso_permille. The elevation bands are all 50 m in height, so band n is centered at hypso_z0_m + 50 * n. Unit: m. |

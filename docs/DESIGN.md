@@ -330,9 +330,9 @@ layer per archive and has no `pyramid`, `--entry-zoom` or
 in `src/rgi_catalog/tiles.py` pins it by sha256, and `sources.fetch` verifies
 it into `.cache/`.
 
-The 0.8.0 binary lacks two flags that the online documentation lists:
-`--size-valve` and `--name`/`--attribution`/`--description` on `tiles` and
-`pyramid`. The build writes the archive metadata itself
+The 0.8.0 binary lacks some flags of `tiles` and `pyramid` that the online
+documentation lists. One is `--size-valve`. The others set the archive name,
+attribution and description (`--name`, `--attribution`, `--description`). The build writes the archive metadata itself
 (`tiles.set_metadata`). It copies the header, directories and tile data byte
 for byte and replaces only the metadata block.
 
