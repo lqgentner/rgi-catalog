@@ -13,10 +13,9 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 ## Files
 
 - **GeoParquet, for analysis.** Each product is one GeoParquet file with all
-  of its rows and columns. The side files of RGI's glacier product are
-  columns of the glaciers file. These columns give the hypsometry and the
-  submission information of each glacier. Further columns give the glacier
-  complex and the links to RGI 6.0.
+  of its rows and columns. The hypsometry, the submission information,
+  the glacier complex and the links to RGI 6.0 of each glacier are columns
+  of the glaciers file. RGI distributes them as side files.
 - **A names table, for search.** The glaciers collection also has a small
   Parquet file of each glacier's ID, names and region codes, without the
   outlines. Its rows are in the order of the glaciers file.

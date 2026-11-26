@@ -345,19 +345,19 @@
         {
           "name": "slope_deg",
           "type": "double",
-          "description": "Mean surface slope of the glacier.",
+          "description": "Mean slope of the glacier's surface.",
           "unit": "degrees"
         },
         {
           "name": "aspect_deg",
           "type": "double",
-          "description": "Surface aspect (orientation) of the glacier presented as an azimuth relative to 0° at due north.",
+          "description": "Aspect (orientation) of the glacier's surface as an azimuth angle clockwise from true north (0°).",
           "unit": "degrees"
         },
         {
           "name": "aspect_sec",
           "type": "uint8",
-          "description": "Surface aspect (orientation) of the glacier presented as a category.",
+          "description": "Aspect (orientation) of the glacier's surface as a category.",
           "classification:classes": [
             {
               "value": 1,

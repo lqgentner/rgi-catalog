@@ -15,8 +15,8 @@ This is an unofficial mirror, not endorsed by the RGI Consortium. The authoritat
 
 The public root is `https://data.source.coop/lqgentner/rgi/catalog.json`. Each RGI version is a
 sub-catalog. Each RGI product is a collection with one GeoParquet file and no
-items. The glaciers collection also has a names table. The names table is
-a plain Parquet file of each glacier's ID, names and region codes.
+items. The glaciers collection also has a names table, which is a plain
+Parquet file of each glacier's ID, names and region codes.
 
 - `v7.0/`: RGI 7.0, mirror revision `7.0-r2`. Collections: `glaciers`, `complexes`, `intersects`, `centerlines`, `regions`. Read `v7.0/AGENTS.md` next.
 

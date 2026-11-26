@@ -97,9 +97,9 @@ Open it from the Web menu and select this collection.
 | `zmax_m` | `double` | Maximum elevation (m above sea level) of the glacier. Unit: m. |
 | `zmed_m` | `double` | Median elevation (m above sea level) of the glacier. Unit: m. |
 | `zmean_m` | `double` | Mean elevation (m above sea level) of the glacier. Unit: m. |
-| `slope_deg` | `double` | Mean surface slope of the glacier. Unit: degrees. |
-| `aspect_deg` | `double` | Surface aspect (orientation) of the glacier presented as an azimuth relative to 0° at due north. Unit: degrees. |
-| `aspect_sec` | `uint8` | Surface aspect (orientation) of the glacier presented as a category. See [Coded columns](#coded-columns). |
+| `slope_deg` | `double` | Mean slope of the glacier's surface. Unit: degrees. |
+| `aspect_deg` | `double` | Aspect (orientation) of the glacier's surface as an azimuth angle clockwise from true north (0°). Unit: degrees. |
+| `aspect_sec` | `uint8` | Aspect (orientation) of the glacier's surface as a category. See [Coded columns](#coded-columns). |
 | `dem_source` | `string` | The name of the dataset that was used to compute the topography attributes. See [Coded columns](#coded-columns). |
 | `lmax_m` | `uint32` | Length (m) of the longest centerline of the glacier. Unit: m. |
 | `display_name` | `string` | The glacier name for map labels, cleaned from glac_name. Null when glac_name contains no usable name. The rules are in docs/PROVENANCE.md. |

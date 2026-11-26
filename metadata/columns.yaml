@@ -113,18 +113,18 @@ glaciers:
     unit: m
     source: *g_metadata
   slope_deg:
-    description: Mean surface slope of the glacier.
+    description: Mean slope of the glacier's surface.
     unit: degrees
     source: *g_metadata
   aspect_deg:
     description: >-
-      Surface aspect (orientation) of the glacier presented as an azimuth
-      relative to 0° at due north.
+      Aspect (orientation) of the glacier's surface as an azimuth angle
+      clockwise from true north (0°).
     unit: degrees
     source: *g_metadata
   aspect_sec:
     description: >-
-      Surface aspect (orientation) of the glacier presented as a category.
+      Aspect (orientation) of the glacier's surface as a category.
     source: *g_metadata
   dem_source:
     description: >-
