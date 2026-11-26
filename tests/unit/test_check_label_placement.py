@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from collections import Counter
 import gzip
 import importlib.util
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -130,10 +132,14 @@ class _Reader:
         return self.tiles.get((z, x, y))
 
 
-def _run(tiles: dict[tuple[int, int, int], bytes]) -> Any:
+def _label_line(tx: int, ty: int, x: float, y: float) -> Any:
+    """Return a label line 2,000 tile units long, 250 px at z7, centered at (x, y) in a tile."""
+    return placement.Line(tx * 4096 + x, ty * 4096 + y, 2000.0, 100.0, 512 / 4096)
+
+
+def _run(tiles: dict[tuple[int, int, int], bytes], lines: list[Any] | None = None) -> Any:
     placement._reader = _Reader(tiles)
-    # Center tile (10, 20). The line is 2,000 tile units long, 250 px at z7.
-    placement._lines = {KEY: (10, 20, 2000.0, 100.0, 512 / 4096)}
+    placement._lines = {KEY: lines or [_label_line(10, 20, 2000, 2000)]}
     return placement._check_tiles(sorted(tiles))
 
 
@@ -142,21 +148,66 @@ def test_check_tiles_finds_a_whole_line_placed_once() -> None:
     # The neighbour holds the same line in its buffer. Its center lies outside.
     right = _layer("glacier-labels", [(KEY[0], KEY[1], _line([(-3096, 2000), (-1096, 2000)]))])
     whole, placed, unknown = _run({(7, 10, 20): _tile(center), (7, 11, 20): _tile(right)})
-    assert whole == [KEY]
-    assert placed == [(*KEY, True)]
+    assert whole == [(*KEY, 0)]
+    assert placed == [((*KEY, 0), True)]
     assert unknown == set()
 
 
-def test_check_tiles_counts_a_second_placement_and_a_clipped_line() -> None:
-    # The center tile has the line clipped short, and the neighbour places it too.
+def test_check_tiles_tells_apart_two_lines_of_a_glacier() -> None:
+    # Two names of one glacier: one centered in tile (10, 20), one in tile
+    # (11, 20). Each tile holds both lines, the other one in its buffer.
+    lines = [_label_line(10, 20, 2000, 2000), _label_line(11, 20, 2000, 2000)]
+    left = [_line([(1000, 2000), (3000, 2000)]), _line([(5096, 2000), (7096, 2000)])]
+    right = [_line([(-3096, 2000), (-1096, 2000)]), _line([(1000, 2000), (3000, 2000)])]
+    tiles = {
+        (7, 10, 20): _tile(_layer("glacier-labels", [(*KEY, line) for line in left])),
+        (7, 11, 20): _tile(_layer("glacier-labels", [(*KEY, line) for line in right])),
+    }
+    whole, placed, unknown = _run(tiles, lines)
+    assert whole == [(*KEY, 0), (*KEY, 1)]
+    assert placed == [((*KEY, 0), True), ((*KEY, 1), True)]
+    assert unknown == set()
+
+
+def test_check_tiles_marks_a_name_on_a_clipped_line_stray() -> None:
+    # The center tile has the line clipped short, and the neighbour places a
+    # clipped part too. Neither part has the center of the label line.
     center = _layer("glacier-labels", [(KEY[0], KEY[1], _line([(1000, 2000), (2000, 2000)]))])
     right = _layer("glacier-labels", [(KEY[0], KEY[1], _line([(100, 2000), (2100, 2000)]))])
     whole, placed, _ = _run({(7, 10, 20): _tile(center), (7, 11, 20): _tile(right)})
     assert whole == []
-    assert [fits for *_, fits in placed] == [True, True]
+    stray = (*KEY, placement.STRAY)
+    assert placed == [(stray, True), (stray, True)]
 
 
 def test_check_tiles_reports_lines_missing_from_the_label_file() -> None:
     stale = _layer("glacier-labels", [("RGI2000-v7.0-G-11-99999", 7, _line([(1, 1), (9, 9)]))])
     _, _, unknown = _run({(7, 10, 20): _tile(stale)})
     assert unknown == {("RGI2000-v7.0-G-11-99999", 7)}
+
+
+def _verdict(
+    placements: dict[tuple[str, int, int], int], capsys: pytest.CaptureFixture[str]
+) -> Any:
+    lines = {KEY: [_label_line(10, 20, 2000, 2000), _label_line(11, 20, 2000, 2000)]}
+    whole = {(*KEY, 0), (*KEY, 1)}
+    ok = placement._verdict(lines, whole, Counter(placements), set(), Path("labels.parquet"))
+    return ok, capsys.readouterr().out
+
+
+def test_verdict_passes_each_line_placed_once(capsys: pytest.CaptureFixture[str]) -> None:
+    ok, out = _verdict({(*KEY, 0): 1, (*KEY, 1): 1}, capsys)
+    assert ok
+    assert "z7: 2 lines, 2 whole in the center tile, 2 placed once" in out
+
+
+def test_verdict_fails_a_missing_second_line(capsys: pytest.CaptureFixture[str]) -> None:
+    ok, out = _verdict({(*KEY, 0): 1}, capsys)
+    assert not ok
+    assert "1 placed once" in out
+
+
+def test_verdict_fails_a_stray_name(capsys: pytest.CaptureFixture[str]) -> None:
+    ok, out = _verdict({(*KEY, 0): 1, (*KEY, 1): 1, (*KEY, placement.STRAY): 1}, capsys)
+    assert not ok
+    assert "1 glacier zooms have a name on a line that is not a label line" in out

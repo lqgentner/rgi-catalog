@@ -522,19 +522,19 @@ reached.
 
 ## Glacier labels
 
-A glacier name follows a curved label line near the glacier's terminus, as
-swisstopo's national map writes a name along the tongue. The `tiles` step
-fits the lines. The styles draw the names on them.
+Each glacier name follows curved label lines along the glacier's main
+centerline. On a long glacier the name repeats, as a map repeats the name of a
+river. The `tiles` step fits the lines. The styles draw the names on them.
 
-### The label line
+### The label lines
 
 A main centerline runs from the head to the terminus. Its last vertex is
 RGI's terminus point (`termlon`, `termlat`) for each of the 9,457 named
 glaciers with a main centerline.
 
-At each zoom, a stretch of the smoothed centerline slides up from the
-terminus in steps of 2 px. The build uses the first stretch that passes two
-checks:
+At each zoom, the fit smooths the centerline and tries stretches of it. The
+stretches start 2 px apart, on a grid through the stretch at the middle of
+the line. A stretch must pass two checks:
 
 - MapLibre must keep the name. The check is a port of MapLibre's rule for
   the angle between glyphs. MapLibre's limit is 45°. The fit uses 40°, so
@@ -542,14 +542,35 @@ checks:
 - The text must keep 9.6 px to the glacier's own outline on both sides of
   the line. That is half the text height (0.6 em) and the 1.2 px halo.
 
-So a narrow tongue pushes the name up the glacier, or drops the line at that
-zoom. The downstream end of the name keeps a tenth of the centerline, and at
-least 8.4 px, to the terminus. The middle of the centerline is always a
-candidate. The fit measures the text with the glyph advances in
-`metadata/glyph_advances.yaml`.
+The first name uses the stretch that passes nearest the middle of the
+centerline. So a narrow part or a sharp bend at the middle moves the name to
+the nearest stretch that passes. If no stretch passes, the zoom has no line.
+Each end of a name keeps a tenth of the centerline, and at least 8.4 px, to
+the end of the line beside it, the head or the terminus. The middle of the
+centerline is always a candidate. The fit measures the text with the glyph
+advances in `metadata/glyph_advances.yaml`.
+
+swisstopo's base map draws each glacier name at the middle of one name line,
+which runs from near the head to near the terminus. On the 209 glaciers with
+one swisstopo name between 7.3° and 8.3° E and 45.9° and 46.6° N, the
+middle of that line lies at 0.46 of the RGI centerline (median). The name of
+the fit lies at 0.50 when it appears once.
+
+### Repeated names
+
+The name repeats outward from the first name, down the centerline and up it.
+Each repeat is the nearest stretch that passes and keeps 512 px of
+centerline between its text and the text of the name before it. A narrow
+part moves a repeat further out.
+
+When the zoom changes, the first name keeps its place nearest the middle,
+and the repeats change. An even spread of the names fits one more name on some glaciers,
+but then every name moves when the number of names changes. A build without
+the margin at the head had names at 22,858 zooms of a glacier. There, the
+even spread fit one more name at 6,092 of them.
 
 The fit starts at `label_minzoom` and tries each zoom up to z14. A glacier
-has a label line at each zoom at which a stretch passes, with that zoom in
+has label lines at each zoom at which a stretch passes, with that zoom in
 `label_zoom`. `label_minzoom` falls by one zoom for every factor of 4 in
 area, because each zoom step quadruples a glacier's area on screen. A
 glacier of 1 km² starts at z11. The result is clamped to z7–z12.
@@ -558,9 +579,10 @@ Label lines, by `label_zoom`:
 
 | z | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| lines | 118 | 371 | 822 | 1,509 | 2,632 | 4,177 | 5,791 | 7,438 |
+| lines | 118 | 382 | 889 | 1,965 | 4,373 | 9,147 | 18,410 | 36,481 |
+| most names on one glacier | 1 | 3 | 7 | 13 | 25 | 51 | 103 | 205 |
 
-7,438 of the 9,457 named glaciers have a line at some zoom. The other 2,019
+7,435 of the 9,457 named glaciers have a line at some zoom. The other 2,022
 have no name in the styles.
 
 ### The label layers
@@ -570,8 +592,10 @@ the lines of its own zoom. The z12 tiles also contain the lines of z13 and
 z14. MapLibre overscales a z12 tile past z12 and evaluates the filter at the
 overscaled zoom. The fit of a z13 or z14 line uses the z12 tile grid.
 
-The tile buffer is 256 px, one whole tile. Each line lies whole in each tile
-it touches, so it is in 28 to 47 tiles on average, 513,744 copies in all.
+The tile buffer is one whole tile on each side, `--tile-buffer 256` in the
+tiler's units of a 256-pixel tile. Each line lies whole in each tile
+it touches, so it is in 28 to 37 tiles on average, 2,024,951 copies in all.
+The repeated names add 43.7 MB to the archive.
 
 The `glacier-label-points` layer contains RGI's point of every glacier with
 a `display_name`, from its `label_minzoom`. No style draws it. A point is in
@@ -580,21 +604,23 @@ points had 356,121 copies, and the archive was 12.3 MB larger.
 
 ### The label filter
 
-The styles show each line from its `label_zoom` up to the next zoom, and the
-z14 line at every zoom from z14. So a name moves down the glacier at each
-whole zoom. MapLibre evaluates a filter at the whole zoom of the tile.
+The styles show the lines of a zoom from their `label_zoom` up to the next
+zoom, and the z14 lines at every zoom from z14. So the repeats change at
+each whole zoom. MapLibre evaluates a filter at the whole zoom of the tile.
 OpenLayers with ol-mapbox-style evaluates it at the fractional map zoom. The
-range matches one line per glacier in both.
+range matches the lines of one zoom per glacier in both.
 
 ### The placement check
 
 `scripts/check_label_placement.py` reads the label layer of the tiles. It
-checks that the tile at the center of each line contains the whole line, and
-that each name is placed once. The placement uses the port of MapLibre's
+matches each line in a tile to the label line with the same center. It
+checks that the tile at the center of each line contains the whole line,
+that each name is placed once, and that MapLibre places no name on a clipped
+part of a line. The placement uses the port of MapLibre's
 rule that the fit uses, with MapLibre's own 45° limit. So the script checks what the tiler did to the
 lines: clipping, rounding to the tile grid, the buffer and the overzoom. The
-port and the glyph widths are outside its scope. All 22,858 lines pass. The
-check takes about a minute on 15 cores.
+port and the glyph widths are outside its scope. All 71,765 lines pass. The
+check takes about 80 s on 15 cores.
 
 ## Glacier styles
 

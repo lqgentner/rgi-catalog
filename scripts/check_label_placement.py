@@ -8,7 +8,9 @@ ARCHIVE defaults to ``staging/v7.0/rgi7.0.pmtiles``, and LABELS to the label
 file that the ``tiles`` step wrote next to it (``.tiles/labels.parquet``).
 
 The check reads the ``glacier-labels`` layer of the tiles, as a client gets
-them. For each label line it checks two things:
+them. A glacier can have several label lines at one zoom. The check matches a
+line in a tile to the label line with the same center. For each label line it
+checks two things:
 
 - The tile that holds the center of the line has the whole line. Each tile
   then finds the same line center.
@@ -23,8 +25,9 @@ The ``tiles`` step uses the same port of MapLibre's rule. So the script checks
 what the tiler did to the lines: clipping, rounding to the tile grid, the
 buffer and the overzoom. It does not check the port itself.
 
-The script exits with 1 when a line fails a check, when a tile holds a label
-line that the label file does not have, or when the label file has no line.
+The script exits with 1 when a line fails a check, when a name lands on a
+clipped part of a line, when a tile holds a label line that the label file
+does not have, or when the label file has no line.
 """
 
 from __future__ import annotations
@@ -37,7 +40,7 @@ import math
 from pathlib import Path
 import struct
 import sys
-from typing import Any
+from typing import Any, NamedTuple
 
 import geopandas as gpd
 import numpy as np
@@ -66,12 +69,35 @@ LINESTRING = 2
 VALUE_STRING, VALUE_SINT = 1, 6
 MOVE_TO, CLOSE_PATH = 1, 7
 
-# A label line, by (rgi_id, label_zoom): its center tile, its length in tile
-# units, its label width in pixels, and pixels per tile unit.
-Line = tuple[int, int, float, float, float]
+# A line in a tile belongs to the label line whose center lies within this
+# many tile units of its own center.
+CENTER_TOLERANCE = 8
+
+
+class Line(NamedTuple):
+    """A label line, in global tile units of the zoom of its tiles."""
+
+    cx: float
+    cy: float
+    length: float
+    # The width of the name, and the pixels per tile unit at label_zoom.
+    label_px: float
+    px_per_unit: float
+
+    @property
+    def tile(self) -> tuple[int, int]:
+        """Return the column and row of the tile that holds the center."""
+        return int(self.cx // EXTENT), int(self.cy // EXTENT)
+
+
+# A label line by (rgi_id, label_zoom, index). The index counts the lines of
+# a glacier at a zoom in the order of the label file.
+Key = tuple[str, int, int]
+# The index of a line in a tile that matches no label line.
+STRAY = -1
 
 _reader: Reader | None = None
-_lines: dict[tuple[str, int], Line] = {}
+_lines: dict[tuple[str, int], list[Line]] = {}
 
 
 def _varint(data: bytes, i: int) -> tuple[int, int]:
@@ -190,13 +216,21 @@ def _center(coords: np.ndarray) -> tuple[np.ndarray, float]:
     return coords[i] + ratio * (coords[i + 1] - coords[i]), float(distance[-1])
 
 
-def _init(archive: str, lines: dict[tuple[str, int], Line]) -> None:
+def _init(archive: str, lines: dict[tuple[str, int], list[Line]]) -> None:
     global _reader, _lines  # noqa: PLW0603 - one reader per worker process
     _reader = Reader(MmapSource(Path(archive).open("rb")))  # noqa: SIM115 - lives with the worker
     _lines = lines
 
 
-Checked = tuple[list[tuple[str, int]], list[tuple[str, int, bool]], set[tuple[str, int]]]
+Checked = tuple[list[Key], list[tuple[Key, bool]], set[tuple[str, int]]]
+
+
+def _match(lines: list[Line], center: np.ndarray) -> int | None:
+    """Return the index of the label line with this center, in global tile units."""
+    for index, line in enumerate(lines):
+        if math.hypot(center[0] - line.cx, center[1] - line.cy) < CENTER_TOLERANCE:
+            return index
+    return None
 
 
 def _check_tiles(batch: list[tuple[int, int, int]]) -> Checked:
@@ -211,40 +245,48 @@ def _check_tiles(batch: list[tuple[int, int, int]]) -> Checked:
     if _reader is None:
         msg = "the worker has no archive"
         raise RuntimeError(msg)
-    whole: list[tuple[str, int]] = []
-    placed: list[tuple[str, int, bool]] = []
+    whole: list[Key] = []
+    placed: list[tuple[Key, bool]] = []
     unknown: set[tuple[str, int]] = set()
     for z, x, y in batch:
         tile = _reader.get(z, x, y)
         if tile is None:
             continue
         for rgi_id, label_zoom, geometry in _label_features(tile):
-            line = _lines.get((rgi_id, label_zoom))
-            if line is None:
+            lines = _lines.get((rgi_id, label_zoom))
+            if lines is None:
                 unknown.add((rgi_id, label_zoom))
                 continue
-            tx, ty, length, label_px, px_per_unit = line
             parts = [p for p in geometry if len(p) > 1]
-            if (
-                (x, y) == (tx, ty)
-                and len(parts) == 1
-                and abs(_center(parts[0])[1] - length) < LENGTH_TOLERANCE
-            ):
-                whole.append((rgi_id, label_zoom))
             for part in parts:
-                (px, py), _ = _center(part)
+                (px, py), part_length = _center(part)
+                index = _match(lines, np.array([x * EXTENT + px, y * EXTENT + py]))
+                # A tile clips a line that runs past its buffer. The clipped
+                # part has a center of its own, and a name there is STRAY.
+                key = (rgi_id, label_zoom, STRAY if index is None else index)
+                if index is not None:
+                    line = lines[index]
+                    if (
+                        (x, y) == line.tile
+                        and len(parts) == 1
+                        and abs(part_length - line.length) < LENGTH_TOLERANCE
+                    ):
+                        whole.append(key)
                 if 0 <= px < EXTENT and 0 <= py < EXTENT:
+                    # The lines of a glacier at one zoom share the width and scale.
                     fits = tiles.center_label_fits(
-                        part * px_per_unit, label_px, max_angle=MAPLIBRE_MAX_ANGLE
+                        part * lines[0].px_per_unit,
+                        lines[0].label_px,
+                        max_angle=MAPLIBRE_MAX_ANGLE,
                     )
-                    placed.append((rgi_id, label_zoom, fits))
+                    placed.append((key, fits))
     return whole, placed, unknown
 
 
-def _lines_of(labels: Path) -> dict[tuple[str, int], Line]:
+def _lines_of(labels: Path) -> dict[tuple[str, int], list[Line]]:
     table = gpd.read_parquet(labels)
     table = table.loc[table["label_zoom"].notna()].to_crs(3857)
-    lines: dict[tuple[str, int], Line] = {}
+    lines: dict[tuple[str, int], list[Line]] = collections.defaultdict(list)
     for rgi_id, label_zoom, name, geometry in zip(
         table["rgi_id"], table["label_zoom"], table["display_name"], table.geometry, strict=True
     ):
@@ -256,14 +298,10 @@ def _lines_of(labels: Path) -> dict[tuple[str, int], Line]:
         )
         (cx, cy), length = _center(grid)
         px_per_unit = 2 ** (int(label_zoom) - zoom) * tiles.TILE_PX / EXTENT
-        lines[rgi_id, int(label_zoom)] = (
-            int(cx // EXTENT),
-            int(cy // EXTENT),
-            length,
-            tiles.label_width_px(name),
-            px_per_unit,
+        lines[rgi_id, int(label_zoom)].append(
+            Line(cx, cy, length, tiles.label_width_px(name), px_per_unit)
         )
-    return lines
+    return dict(lines)
 
 
 def check(archive: Path, labels: Path, workers: int | None = None) -> bool:
@@ -288,33 +326,49 @@ def check(archive: Path, labels: Path, workers: int | None = None) -> bool:
         print(f"{labels} has no label line")
         return False
     wanted: set[tuple[int, int, int]] = set()
-    for (_, label_zoom), (tx, ty, *_) in lines.items():
+    for (_, label_zoom), stretches in lines.items():
         zoom = min(label_zoom, tiles.MAXZOOM)
         n = 2**zoom
         # Tile columns wrap at the antimeridian, rows end at the poles.
         wanted.update(
             (zoom, (tx + dx) % n, ty + dy)
+            for tx, ty in (line.tile for line in stretches)
             for dx in NEIGHBOURS
             for dy in NEIGHBOURS
             if 0 <= ty + dy < n
         )
     ordered = sorted(wanted)
     batches = [ordered[i : i + 500] for i in range(0, len(ordered), 500)]
-    whole: set[tuple[str, int]] = set()
-    placements: collections.Counter[tuple[str, int]] = collections.Counter()
+    whole: set[Key] = set()
+    placements: collections.Counter[Key] = collections.Counter()
     unknown: set[tuple[str, int]] = set()
     with ProcessPoolExecutor(workers, initializer=_init, initargs=(str(archive), lines)) as pool:
         for batch_whole, batch_placed, batch_unknown in pool.map(_check_tiles, batches):
             whole.update(batch_whole)
-            placements.update((rgi_id, z) for rgi_id, z, fits in batch_placed if fits)
+            placements.update(key for key, fits in batch_placed if fits)
             unknown.update(batch_unknown)
-    ok = not unknown
+    return _verdict(lines, whole, placements, unknown, labels)
+
+
+def _verdict(
+    lines: dict[tuple[str, int], list[Line]],
+    whole: set[Key],
+    placements: collections.Counter[Key],
+    unknown: set[tuple[str, int]],
+    labels: Path,
+) -> bool:
+    """Print the counts by zoom and the first problems, and return whether all lines pass."""
+    stray = sorted(k for k in placements if k[2] == STRAY)
+    ok = not unknown and not stray
     if unknown:
         first = sorted(unknown)[:5]
         print(f"{len(unknown)} label lines in the tiles are not in {labels}: {first}")
-    by_zoom: dict[int, list[tuple[str, int]]] = collections.defaultdict(list)
-    for key in lines:
-        by_zoom[key[1]].append(key)
+    if stray:
+        msg = f"{len(stray)} glacier zooms have a name on a line that is not a label line"
+        print(f"{msg}: {stray[:5]}")
+    by_zoom: dict[int, list[Key]] = collections.defaultdict(list)
+    for (rgi_id, label_zoom), stretches in lines.items():
+        by_zoom[label_zoom].extend((rgi_id, label_zoom, i) for i in range(len(stretches)))
     for zoom in sorted(by_zoom):
         keys = by_zoom[zoom]
         problems = [k for k in keys if k not in whole or placements[k] != 1]
@@ -322,8 +376,8 @@ def check(archive: Path, labels: Path, workers: int | None = None) -> bool:
             f"z{zoom}: {len(keys)} lines, {sum(k in whole for k in keys)} whole in the center "
             f"tile, {sum(placements[k] == 1 for k in keys)} placed once"
         )
-        for rgi_id, _ in problems[:5]:
-            print(f"  {rgi_id}: whole={(rgi_id, zoom) in whole} placed={placements[rgi_id, zoom]}")
+        for key in problems[:5]:
+            print(f"  {key}: whole={key in whole} placed={placements[key]}")
         ok = ok and not problems
     return ok
 

@@ -202,7 +202,9 @@ def test_write_labels_adds_line_per_zoom_along_longest_main_centerline(
     assert set(lines["rgi_id"]) == {BIG}
     point = labels.loc[(labels["rgi_id"] == BIG) & (labels.geom_type == "Point")].iloc[0]
     assert point["line_zoom"] >= point["label_minzoom"]
-    assert list(lines["label_zoom"]) == list(range(point["line_zoom"], tiles.LABEL_MAXZOOM + 1))
+    zooms = list(range(point["line_zoom"], tiles.LABEL_MAXZOOM + 1))
+    assert sorted(set(lines["label_zoom"])) == zooms
+    assert list(lines["label_zoom"]) == sorted(lines["label_zoom"])
     assert (lines["label_minzoom"] == lines["label_zoom"]).all()
     assert (lines["line_zoom"] == point["line_zoom"]).all()
     assert (lines["display_name"] == point["display_name"]).all()
@@ -211,11 +213,14 @@ def test_write_labels_adds_line_per_zoom_along_longest_main_centerline(
     # line is shorter than a stretch, so the label line is all of it.
     assert line["geometry"].bounds[1] == pytest.approx(61.0, abs=0.001)
     assert line["geometry"].centroid.x == pytest.approx(-147.0, abs=0.01)
-    # The line runs east to its terminus. At each later zoom the name sits
-    # further down the line.
-    middles = [g.interpolate(0.5, normalized=True).x for g in lines["geometry"]]
-    assert middles == sorted(middles)
-    assert middles[-1] > middles[0]
+    # The line runs east to its terminus, straight through a wide glacier.
+    # At each zoom one name sits at its middle, and the names of a zoom run
+    # from the head down. At the later zooms the name repeats.
+    assert lines.groupby("label_zoom").size().max() > 1
+    for _, names in lines.groupby("label_zoom")["geometry"]:
+        middles = [g.interpolate(0.5, normalized=True).x for g in names]
+        assert middles == sorted(middles)
+        assert min(abs(x + 147.0) for x in middles) < 0.002
     short = labels.loc[labels["rgi_id"] == "RGI2000-v7.0-G-11-00001"]
     assert list(short.geom_type) == ["Point"]
     assert pd.isna(short["line_zoom"].iloc[0])
@@ -824,44 +829,56 @@ def test_overview_columns_cover_the_styles() -> None:
     assert set(tiles.COMPLEX_OVERVIEW_COLUMNS) == {"rgi_id", "area_km2"}
 
 
-def test_stretch_starts_slide_up_from_terminus_margin() -> None:
-    # The name ends a tenth of the line before the terminus. The slide
-    # goes up to the head and passes the middle.
+def test_stretch_starts_step_out_from_the_middle_to_the_end_margins() -> None:
     line_px, label_px, keep_px = 1000.0, 92.0, 160.0
     starts = tiles.stretch_starts(line_px, label_px, keep_px)
-    label_end = starts[0] + (keep_px + label_px) / 2
-    assert label_end == pytest.approx(line_px * (1 - tiles.LABEL_TONGUE_MARGIN))
-    assert np.all(np.diff(starts) < 0)
-    assert np.all(-np.diff(starts) <= tiles.LABEL_SLIDE_PX)
-    assert (line_px - keep_px) / 2 in starts
-    assert starts[-1] == 0
+    middle = (line_px - keep_px) / 2
+    assert starts[len(starts) // 2] == middle
+    assert np.allclose(np.diff(starts), tiles.LABEL_STEP_PX)
+    # The text of the outermost names keeps a tenth of the line to each end,
+    # to within a step.
+    margin = line_px * tiles.LABEL_END_MARGIN
+    text_start = starts[0] + (keep_px - label_px) / 2
+    text_end = starts[-1] + (keep_px + label_px) / 2
+    assert margin <= text_start < margin + tiles.LABEL_STEP_PX
+    assert line_px - margin - tiles.LABEL_STEP_PX < text_end <= line_px - margin
     # A name that only fits at the middle keeps the middle.
     assert tiles.stretch_starts(200.0, 150.0, 200.0).tolist() == [0.0]
+
+
+def test_repeat_names_take_the_nearest_fit_a_step_out() -> None:
+    starts = np.arange(0.0, 100.0, 2.0)
+    # Candidates 30 to 35 fail, so the name below the first at 25 moves on to 36.
+    names = tiles.repeat_names(starts, 25, 10.0, lambda i: not 30 <= i <= 35)
+    assert names == [0, 5, 10, 15, 20, 25, 36, 41, 46]
 
 
 def _metres(outline: shapely.Geometry, zoom: int) -> shapely.Geometry:
     return shapely.transform(outline, lambda xy: xy * tiles.pixel_m(zoom))
 
 
-def test_label_line_sits_near_terminus_before_a_bend() -> None:
+def test_label_line_sits_at_middle_or_nearest_stretch_that_fits() -> None:
     zoom = tiles.MAXZOOM
     px_m = tiles.pixel_m(zoom)
     label_px = tiles.label_width_px("Big Glacier")
     needed_px = label_px + 2 * tiles.LABEL_PAD_PX
     # The line runs from the head at x = 0 to the terminus at x = 1000.
     straight = np.array([[0.0, 0.0], [1000.0, 0.0]])
-    wide = shapely.box(-100.0, -500.0, 1100.0, 500.0)
-    placed = tiles.label_window(straight * px_m, "Big Glacier", zoom, _metres(wide, zoom))
-    assert placed is not None
-    center = shapely.LineString(placed / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
-    margin = 1000 * tiles.LABEL_TONGUE_MARGIN
-    assert center.x + label_px / 2 == pytest.approx(1000 - margin, abs=0.5)
-    # A sharp bend near the terminus pushes the name up the line, past the bend.
-    bent = np.array([[0.0, 0.0], [600.0, 0.0], [600.0, -60.0]])
-    placed = tiles.label_window(bent * px_m, "Big Glacier", zoom, _metres(wide, zoom))
-    assert placed is not None
-    center = shapely.LineString(placed / tiles.pixel_m(zoom)).interpolate(0.5, normalized=True)
-    assert 600 - needed_px / 2 - 4 * tiles.LABEL_SMOOTH_PX < center.x < 600 - needed_px / 2
+    wide = shapely.box(-100.0, -600.0, 1100.0, 500.0)
+    placed = tiles.label_windows(straight * px_m, "Big Glacier", zoom, _metres(wide, zoom))
+    assert len(placed) == 1
+    center = shapely.LineString(placed[0] / px_m).interpolate(0.5, normalized=True)
+    assert center.x == pytest.approx(500, abs=0.5)
+    # A sharp bend at the middle moves the name off the bend, to the nearest
+    # stretch that passes.
+    bent = np.array([[0.0, 0.0], [500.0, 0.0], [500.0, -500.0]])
+    placed = tiles.label_windows(bent * px_m, "Big Glacier", zoom, _metres(wide, zoom))
+    assert len(placed) == 1
+    center = shapely.LineString(placed[0] / px_m).interpolate(0.5, normalized=True)
+    off = abs(shapely.LineString(bent).project(center) - 500)
+    assert needed_px / 2 < off < needed_px / 2 + 4 * tiles.LABEL_SMOOTH_PX
+    # Of the two stretches nearest the bend, the upstream one wins.
+    assert center.x < 500
 
 
 def test_label_line_keeps_clear_of_a_narrow_tongue() -> None:
@@ -869,15 +886,91 @@ def test_label_line_keeps_clear_of_a_narrow_tongue() -> None:
     px_m = tiles.pixel_m(zoom)
     label_px = tiles.label_width_px("Big Glacier")
     line = np.array([[0.0, 0.0], [1000.0, 0.0]])
-    # The glacier is 100 px wide up to x = 600 and 16 px wide below it.
+    # The glacier is 100 px wide up to x = 400 and 16 px wide below it, so
+    # the middle of the line is too narrow for the name.
     half = 8.0
-    tongue = shapely.box(0.0, -50.0, 600.0, 50.0) | shapely.box(600.0, -half, 1000.0, half)
-    placed = tiles.label_window(line * px_m, "Big Glacier", zoom, _metres(tongue, zoom))
-    assert placed is not None
-    center = shapely.LineString(placed / px_m).interpolate(0.5, normalized=True)
-    # The text ends where it keeps LABEL_CLEARANCE_PX to the corner at (600, 8).
-    limit = 600 - math.sqrt(tiles.LABEL_CLEARANCE_PX**2 - half**2)
-    assert limit - tiles.LABEL_SLIDE_PX - 0.5 <= center.x + label_px / 2 <= limit + 0.5
+    tongue = shapely.box(0.0, -50.0, 400.0, 50.0) | shapely.box(400.0, -half, 1000.0, half)
+    placed = tiles.label_windows(line * px_m, "Big Glacier", zoom, _metres(tongue, zoom))
+    assert len(placed) == 1
+    center = shapely.LineString(placed[0] / px_m).interpolate(0.5, normalized=True)
+    # The text ends where it keeps LABEL_CLEARANCE_PX to the corner at (400, 8).
+    limit = 400 - math.sqrt(tiles.LABEL_CLEARANCE_PX**2 - half**2)
+    assert limit - tiles.LABEL_STEP_PX - 0.5 <= center.x + label_px / 2 <= limit + 0.5
     # A glacier narrower than the text everywhere gets no line.
     strip = shapely.box(-100.0, -half, 1100.0, half)
-    assert tiles.label_window(line * px_m, "Big Glacier", zoom, _metres(strip, zoom)) is None
+    assert tiles.label_windows(line * px_m, "Big Glacier", zoom, _metres(strip, zoom)) == []
+
+
+def _name_centers(
+    line: np.ndarray, outline: shapely.Geometry, zoom: int = tiles.MAXZOOM
+) -> list[float]:
+    """Return the x of each name's center, for a line along the x axis."""
+    px_m = tiles.pixel_m(zoom)
+    placed = tiles.label_windows(line * px_m, "Big Glacier", zoom, _metres(outline, zoom))
+    return [shapely.LineString(p / px_m).interpolate(0.5, normalized=True).x for p in placed]
+
+
+def test_label_lines_repeat_outward_from_the_middle_to_the_end_margins() -> None:
+    label_px = tiles.label_width_px("Big Glacier")
+    step = label_px + tiles.LABEL_REPEAT_GAP_PX
+    line = np.array([[0.0, 0.0], [3000.0, 0.0]])
+    centers = _name_centers(line, shapely.box(-100.0, -500.0, 3100.0, 500.0))
+    # The names run from the head down. One sits at the middle, and each
+    # other keeps a gap to the one beside it toward the middle.
+    assert len(centers) >= 3
+    assert min(abs(x - 1500) for x in centers) < 0.5
+    gaps = np.diff(centers) - label_px
+    assert np.all(gaps >= tiles.LABEL_REPEAT_GAP_PX - 0.5)
+    assert np.all(gaps < tiles.LABEL_REPEAT_GAP_PX + tiles.LABEL_STEP_PX + 0.5)
+    # The text keeps a tenth of the line to the head and to the terminus. No
+    # other name fits beyond the outermost ones.
+    margin = 3000 * tiles.LABEL_END_MARGIN
+    assert margin - 0.5 <= centers[0] - label_px / 2 < margin + step
+    assert 3000 - margin - step < centers[-1] + label_px / 2 <= 3000 - margin + 0.5
+
+
+def test_label_lines_repeat_past_a_narrow_part() -> None:
+    label_px = tiles.label_width_px("Big Glacier")
+    step = label_px + tiles.LABEL_REPEAT_GAP_PX
+    line = np.array([[0.0, 0.0], [3000.0, 0.0]])
+    # The glacier narrows to 16 px where the name below the middle would sit.
+    half = 8.0
+    cut = (1500 + step - 20, 1500 + step + 20)
+    outline = shapely.difference(
+        shapely.box(-100.0, -500.0, 3100.0, 500.0),
+        shapely.box(cut[0], half, cut[1], 600.0) | shapely.box(cut[0], -600.0, cut[1], -half),
+    )
+    centers = _name_centers(line, outline)
+    below = [x for x in centers if x > 1500]
+    # The text starts where it keeps LABEL_CLEARANCE_PX to the corner at the cut.
+    limit = cut[1] + math.sqrt(tiles.LABEL_CLEARANCE_PX**2 - half**2)
+    assert limit - 0.5 <= below[0] - label_px / 2 < limit + tiles.LABEL_STEP_PX + 0.5
+
+
+def test_label_lines_repeat_on_both_sides_of_an_off_middle_name() -> None:
+    label_px = tiles.label_width_px("Big Glacier")
+    line = np.array([[0.0, 0.0], [3000.0, 0.0]])
+    # The middle of the glacier is 16 px wide, too narrow for the name.
+    half = 8.0
+    narrow = (1300.0, 1700.0)
+    outline = shapely.difference(
+        shapely.box(-100.0, -500.0, 3100.0, 500.0),
+        shapely.box(narrow[0], half, narrow[1], 600.0)
+        | shapely.box(narrow[0], -600.0, narrow[1], -half),
+    )
+    centers = _name_centers(line, outline)
+    clear = math.sqrt(tiles.LABEL_CLEARANCE_PX**2 - half**2)
+    # The first name sits next to the narrow part, and the names repeat
+    # from it to both sides of the middle.
+    assert all(
+        x + label_px / 2 <= narrow[0] - clear + 0.5 or x - label_px / 2 >= narrow[1] + clear - 0.5
+        for x in centers
+    )
+    # The first name is the upstream neighbour of the narrow part.
+    upstream = [x for x in centers if x < 1500]
+    assert len(upstream) >= 2
+    first_end = max(upstream) + label_px / 2
+    assert narrow[0] - clear - tiles.LABEL_STEP_PX - 0.5 < first_end <= narrow[0] - clear + 0.5
+    assert any(x > 1500 for x in centers)
+    gaps = np.diff(centers) - label_px
+    assert np.all(gaps >= tiles.LABEL_REPEAT_GAP_PX - 0.5)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import functools
 import gzip
 import json
 import math
@@ -35,7 +36,7 @@ from rgi_catalog.sources import SourcePin, fetch
 
 if TYPE_CHECKING:
     import argparse
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
 TYLERTOO = SourcePin(
     key="tylertoo",
@@ -90,12 +91,15 @@ LABEL_SMOOTH_PX = 4.0
 # at most TILE_PX, unless the name needs more. The label tiles have a buffer
 # of TILE_PX, so each tile then holds the whole line at its zoom.
 LABEL_STRETCH = 1.5
-# The stretch slides up the centerline from the terminus in steps of this
-# many pixels. The downstream end of the name keeps this part of the
-# centerline's length to the terminus, and at least LABEL_PAD_PX. The
-# middle of the centerline is always a candidate.
-LABEL_SLIDE_PX = 2.0
-LABEL_TONGUE_MARGIN = 0.1
+# The candidate stretches start this many pixels apart along the centerline,
+# on a grid through the stretch at its middle.
+LABEL_STEP_PX = 2.0
+# Each end of a name keeps this part of the centerline's length to the end of
+# the line beside it, the head or the terminus, and at least LABEL_PAD_PX.
+LABEL_END_MARGIN = 0.1
+# A name repeats down and up the centerline from the name nearest its middle.
+# Between the texts of two names lie at least this many pixels of centerline.
+LABEL_REPEAT_GAP_PX = 512.0
 # MapLibre's text-max-angle rule: the corners in a window of 3/5 of the text
 # size may turn by at most 45° (the default) in total. The tiler moves each
 # vertex by up to 1/16 pixel, which changes a short segment's turn by about
@@ -442,13 +446,14 @@ def line_stretch(coords: np.ndarray, start: float, length: float) -> np.ndarray:
 
 
 def stretch_starts(line_px: float, label_px: float, keep_px: float) -> np.ndarray:
-    """Return the starts of the stretches to try, from the terminus up.
+    """Return the starts of the candidate stretches along a centerline.
 
     The centerline runs from the head to the terminus. The name sits at the
-    middle of the stretch. Its downstream end keeps :data:`LABEL_TONGUE_MARGIN`
-    of the line, at least :data:`LABEL_PAD_PX`, to the terminus. The margin
-    is at most the one of a name at the middle of the line, so the middle
-    stretch is always a candidate.
+    middle of the stretch. The starts lie :data:`LABEL_STEP_PX` apart on a
+    grid through the middle stretch. Each end of the name keeps
+    :data:`LABEL_END_MARGIN` of the line, at least :data:`LABEL_PAD_PX`, to
+    the end of the line beside it. The middle stretch is always a
+    candidate, also where the margins leave no room.
 
     Parameters
     ----------
@@ -462,14 +467,16 @@ def stretch_starts(line_px: float, label_px: float, keep_px: float) -> np.ndarra
     Returns
     -------
     np.ndarray
-        The distances from the head, in pixels, in descending order. The
-        first start is the most downstream one.
+        The distances from the head, in pixels, in ascending order. The
+        middle stretch is the middle element.
     """
-    margin = min(max(LABEL_PAD_PX, LABEL_TONGUE_MARGIN * line_px), (line_px - label_px) / 2)
-    last = min(line_px - keep_px, line_px - margin - (keep_px + label_px) / 2)
+    margin = max(LABEL_PAD_PX, LABEL_END_MARGIN * line_px)
     middle = (line_px - keep_px) / 2
-    slide = np.arange(last, 0, -LABEL_SLIDE_PX)
-    return np.unique(np.concatenate([slide, [middle, 0.0]]))[::-1]
+    # The text starts (keep_px - label_px) / 2 into its stretch. The first
+    # start keeps the margin to the head, and the last mirrors it.
+    first = max(margin - (keep_px - label_px) / 2, 0.0)
+    steps = max(int((middle - first) // LABEL_STEP_PX), 0)
+    return middle + LABEL_STEP_PX * np.arange(-steps, steps + 1)
 
 
 def _turn(coords: np.ndarray, vertex: int) -> float:
@@ -607,22 +614,25 @@ def label_clear(
     return not shapely.dwithin(boundary_m, text, LABEL_CLEARANCE_PX * pixel_m(zoom))
 
 
-def label_window(
+def label_windows(
     coords_m: np.ndarray, name: str, zoom: int, outline_m: shapely.Geometry
-) -> np.ndarray | None:
-    """Return the line along which a name follows its centerline at one zoom.
+) -> list[np.ndarray]:
+    """Return the lines along which a name follows its centerline at one zoom.
 
-    The line is smoothed by :data:`LABEL_SMOOTH_PX`. A stretch of
-    :data:`LABEL_STRETCH` padded label widths, at most :data:`TILE_PX`,
-    slides up the line from the terminus (:func:`stretch_starts`). The
-    first stretch on the tile grid that passes two checks wins:
+    The line is smoothed by :data:`LABEL_SMOOTH_PX`. The candidates are
+    stretches of :data:`LABEL_STRETCH` padded label widths, at most
+    :data:`TILE_PX` (:func:`stretch_starts`). A stretch on the tile grid is
+    a label line when it passes two checks:
 
     - MapLibre keeps the name with :data:`LABEL_PAD_PX` on each side
       (:func:`center_label_fits`).
     - The text keeps :data:`LABEL_CLEARANCE_PX` to the glacier's outline
       (:func:`label_clear`).
 
-    The label bands do not simplify, so the tile holds this line.
+    The first name is the stretch that passes nearest the middle of the
+    line. Of two at one distance, the upstream one wins. The names above it
+    and below it follow outward (:func:`repeat_names`). The label bands do
+    not simplify, so the tile holds these lines.
 
     Parameters
     ----------
@@ -637,36 +647,84 @@ def label_window(
 
     Returns
     -------
-    np.ndarray | None
-        The stretch in Web Mercator metres, or None if the name does not
-        fit at this zoom.
+    list[np.ndarray]
+        The stretches in Web Mercator metres, from the head down. The list
+        is empty if the name does not fit at this zoom.
     """
     label_px = label_width_px(name)
     needed_px = label_px + 2 * LABEL_PAD_PX
     if _arc_length(coords_m)[-1] / pixel_m(zoom) < needed_px:
-        return None
+        return []
     smoothed = smooth_line(coords_m / pixel_m(zoom), LABEL_SMOOTH_PX)
     smoothed_px = _arc_length(smoothed)[-1]
     if smoothed_px < needed_px:
-        return None
+        return []
     boundary_m = shapely.boundary(outline_m)
     shapely.prepare([outline_m, boundary_m])
     keep_px = min(smoothed_px, max(needed_px, min(LABEL_STRETCH * needed_px, TILE_PX)))
-    for start in stretch_starts(smoothed_px, label_px, keep_px):
-        stretch = line_stretch(smoothed, start, keep_px)
-        stretch = np.asarray(shapely.simplify(shapely.LineString(stretch), 0.25).coords)
-        stretch = tile_grid(stretch, zoom)
-        if center_label_fits(stretch, needed_px) and label_clear(
-            stretch, label_px, zoom, outline_m, boundary_m
-        ):
-            return stretch * pixel_m(zoom)
-    return None
+    starts = stretch_starts(smoothed_px, label_px, keep_px)
+
+    @functools.cache
+    def stretch(i: int) -> np.ndarray | None:
+        """Return candidate ``i`` on the tile grid, or None if it fails a check."""
+        line = line_stretch(smoothed, starts[i], keep_px)
+        line = tile_grid(np.asarray(shapely.simplify(shapely.LineString(line), 0.25).coords), zoom)
+        passes = center_label_fits(line, needed_px) and label_clear(
+            line, label_px, zoom, outline_m, boundary_m
+        )
+        return line if passes else None
+
+    def fits(i: int) -> bool:
+        return stretch(i) is not None
+
+    middle = len(starts) // 2
+    outward = sorted(range(len(starts)), key=lambda i: abs(i - middle))
+    first = next((i for i in outward if fits(i)), None)
+    if first is None:
+        return []
+    chosen = repeat_names(starts, first, label_px + LABEL_REPEAT_GAP_PX, fits)
+    return [line * pixel_m(zoom) for i in chosen if (line := stretch(i)) is not None]
+
+
+def repeat_names(
+    starts: np.ndarray, first: int, step: float, fits: Callable[[int], bool]
+) -> list[int]:
+    """Return the candidates of the names that repeat outward from the first name.
+
+    Parameters
+    ----------
+    starts
+        The start of each candidate stretch, in ascending order. All
+        stretches have one length, so the starts space the names.
+    first
+        The candidate of the first name.
+    step
+        The smallest distance between two names: the label width and
+        :data:`LABEL_REPEAT_GAP_PX`.
+    fits
+        Whether a candidate passes the checks.
+
+    Returns
+    -------
+    list[int]
+        ``first`` and the other names, in ascending order. Going outward,
+        each name is the nearest candidate that fits at least ``step`` from
+        the name before it.
+    """
+    chosen = [first]
+    for outward in (range(first - 1, -1, -1), range(first + 1, len(starts))):
+        last = first
+        for i in outward:
+            if abs(starts[i] - starts[last]) >= step and fits(i):
+                chosen.append(i)
+                last = i
+    return sorted(chosen)
 
 
 def label_lines(
     coords_m: np.ndarray, name: str, minzoom: int, outline_m: shapely.Geometry
-) -> dict[int, np.ndarray]:
-    """Return the label line of a name at each zoom at which it fits.
+) -> dict[int, list[np.ndarray]]:
+    """Return the label lines of a name at each zoom at which it fits.
 
     Parameters
     ----------
@@ -681,15 +739,15 @@ def label_lines(
 
     Returns
     -------
-    dict[int, np.ndarray]
-        The line of :func:`label_window` by zoom, from ``minzoom`` to
-        :data:`LABEL_MAXZOOM`. A zoom at which the name does not fit has no line.
+    dict[int, list[np.ndarray]]
+        The lines of :func:`label_windows` by zoom, from ``minzoom`` to
+        :data:`LABEL_MAXZOOM`. A zoom at which the name does not fit has no entry.
     """
-    lines: dict[int, np.ndarray] = {}
+    lines: dict[int, list[np.ndarray]] = {}
     for zoom in range(minzoom, LABEL_MAXZOOM + 1):
-        line = label_window(coords_m, name, zoom, outline_m)
-        if line is not None:
-            lines[zoom] = line
+        windows = label_windows(coords_m, name, zoom, outline_m)
+        if windows:
+            lines[zoom] = windows
     return lines
 
 
@@ -730,11 +788,12 @@ def main_centerlines(centerlines_parquet: Path, rgi_ids: Sequence[str]) -> gpd.G
 
 
 def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -> Path:
-    """Write the labels: a point per named glacier and a line per zoom at which it fits.
+    """Write the labels: a point per named glacier and its lines at each zoom at which it fits.
 
     The point is RGI's own point. Each line is a stretch of the glacier's
-    main centerline near the terminus, smoothed, where the glacier is wide
-    enough for the name (:func:`label_lines`).
+    main centerline, smoothed, where the glacier is wide enough for the
+    name. The first name sits nearest the middle of the centerline, and
+    the others repeat down and up from it (:func:`label_lines`).
     ``label_zoom`` is the zoom of a line, and is null on a point. The
     styles draw a line at its own zoom only. ``line_zoom`` is the first
     zoom with a line, and is null for a glacier without a line.
@@ -772,15 +831,16 @@ def write_labels(glaciers_parquet: Path, centerlines_parquet: Path, out: Path) -
     for row, (rgi_id, name, zoom) in enumerate(
         zip(named["rgi_id"], named["display_name"], minzoom, strict=True)
     ):
-        placed: dict[int, np.ndarray] = {}
+        placed: dict[int, list[np.ndarray]] = {}
         if rgi_id in centerlines.index:
             coords = np.asarray(centerlines[rgi_id].coords)
             placed = label_lines(coords, name, zoom, outline[rgi_id])
         line_zoom.append(min(placed, default=None))
-        for z, line in placed.items():
-            line_rows.append(row)
-            line_zooms.append(z)
-            lines.append(shapely.LineString(line))
+        for z, windows in placed.items():
+            for line in windows:
+                line_rows.append(row)
+                line_zooms.append(z)
+                lines.append(shapely.LineString(line))
     points = gpd.GeoDataFrame(
         {
             "rgi_id": named["rgi_id"],
@@ -1019,7 +1079,7 @@ def glacier_layers(
                     *LINE_COMPLETE,
                     # The tiler's simplification merges the smoothed bends of
                     # a label line into sharper corners, and MapLibre then
-                    # drops the label. label_window checks the line as written.
+                    # drops the label. label_windows checks the line as written.
                     "--simplify-factor",
                     "0",
                     # The tiler counts the buffer in pixels of a 256-pixel
