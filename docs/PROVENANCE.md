@@ -49,8 +49,8 @@ The layout changes:
   links (`rgi6_links`). The complex links of the complex product become
   `glacier_ids`. A glacier with no entry in a side file keeps its row.
 - RGI splits regions 10 and 19-15 at the antimeridian into two polygons.
-  Each pair becomes one row with a MultiPolygon of both parts. The
-  coordinates do not change.
+  The mirror joins each pair into one row with a MultiPolygon of both
+  parts and keeps the coordinates.
 - Integers are narrowed to a smaller type only when every value round-trips.
   Floats stay float64.
 - The build skips the `.ipynb_checkpoints/` folders
@@ -486,18 +486,18 @@ An override in `metadata/name_overrides.yaml` replaces the rules for one
 `glac_name`. The overrides are listed below. Otherwise the rules run in this
 order (`src/rgi_catalog/names.py`):
 
-1. Underscores become spaces, and runs of whitespace collapse to one space.
+1. Underscores become spaces, and runs of whitespace become one space.
    A trailing comma is dropped. A dash that stands for an empty second name
    is dropped too: `Austfonna, -` becomes `Austfonna`.
 2. Inventory codes are removed as whole tokens at either end of the name.
-   These are GLIMS and WGI codes: two capital letters, a digit, then five or
-   more letters or digits, such as `CN5Y673P0037`. A range or query suffix
+   These are GLIMS and WGI codes such as `CN5Y673P0037`. A code starts with
+   two capital letters and a digit, followed by five or more letters or digits. A range or query suffix
    such as `-10`, `+05` or `?` is part of the code.
 3. The name is null when nothing is left. It is also null for `S/N`, `NN`,
    `Unnamed` with an optional number, `None`, `<Null>`, `No Name`,
-   `No Name Glacier` and `Namenlos` with an optional Roman numeral. Names that
-   are only digits, codes of one to three capitals, and names that are only a
-   bracket, such as `(Severny Island)`, are null too.
+   `No Name Glacier` and `Namenlos` with an optional Roman numeral. A name of
+   only digits or of only a code of one to three capitals is null too. So is
+   a name that is only a bracket, such as `(Severny Island)`.
 4. A Cyrillic `а`, `е` or `в` after digits becomes the Latin `a`, `e` or `v`:
    `101а` becomes `101a`. 362 other names of this form in regions 10 and 12
    use the Latin letter.
@@ -512,7 +512,7 @@ order (`src/rgi_catalog/names.py`):
 8. A name with no lowercase letter is re-cased. Each word starts with a
    capital and continues in lowercase. Roman numerals and compass points
    stay in capitals, and so does a Swiss canton code that ends the name
-   (`FIESCHERGLETSCHER VS` becomes `Fieschergletscher VS`). A word that holds
+   (`FIESCHERGLETSCHER VS` becomes `Fieschergletscher VS`). A word that contains
    a digit keeps its case (`HPS34`). Particles such as `de`, `du`, `del`,
    `dal`, `dil`, `la` and `d'` are lowercase unless they start the name, and
    the letter after `O'` is a capital. In a
