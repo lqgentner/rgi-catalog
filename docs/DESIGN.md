@@ -550,12 +550,6 @@ the end of the line beside it, the head or the terminus. The middle of the
 centerline is always a candidate. The fit measures the text with the glyph
 advances in `metadata/glyph_advances.yaml`.
 
-swisstopo's base map draws each glacier name at the middle of one name line,
-which runs from near the head to near the terminus. On the 209 glaciers with
-one swisstopo name between 7.3° and 8.3° E and 45.9° and 46.6° N, the
-middle of that line lies at 0.46 of the RGI centerline (median). The name of
-the fit lies at 0.50 when it appears once.
-
 ### Repeated names
 
 The name repeats outward from the first name, down the centerline and up it.
