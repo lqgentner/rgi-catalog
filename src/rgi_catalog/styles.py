@@ -36,11 +36,11 @@ OUTLINE_WIDTH = ["interpolate", ["linear"], ["zoom"], 0, 1.2, 8, 0.6, 12, 1.0]
 # Below z10 the archive holds a glacier too small to draw as a point. A
 # glacier at the antimeridian is a MultiPoint where the tile buffer wraps.
 POINTS = ["in", ["geometry-type"], ["literal", ["Point", "MultiPoint"]]]
-# The archive has a label line per glacier and zoom, with its zoom in
-# label_zoom. Past MAXZOOM the tiles of MAXZOOM are overzoomed. A line shows
-# from its zoom up to the next zoom, and the line of LABEL_MAXZOOM shows at
-# every zoom past it. A renderer that evaluates the filter at a fractional
-# zoom then also matches one line per glacier.
+# The archive has the label lines of each glacier at each zoom, with the zoom
+# in label_zoom. Past MAXZOOM the tiles of MAXZOOM are overzoomed. A line
+# shows from its zoom up to the next zoom, and the lines of LABEL_MAXZOOM
+# show at every zoom past it. A renderer that evaluates the filter at a
+# fractional zoom then also matches the lines of one zoom per glacier.
 LABEL_LINES = [
     "all",
     [">=", ["zoom"], ["get", "label_zoom"]],
@@ -115,7 +115,7 @@ def _region_labels(level: int, minzoom: int, maxzoom: int, size: int) -> dict[st
 LABELS: dict[str, Any] = {
     "id": "glacier-labels",
     "type": "symbol",
-    # A name follows the label line of its glacier at the zoom.
+    # A name follows the label lines of its glacier at the zoom.
     "filter": LABEL_LINES,
     "layout": {
         "text-field": ["get", "display_name"],
