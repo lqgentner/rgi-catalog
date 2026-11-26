@@ -25,8 +25,8 @@
     "glacier outlines",
     "hypsometry"
   ],
-  "version": "7.0-r2",
-  "updated": "2026-11-07T16:42:46Z",
+  "version": "7.0-r3",
+  "updated": "2026-11-26T19:02:53Z",
   "sci:doi": "10.5067/f6jmovy5navz",
   "sci:citation": "RGI Consortium. (2023). Randolph Glacier Inventory - A Dataset of Global Glacier Outlines, Version 7 [Data set]. NASA National Snow and Ice Data Center Distributed Active Archive Center. https://doi.org/10.5067/F6JMOVY5NAVZ",
   "sci:publications": [
@@ -83,8 +83,8 @@
       "roles": [
         "data"
       ],
-      "file:size": 261370052,
-      "file:checksum": "1220f16a6c2d08c87d41dc315540ead570e0bab11b2fd4a70b42a4980d290ca0d016",
+      "file:size": 261370078,
+      "file:checksum": "12209d294727d2b3ec242d512f116d665c22840efc79c78d206cec50d0c49e2dba2f",
       "alternate": {
         "s3": {
           "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet",
@@ -536,8 +536,8 @@
       "roles": [
         "data"
       ],
-      "file:size": 197967,
-      "file:checksum": "12206c1bb9d7232c0e3cdde80c49844fd0f2333ee4bfec70f6d9eaf0695a439db07c",
+      "file:size": 198033,
+      "file:checksum": "1220fc63728b46e29b1bf79f80a389fa301184181bb5d87373125b8d2e1e11fbfbb4",
       "alternate": {
         "s3": {
           "href": "s3://us-west-2.opendata.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glacier-names.parquet",
@@ -637,8 +637,8 @@
       "roles": [
         "visual"
       ],
-      "file:size": 1144477524,
-      "file:checksum": "122072ca1683454fa5e8213df6b3c7f07b596090e91d4e1aaab41c4938655cbe7d25"
+      "file:size": 1188207859,
+      "file:checksum": "1220ea0a3e2fdfefa7510c6e036a8814eacd5586b30e9d64af2c9ad0dd65537c2f85"
     },
     "thumbnail": {
       "href": "./thumbnail.webp",
@@ -740,8 +740,8 @@
         "glaciers",
         "glacier-labels"
       ],
-      "file:size": 1144477524,
-      "file:checksum": "122072ca1683454fa5e8213df6b3c7f07b596090e91d4e1aaab41c4938655cbe7d25"
+      "file:size": 1188207859,
+      "file:checksum": "1220ea0a3e2fdfefa7510c6e036a8814eacd5586b30e9d64af2c9ad0dd65537c2f85"
     }
   ]
 }
