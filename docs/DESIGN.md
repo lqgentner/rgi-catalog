@@ -45,10 +45,11 @@ assets. Without the asset it falls back to the GeoParquet file.
 `src/rgi_catalog/geoparquet.py` writes each file in two steps:
 
 1. geopandas writes a plain intermediate GeoParquet file. Its schema
-   metadata carries the key-value metadata (`rgi:version`,
+   metadata contains the key-value metadata (`rgi:version`,
    `rgi:mirror_revision`, `rgi:sources`, `rgi:citation`, `rgi:catalog`).
-2. The gpio Python API reads that file, adds the bbox covering column,
-   orders the rows, and writes the published file in one pass. The settings
+2. The Python API of gpio reads that file and adds the bbox covering
+   column. It then orders the rows and writes the published file in one
+   pass. The settings
    are GeoParquet 2.0, zstd level 19, and the row order and row group size
    of the collection's `layout` in `metadata/catalog.yaml`. gpio carries the
    input's non-geo key-value metadata into the output (geoparquet-io #690).
@@ -148,13 +149,13 @@ PTL-DAT-006 requires spatially ordered rows. The row groups average 1.8% of
 the file extent, against 4.7% for the Hilbert file and the 30% limit.
 
 The complexes and the centerlines use the glaciers layout. The intersects
-use 10,240 rows per group. The regions are 110 rows in one row group, so
-every read fetches the whole file, and they stay in Hilbert order.
+use 10,240 rows per group. The regions are 110 rows in one row group.
+Every read fetches the whole file. The regions stay in Hilbert order.
 
 In the centerlines, the `rgi_id` order is also the `rgi_g_id` order. The
-lines of one glacier are consecutive, so a filter on `rgi_g_id` selects one
-row group, or two at a boundary. The intersect IDs do not follow the glacier
-IDs as closely.
+lines of one glacier are consecutive. A filter on `rgi_g_id` reads one row
+group, or two at a boundary. The intersect IDs follow the glacier IDs less
+closely.
 
 `scripts/measure_lookups.py --product NAME` reads each file by the key of
 its README example. The sample is one random row of each first-order region,
@@ -188,13 +189,13 @@ the row group size exactly, but its file was 9.6% larger: 322.3 MB against
 
 - pyarrow tries dictionary encoding on every column. On columns of mostly
   unique values (`rgi_id`, coordinates, the measured floats) it writes the
-  dictionary pages and then falls back to plain encoding. That costs about
+  dictionary pages and then falls back to plain encoding. That adds about
   0.5 MB per column, 11 MB in all.
 - pyarrow writes 1 MB data pages, which zstd compresses less well than
   DuckDB's pages. The geometry column was 16.8 MB larger.
 
 With dictionaries only on repetitive text columns and 8 MB pages, pyarrow
-reached 297.7 MB. gpio does not expose those settings, so the build uses the
+reached 297.7 MB. gpio does not expose those settings. The build uses the
 DuckDB writer. An exact row group size is not needed.
 
 ### Compression level
@@ -245,16 +246,16 @@ client reads the whole table in one request. Before, it read three columns
 of the glaciers file. Those columns are in 68 row groups, and in Chrome
 through data.source.coop the read took 137 requests and about 2.3 s.
 
-The table is plain Parquet. It carries the `rgi:` footer keys of the
+The table is plain Parquet. It contains the `rgi:` footer keys of the
 glaciers file, but not the GeoParquet `geo` key. With the `geo` key and no
 geometry, rashid fails the file on PTL-DAT-007. Without it, rashid checks the
 file as a table. The asset follows `data` in the collection. The browser's
 data preview and the QGIS plugin's "Load full data" take the first Parquet
 asset, so both keep the GeoParquet file.
 
-The encodings come from the column contents. `rgi_id` counts up by one, so a
+The encodings come from the column contents. `rgi_id` counts up by one. A
 prefix delta stores only the changed last characters. The names are mostly
-unique, so a length delta packs them better than a dictionary. Column sizes
+unique. A length delta stores them in fewer bytes than a dictionary. Column sizes
 in the table, zstd level 19:
 
 | Column | Dictionary | Chosen encoding | Chosen size |
@@ -282,15 +283,15 @@ footer statistics of the complexes file answer that.
 - **Fixes.** The text repair, the Z drop and the validity repair run on every
   product (`assemble._apply_fixes`). 7 complex outlines are invalid and are
   repaired. All glacier outlines are valid under the GEOS in the environment.
-- **Links.** Each of the 274,531 glaciers is in exactly one complex. Each
-  has exactly one main centerline, and its `length_m` equals the glacier's
-  `lmax_m`. Each intersect and each centerline refers to a glacier in the
+- **Links.** Each of the 274,531 glaciers is in exactly one complex and
+  has exactly one main centerline. The `length_m` of that centerline equals
+  the `lmax_m` of the glacier. Each intersect and each centerline refers to a glacier in the
   glaciers file.
 - **Regions.** The summary CSVs contain only the codes and names of the
   shapefiles, and no statistics. The build uses them as a witness and fails
   when they differ. The file stacks both levels with a `level` column.
   RGI splits regions 10 and 19-15 at the antimeridian into two polygons.
-  The file joins each pair into one MultiPolygon row, so a region code names
+  The file joins each pair into one MultiPolygon row. A region code identifies
   one row: 20 rows of level 1 and 90 of level 2.
 - **Region labels.** The regions have no label point. The tiles use the
   `point_on_surface` of each region's largest polygon. The label points are
@@ -329,9 +330,9 @@ layer per archive and has no `pyramid`, `--entry-zoom` or
 in `src/rgi_catalog/tiles.py` pins it by sha256, and `sources.fetch` verifies
 it into `.cache/`.
 
-The 0.8.0 binary lacks two flags that the online documentation lists:
-`--size-valve` and `--name`/`--attribution`/`--description` on `tiles` and
-`pyramid`. The build writes the archive metadata itself
+The 0.8.0 binary lacks some flags of `tiles` and `pyramid` that the online
+documentation lists. One is `--size-valve`. The others set the archive name,
+attribution and description (`--name`, `--attribution`, `--description`). The build writes the archive metadata itself
 (`tiles.set_metadata`). It copies the header, directories and tile data byte
 for byte and replaces only the metadata block.
 
@@ -405,15 +406,15 @@ Measured on the full glaciers table:
 
 The tiles end at z12. A z12 tile resolves about 2.4 m at the equator, finer
 than the imagery behind the outlines, and clients overzoom above it. A
-client overzooms one source as a whole, so every layer ends at z12. An
-archive to z14 was 2.4 GB. z14 alone was 2.2 million tiles, mostly about
+client overzooms one source as a whole. For this reason, all layers end at
+z12. With z13 and z14, the archive was 2.4 GB. z14 alone was 2.2 million tiles, mostly about
 1 KB each: tiles inside ice caps that contain one clipped polygon and its 39
 properties.
 
 The tiles keep every scalar column. Without the four long submission text
 columns, the z10–12 band would be 12% smaller (485 MB against 550 MB).
 
-The glaciers layer starts at z0, so the default style shows data at the full
+The glaciers layer starts at z0. The default style shows data at the full
 extent. z9 keeps all 274,531 glaciers.
 
 ### Low zooms
@@ -425,7 +426,7 @@ The Alps and High Mountain Asia were almost empty at world scale.
 Below z10 the glaciers and the complexes are an overview built per zoom
 (`tiles.write_overview`). At each zoom a feature that spans 3 pixels of a
 512-pixel tile is its outline. A smaller feature is RGI's point (`cenlon`,
-`cenlat`). So large glaciers keep their shape at low zooms, as in
+`cenlat`). So large glaciers keep their outline at low zooms, as in
 Google Earth Engine, and a small one is a dot. The points keep one per grid
 cell of 4 GSD, about a pixel, and each cell keeps the point of the largest
 feature (`--sort-key area_km2`). The density limit thins only the points.
@@ -462,7 +463,8 @@ EPSG:3857. The same glaciers then move at most 0.55 pixels at z9 and keep
 polygons reach 90°S, and the input cuts them off there. The extents of the
 other products are within 84° of the equator.
 
-A tiling does not simplify its finest zoom, so a unit test pads its band.
+A tiling does not simplify its finest zoom. For this reason, the unit test
+of the simplification adds one zoom to its band (`pad_zoom`).
 
 The overview points are thinned on a grid of 4 GSD. In map units that grid
 is square, so high latitudes keep more points than on a grid in degrees.
@@ -474,7 +476,7 @@ z7. The tolerance in degrees collapsed at least as many.
 ### Line entry zooms
 
 `tiles.write_early_lines` gives each centerline and intersect the first zoom
-from z4 at which its Web Mercator bounding box spans 32 pixels
+from z4 at which its bounding box in Web Mercator spans 32 pixels
 (`line_minzoom`). A main centerline enters at z8 at the latest and every
 other line at z9. So an ice cap shows its centerlines and divides with its
 outline. On Barents Island the main centerlines enter at z6–7 and the long
@@ -581,7 +583,7 @@ have no name in the styles.
 
 ### The label layers
 
-The `glacier-labels` layer has one band per zoom, so a tile contains only
+The `glacier-labels` layer has one band per zoom. A tile contains only
 the lines of its own zoom. The z12 tiles also contain the lines of z13 and
 z14. MapLibre overscales a z12 tile past z12 and evaluates the filter at the
 overscaled zoom. The fit of a z13 or z14 line uses the z12 tile grid.
@@ -630,14 +632,14 @@ check takes about 80 s on 15 cores.
 
 Every style draws the region boundaries under its data and the region names
 over it. Each name is under its number (`11`, `11-01`). The boundaries
-come from the `region-boundaries` layer, which stores each border once, so
-the dash patterns stay in step. A first-order boundary is a long dash
+come from the `region-boundaries` layer, which stores each border once.
+The dashes of a border come from one line and do not overlap. A first-order boundary is a long dash
 (`[5, 2.5]` line widths, 1.2 px, `#757575`) and shows from z0. A
 second-order boundary is a short dash (`[2.5, 2.5]`, 0.8 px, `#9e9e9e`) and
 shows from z3.
 
-The styles draw the names on top. The glyphs come from OpenFreeMap. A
-region name is in Noto Sans Bold or Noto Sans Regular. A glacier name is in
+The styles draw the names on top. The glyphs come from OpenFreeMap. Region
+names use Noto Sans Bold or Noto Sans Regular. Glacier names use
 Noto Sans Italic at 14 px with a letter spacing of 0.2 em, placed at the
 center of its label line.
 
@@ -668,7 +670,7 @@ intersects styles draw the glaciers in the glacier colours, but faint, so
 the lines are the subject. The colours are in `styles.py`.
 
 The outline of every style is a `line` layer from z0, about one pixel wide
-at low zooms. At world scale a glacier is smaller than a pixel, so a fill
+at low zooms. At world scale a glacier is smaller than a pixel. A fill
 alone draws nothing there. A `circle` layer filtered to points draws the
 overview points, 1.5 to 2.5 px wide, in the fill colour. Themed styles colour
 the outline and the dots with the theme's expression, and the legend still
@@ -721,8 +723,8 @@ archive and drops its symbol layers. The thumbnails need no credit:
 - The root, the version and the regions are world views over the land of
   Natural Earth (`scripts/naturalearth_land.py`, 1:50m, public domain).
 - The glaciers, complexes, intersects and centerlines share one frame on
-  white: the Garibaldi and Marinelli glaciers, Cordillera Darwin, just above
-  map zoom 10.
+  white. The frame shows the Garibaldi and Marinelli glaciers in Cordillera
+  Darwin, just above map zoom 10.
 
 | Image | Style | bbox |
 | --- | --- | --- |

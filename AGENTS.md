@@ -26,7 +26,7 @@ forever and deleting it later reclaims nothing.
 
 `ACCEPTED` in `tests/test_conformance.py` starts empty. Never add an entry
 without a matching row in `docs/conformance.md` giving the rule, where it
-fires, why it is accepted, and the issue tracking its removal.
+reports, why it is accepted, and the issue tracking its removal.
 
 ### Published agent guides
 
@@ -43,8 +43,8 @@ spec recommends these two links for a git-backed catalog. See
 [git-backed catalogs](https://github.com/portolan-sdi/portolan-spec/blob/main/specs/best-practices/git-backed-catalogs.md),
 which merged in August 2026.
 
-Keep both hrefs absolute. The repository is outside the published catalog,
-so a relative href resolves against the public base URL.
+Keep both hrefs absolute. The repository is outside the published catalog.
+A relative href resolves against the public base URL.
 
 ## Working in this repository
 

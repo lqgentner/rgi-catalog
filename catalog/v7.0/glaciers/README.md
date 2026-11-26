@@ -23,7 +23,7 @@ The RGI 7.0 user guide describes the
 
 - [`rgi7.0-glaciers.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glaciers.parquet): 274,531 rows, 261.4 MB. GeoParquet 2.0.0 in 68 row groups of up to 4,096 rows, zstd-compressed and ordered by `rgi_id`. Each row group contains a separate range of `rgi_id` values, so a filter on one value reads one row group. A `bbox` column lets readers skip row groups in a spatial filter.
 - [`rgi7.0-glacier-names.parquet`](https://data.source.coop/lqgentner/rgi/v7.0/glaciers/rgi7.0-glacier-names.parquet): 274,531 rows, 0.2 MB. Plain Parquet without geometry, with the columns `rgi_id`, `display_name`, `glac_name`, `o1region`, `o2region` of the GeoParquet file in the same row order. A search by name or ID reads the whole file in one request.
-- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the PMTiles web map archive from z0 to z12, with the layers `glaciers`, `glacier-labels`. Below z10 the layer is an overview. Features that span 3 pixels at a zoom show as simplified outlines. Smaller features show as points at RGI's `cenlon` and `cenlat`, and each grid cell of about a pixel keeps the point of the largest feature. Overview features contain only `rgi_id`, `display_name`, `area_km2`, `zmed_m`, `surge_type`, `term_type`, `is_rgi6`. From z10 the tiles contain every column except the list and struct columns, which vector tiles cannot store: `hypso_permille`, `rgi6_links`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
+- [`rgi7.0.pmtiles`](https://data.source.coop/lqgentner/rgi/v7.0/rgi7.0.pmtiles): the PMTiles archive for web maps from z0 to z12, with the layers `glaciers`, `glacier-labels`. Below z10 the layer is an overview. Features that span 3 pixels at a zoom show as simplified outlines. Smaller features show as points at RGI's `cenlon` and `cenlat`, and each grid cell of about a pixel keeps the point of the largest feature. Overview features contain only `rgi_id`, `display_name`, `area_km2`, `zmed_m`, `surge_type`, `term_type`, `is_rgi6`. From z10 the tiles contain every column except the list and struct columns, which vector tiles cannot store: `hypso_permille`, `rgi6_links`, `bbox`. Fetch those from the GeoParquet file by `rgi_id`. Timestamps are strings in the tiles.
 ## Map styles
 
 - [Glaciers](./styles/glaciers.json) (default): Glacier outlines and names.
@@ -97,11 +97,11 @@ Open it from the Web menu and select this collection.
 | `zmax_m` | `double` | Maximum elevation (m above sea level) of the glacier. Unit: m. |
 | `zmed_m` | `double` | Median elevation (m above sea level) of the glacier. Unit: m. |
 | `zmean_m` | `double` | Mean elevation (m above sea level) of the glacier. Unit: m. |
-| `slope_deg` | `double` | Mean slope of the glacier surface. Unit: degrees. |
-| `aspect_deg` | `double` | The aspect (orientation) of the glacier surface presented as an azimuth relative to 0° at due north. Unit: degrees. |
-| `aspect_sec` | `uint8` | The aspect (orientation) of the glacier surface presented as a category. See [Coded columns](#coded-columns). |
+| `slope_deg` | `double` | Mean slope of the glacier's surface. Unit: degrees. |
+| `aspect_deg` | `double` | Aspect (orientation) of the glacier's surface as an azimuth angle clockwise from true north (0°). Unit: degrees. |
+| `aspect_sec` | `uint8` | Aspect (orientation) of the glacier's surface as a category. See [Coded columns](#coded-columns). |
 | `dem_source` | `string` | The name of the dataset that was used to compute the topography attributes. See [Coded columns](#coded-columns). |
-| `lmax_m` | `uint32` | Length (m) of the longest surface centerline of the glacier. Unit: m. |
+| `lmax_m` | `uint32` | Length (m) of the longest centerline of the glacier. Unit: m. |
 | `display_name` | `string` | The glacier name for map labels, cleaned from glac_name. Null when glac_name contains no usable name. The rules are in docs/PROVENANCE.md. |
 | `complex_id` | `string` | The identifier of the glacier complex to which the glacier belongs. |
 | `hypso_z0_m` | `int32` | Central elevation of the first elevation band of hypso_permille. The elevation bands are all 50 m in height, so band n is centered at hypso_z0_m + 50 * n. Unit: m. |

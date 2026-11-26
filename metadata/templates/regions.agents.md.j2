@@ -55,7 +55,7 @@ WHERE ST_Contains(geometry, ST_Point(8.0, 46.5));
   shapefiles as two polygons, eastern and western." Here each is one row,
   a MultiPolygon of both parts. Its bounding box spans almost every
   longitude, so a bbox filter always reads it.
-- The `regions` layer of the web map archive draws each shared border
+- The `regions` layer of the PMTiles archive draws each shared border
   twice, once per polygon. The `region-boundaries` layer stores each border
   once, as lines with one column, `level`: 1 where the line bounds a
   first-order region, else 2. Its lines are snapped to 1e-5 degrees, so
