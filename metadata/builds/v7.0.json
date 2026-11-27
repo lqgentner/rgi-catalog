@@ -398,32 +398,32 @@
   },
   "files": {
     "centerlines/rgi7.0-centerlines.parquet": {
-      "file:checksum": "1220dcde2a1f77dc6a41fa5f2a0a05435c23efdb25d5b714176a01aae1bd9db0c4a8",
-      "size": 210294494
+      "file:checksum": "12205fd8219d936edce5bfaeb30679b350495ca82a4471000c02b55d9c4d33f27fe2",
+      "size": 210294520
     },
     "complexes/rgi7.0-complexes.parquet": {
-      "file:checksum": "1220f7419cc3d62c2edd00ac3741f9497257e00c7792337e636bdb2357881bcab90c",
-      "size": 214686136
+      "file:checksum": "12203673704416e24ac742831446e68530f51857db1793fa34144cf11524784e4c5d",
+      "size": 214686162
     },
     "glaciers/rgi7.0-glacier-names.parquet": {
-      "file:checksum": "12206c1bb9d7232c0e3cdde80c49844fd0f2333ee4bfec70f6d9eaf0695a439db07c",
-      "size": 197967
+      "file:checksum": "1220fc63728b46e29b1bf79f80a389fa301184181bb5d87373125b8d2e1e11fbfbb4",
+      "size": 198033
     },
     "glaciers/rgi7.0-glaciers.parquet": {
-      "file:checksum": "1220f16a6c2d08c87d41dc315540ead570e0bab11b2fd4a70b42a4980d290ca0d016",
-      "size": 261370052
+      "file:checksum": "12209d294727d2b3ec242d512f116d665c22840efc79c78d206cec50d0c49e2dba2f",
+      "size": 261370078
     },
     "intersects/rgi7.0-intersects.parquet": {
-      "file:checksum": "12209cbf15e0b82dd7ecc60a34572cc87c9998b3cd7ba8caba47027e98040b4e5d74",
-      "size": 16791243
+      "file:checksum": "12201d7de6cf82c35b7b28e506b3c64661f67c889044c90b0bccb34cd7459a06b47d",
+      "size": 16791269
     },
     "regions/rgi7.0-regions.parquet": {
-      "file:checksum": "1220f2605561128e376c1b4c853e1187224f27870bcc898fbd070dcfafa830b0e40a",
-      "size": 955336
+      "file:checksum": "1220dce4788b3fa737bf4eca360ee5b3c88cde253b6e937b65896c7e92831657f068",
+      "size": 955362
     },
     "rgi7.0.pmtiles": {
-      "file:checksum": "122072ca1683454fa5e8213df6b3c7f07b596090e91d4e1aaab41c4938655cbe7d25",
-      "size": 1144477524
+      "file:checksum": "1220ea0a3e2fdfefa7510c6e036a8814eacd5586b30e9d64af2c9ad0dd65537c2f85",
+      "size": 1188207859
     }
   },
   "fixes": {
@@ -483,7 +483,7 @@
       }
     ]
   },
-  "mirror_revision": "7.0-r2",
+  "mirror_revision": "7.0-r3",
   "names": {
     "collection": "glaciers",
     "columns": [
@@ -539,6 +539,6 @@
       "sha256": "755728420f8666e43fea8b7c92049bdc4d3da30965c7cb5998d5e02f2400cf90"
     }
   },
-  "updated": "2026-11-07T16:42:46Z",
+  "updated": "2026-11-26T19:02:53Z",
   "version": "7.0"
 }

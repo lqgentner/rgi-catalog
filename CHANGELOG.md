@@ -4,9 +4,10 @@ Each entry is one mirror revision of the published catalog. A revision name
 is the RGI version plus a counter, for example `7.0-r1`. The git tag carries
 the same name.
 
-## Unreleased
+## 7.0-r3 (2026-11-27)
 
-These changes are in `catalog/` on `main` and are not yet published.
+The PMTiles repeat names of long glaciers along their centerlines, and the
+catalog declares the Portolan v0.3.0 profile.
 
 ### Changed
 
@@ -22,11 +23,11 @@ These changes are in `catalog/` on `main` and are not yet published.
   collection, for example `RGI 7.0 glaciers, PMTiles`. QGIS names the tile
   layer after this title.
 - The names table has the title `RGI 7.0 glacier names, Parquet`.
-- The map writes a glacier name first at the middle of its centerline, not
-  near the terminus. On a long glacier the name repeats up and down the
-  centerline, with at least 512 px between two names. Each end of a name
-  keeps a tenth of the centerline to the head and to the terminus. This
-  change is in the web map archive, so it needs a rebuild of the tiles.
+- The PMTiles web map archive writes a glacier name first at the middle of
+  its centerline instead of near the terminus. On a long glacier the name
+  repeats up and down the centerline, with at least 512 px between two names.
+- The descriptions of `slope_deg`, `aspect_deg`, `aspect_sec` and `lmax_m`
+  were updated.
 
 ### Added
 
