@@ -4,9 +4,9 @@ Each entry is one mirror revision of the published catalog. A revision name
 is the RGI version plus a counter, for example `7.0-r1`. The git tag carries
 the same name.
 
-## 7.0-r3 (2026-11-26)
+## 7.0-r3 (2026-11-27)
 
-The map repeats the name of a long glacier along its centerline, and the
+The PMTiles repeat names of long glaciers along their centerlines, and the
 catalog declares the Portolan v0.3.0 profile.
 
 ### Changed
@@ -23,17 +23,11 @@ catalog declares the Portolan v0.3.0 profile.
   collection, for example `RGI 7.0 glaciers, PMTiles`. QGIS names the tile
   layer after this title.
 - The names table has the title `RGI 7.0 glacier names, Parquet`.
-- The map writes a glacier name first at the middle of its centerline, not
-  near the terminus. On a long glacier the name repeats up and down the
-  centerline, with at least 512 px between two names. Each end of a name
-  keeps a tenth of the centerline to the head and to the terminus. The
-  `glacier-labels` layer can hold more than one line for each glacier and
-  zoom: 71,765 lines from z7 to z14, against 22,858 in `7.0-r2`. 7,435 of
-  the 9,457 named glaciers have a name on the map, against 7,438. The web
-  map archive grows from 1,144.5 MB to 1,188.2 MB.
+- The PMTiles web map archive writes a glacier name first at the middle of
+  its centerline instead of near the terminus. On a long glacier the name
+  repeats up and down the centerline, with at least 512 px between two names.
 - The descriptions of `slope_deg`, `aspect_deg`, `aspect_sec` and `lmax_m`
-  differ from RGI's text. The aspect is an azimuth clockwise from true
-  north.
+  were updated.
 
 ### Added
 
